@@ -7,7 +7,7 @@ import { ArrowLeft, Users, CheckCircle2, TrendingUp, Pencil, Trash2, X, Plus, Ci
 import { loadClasses, saveClasses, loadStudents, loadTodos, saveTodos } from "@/lib/store";
 import type { ClassItem, Student, Todo } from "@/lib/store";
 
-const avatarColors = ["#6366F1", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6", "#EC4899", "#14B8A6"];
+const avatarColors = ["#1a5c6b","#6366F1","#e8732a","#2a9d6a","#3B82F6","#8B5CF6","#EC4899","#d4a017"];
 
 function badgeFontSize(text: string) {
   const len = text.length;
@@ -111,7 +111,7 @@ export default function ClassProfilePage() {
 
       {/* Header */}
       <div className="px-5 pt-4 pb-8 flex items-center gap-3 relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #111111 0%, #374151 100%)", boxShadow: "0 8px 32px rgba(0,0,0,0.32)", zIndex: 10 }}>
+        style={{ background: "linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 60%, var(--accent-hover) 100%)", boxShadow: "6px 6px 14px rgba(53,120,136,0.25), inset -2px -2px 6px rgba(0,0,0,0.08), inset 2px 2px 6px rgba(255,255,255,0.12)", zIndex: 10 }}>
         <div style={{ position: "absolute", right: -20, top: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
         <div style={{ position: "absolute", right: 50, bottom: -20, width: 70, height: 70, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
         <Link href="/dashboard"
@@ -119,7 +119,7 @@ export default function ClassProfilePage() {
           style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
           <ArrowLeft size={16} />
         </Link>
-        <h1 className="flex-1 text-base font-semibold text-white relative">Sinf profili</h1>
+        <h1 className="flex-1 text-base font-semibold text-white relative" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Sinf profili</h1>
         <button
           onClick={() => { setEditing(true); setEditName(cls.name); setEditIcon(cls.icon ?? ""); setEditTgGroup(cls.telegramGroupId ?? ""); }}
           className="w-8 h-8 rounded-xl flex items-center justify-center relative"
@@ -128,15 +128,16 @@ export default function ClassProfilePage() {
         </button>
       </div>
 
-      <div className="bg-grid flex-1 mt-2 rounded-t-2xl overflow-hidden">
+      <div className="bg-grid flex-1 mt-2 overflow-hidden" style={{ borderRadius: "var(--radius-lg) var(--radius-lg) 0 0" }}>
         <div className="h-full overflow-y-auto px-4 pt-8 pb-8 max-w-lg mx-auto w-full flex flex-col gap-4">
 
           {/* Profile card */}
-          <div className="card-3d rounded-xl p-5" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          <div className="p-5" style={{ background: "var(--bg-card)", backdropFilter: "blur(4px)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay)" }}>
             <div className="flex items-center gap-4">
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center font-bold shrink-0"
+                className="w-16 h-16 flex items-center justify-center font-bold shrink-0"
                 style={{
+                  borderRadius: "var(--radius-md)",
                   background: "var(--accent-light)",
                   color: "var(--accent)",
                   fontSize: badgeFontSize(badgeText),
@@ -144,7 +145,7 @@ export default function ClassProfilePage() {
                 {badgeText}
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
+                <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
                   {cls.name} sinfi
                 </h2>
                 <p className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
@@ -157,7 +158,7 @@ export default function ClassProfilePage() {
                     </span>
                   ) : (
                     <span className="relative inline-flex items-center justify-center shrink-0" style={{ width: 14, height: 14 }}>
-                      <Send size={11} style={{ color: "#374151" }} />
+                      <Send size={11} style={{ color: "var(--text-muted)" }} />
                       <span style={{ position: "absolute", top: "50%", left: "-1px", right: "-1px", height: "2px", background: "var(--text-muted)", transform: "rotate(-35deg)", opacity: 0.45 }} />
                     </span>
                   )}
@@ -174,15 +175,15 @@ export default function ClassProfilePage() {
               </div>
               <button
                 onClick={() => setShowDelete(true)}
-                className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 self-start hover:opacity-80 transition-all"
-                style={{ background: "#FFF1F2", color: "var(--error)" }}>
+                className="w-8 h-8 flex items-center justify-center shrink-0 self-start hover:opacity-80 transition-all"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--error-bg)", color: "var(--error)" }}>
                 <Trash2 size={15} />
               </button>
             </div>
 
             <Link href={`/class/${id}`}
-              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all hover:opacity-80"
-              style={{ background: "var(--accent)", color: "#fff" }}>
+              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all hover:opacity-80"
+              style={{ borderRadius: "var(--radius-sm)", background: "var(--accent)", color: "#fff" }}>
               <Users size={15} /> O'quvchilar ro'yxati
             </Link>
           </div>
@@ -192,9 +193,9 @@ export default function ClassProfilePage() {
             {[
               { label: "O'quvchilar", value: students.length, icon: Users, color: "var(--text-secondary)", bg: "var(--accent-light)" },
               { label: "Tekshirishlar", value: totalSubmissions, icon: CheckCircle2, color: "var(--text-secondary)", bg: "var(--accent-light)" },
-              { label: "Faollik", value: `${activityPct}%`, icon: TrendingUp, color: "#F5A623", bg: "#FEF3DC" },
+              { label: "Faollik", value: `${activityPct}%`, icon: TrendingUp, color: "var(--warning)", bg: "var(--warning-bg)" },
             ].map(({ label, value, icon: Icon, color, bg }, i) => (
-              <div key={i} className="rounded-xl p-3 text-center" style={{ background: bg }}>
+              <div key={i} className="p-3 text-center" style={{ background: bg, borderRadius: "var(--radius-sm)" }}>
                 <Icon size={16} className="mx-auto mb-1" style={{ color }} />
                 <p className="text-base font-bold" style={{ color }}>{value}</p>
                 <p className="text-xs mt-0.5" style={{ color: color + "99" }}>{label}</p>
@@ -203,13 +204,13 @@ export default function ClassProfilePage() {
           </div>
 
           {/* Vazifalar */}
-          <div className="card-3d rounded-xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          <div className="overflow-hidden" style={{ background: "var(--bg-card)", backdropFilter: "blur(4px)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay)" }}>
             <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
               <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Vazifalar</span>
               <button
                 onClick={() => setShowTodo(true)}
-                className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:opacity-80"
-                style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
+                className="w-7 h-7 flex items-center justify-center transition-all hover:opacity-80"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--accent-light)", color: "var(--accent)" }}>
                 <Plus size={14} />
               </button>
             </div>
@@ -223,11 +224,11 @@ export default function ClassProfilePage() {
               <div className="p-2 flex flex-col gap-1">
                 {sortedTodos.map((todo) => (
                   <div key={todo.id}
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-                    style={{ background: "var(--bg-primary)", opacity: todo.done ? 0.55 : 1 }}>
+                    className="flex items-center gap-2.5 px-3 py-2.5"
+                    style={{ background: "var(--bg-primary)", opacity: todo.done ? 0.55 : 1, borderRadius: "var(--radius-sm)" }}>
                     <button onClick={() => toggleTodo(todo.id)} className="shrink-0 transition-all hover:scale-110">
                       {todo.done
-                        ? <CheckCircle2 size={17} style={{ color: "var(--accent)" }} />
+                        ? <CheckCircle2 size={17} style={{ color: "var(--success)" }} />
                         : <Circle size={17} style={{ color: "var(--border)" }} />}
                     </button>
                     <div className="flex-1 min-w-0">
@@ -252,7 +253,7 @@ export default function ClassProfilePage() {
 
           {/* Students preview */}
           {students.length > 0 && (
-            <div className="card-3d rounded-xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <div className="overflow-hidden" style={{ background: "var(--bg-card)", backdropFilter: "blur(4px)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay)" }}>
               <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
                 <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>O'quvchilar</span>
                 <Link href={`/class/${id}`} className="text-xs font-medium" style={{ color: "var(--accent)" }}>
@@ -265,8 +266,8 @@ export default function ClassProfilePage() {
                   const initials = s.name.split(" ").map((n) => n[0]).join("").slice(0, 2);
                   return (
                     <Link key={s.id} href={`/student/${s.id}`}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:opacity-80"
-                      style={{ background: "var(--bg-primary)" }}>
+                      className="flex items-center gap-3 px-3 py-2.5 transition-all hover:opacity-80"
+                      style={{ background: "var(--bg-primary)", borderRadius: "var(--radius-sm)" }}>
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                         style={{ background: color }}>
                         {initials}
@@ -279,7 +280,7 @@ export default function ClassProfilePage() {
                         </span>
                       ) : (
                         <span className="relative inline-flex items-center justify-center shrink-0" style={{ width: 13, height: 13 }}>
-                          <Send size={10} style={{ color: "#374151" }} />
+                          <Send size={10} style={{ color: "var(--text-muted)" }} />
                           <span style={{ position: "absolute", top: "50%", left: "-1px", right: "-1px", height: "1.5px", background: "var(--text-muted)", transform: "rotate(-35deg)", opacity: 0.4 }} />
                         </span>
                       )}
@@ -296,15 +297,15 @@ export default function ClassProfilePage() {
       {/* Edit modal */}
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "#00000060" }}
+          style={{ background: "rgba(0,0,0,0.25)", backdropFilter: "blur(6px)" }}
           onClick={(e) => e.target === e.currentTarget && setEditing(false)}>
-          <div className="w-full max-w-sm rounded-2xl p-5 animate-fade-in"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          <div className="w-full max-w-sm p-5 animate-fade-in"
+            style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)" }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>Sinfni tahrirlash</h2>
+              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Sinfni tahrirlash</h2>
               <button onClick={() => setEditing(false)}
-                className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                className="w-8 h-8 flex items-center justify-center"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
                 <X size={15} />
               </button>
             </div>
@@ -312,8 +313,9 @@ export default function ClassProfilePage() {
             <div className="flex items-end gap-3 mb-3">
               <div className="shrink-0 flex flex-col items-center gap-1.5">
                 <p className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>KO'RINISH</p>
-                <div className="rounded-xl flex items-center justify-center font-bold"
+                <div className="flex items-center justify-center font-bold"
                   style={{
+                    borderRadius: "var(--radius-sm)",
                     background: "var(--accent-light)", color: "var(--accent)",
                     minWidth: 44, height: 44, padding: "0 8px",
                     fontSize: badgeFontSize(editIcon.trim() || editName.charAt(0) || "A"),
@@ -326,16 +328,16 @@ export default function ClassProfilePage() {
                   <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Belgi (ixtiyoriy, max 4)</p>
                   <input value={editIcon} onChange={(e) => setEditIcon(e.target.value.slice(0, 4))}
                     maxLength={4} placeholder={editName.charAt(0) || "9A"}
-                    className="w-full px-3 py-2 rounded-xl text-sm outline-none font-bold text-center"
-                    style={{ background: "var(--accent-light)", border: "1px solid var(--accent)", color: "var(--accent)" }} />
+                    className="w-full px-3 py-2 text-sm outline-none font-bold text-center"
+                    style={{ borderRadius: "var(--radius-sm)", background: "var(--accent-light)", border: "1px solid var(--accent)", color: "var(--accent)" }} />
                 </div>
                 <div>
                   <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Sinf nomi</p>
                   <input autoFocus value={editName} onChange={(e) => setEditName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && saveEdit()}
                     placeholder="Masalan: 9-A"
-                    className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                    style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
+                    className="w-full px-3 py-2 text-sm outline-none"
+                    style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
                 </div>
               </div>
             </div>
@@ -344,17 +346,17 @@ export default function ClassProfilePage() {
               <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Telegram guruh ID (ixtiyoriy)</p>
               <input value={editTgGroup} onChange={(e) => setEditTgGroup(e.target.value)}
                 placeholder="-100xxxxxxxxxx yoki @groupname"
-                className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
+                className="w-full px-3 py-2 text-sm outline-none"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
             </div>
 
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setEditing(false)} className="flex-1 py-2.5 rounded-xl text-sm"
-                style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
+              <button onClick={() => setEditing(false)} className="flex-1 py-2.5 text-sm"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
                 Bekor
               </button>
-              <button onClick={saveEdit} className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                style={{ background: "var(--accent)", color: "#fff" }}>
+              <button onClick={saveEdit} className="flex-1 py-2.5 text-sm font-medium"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--cta)", color: "#fff" }}>
                 Saqlash
               </button>
             </div>
@@ -365,15 +367,15 @@ export default function ClassProfilePage() {
       {/* Todo add modal */}
       {showTodo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "#00000060" }}
+          style={{ background: "rgba(0,0,0,0.25)", backdropFilter: "blur(6px)" }}
           onClick={(e) => e.target === e.currentTarget && setShowTodo(false)}>
-          <div className="w-full max-w-sm rounded-2xl p-5 animate-fade-in"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          <div className="w-full max-w-sm p-5 animate-fade-in"
+            style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)" }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>Yangi vazifa</h2>
+              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Yangi vazifa</h2>
               <button onClick={() => setShowTodo(false)}
-                className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                className="w-8 h-8 flex items-center justify-center"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
                 <X size={15} />
               </button>
             </div>
@@ -387,8 +389,8 @@ export default function ClassProfilePage() {
                   onChange={(e) => setTodoText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addTodo()}
                   placeholder="Masalan: 5-bob mashqlarini tekshirish"
-                  className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
-                  style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                  className="w-full px-3 py-2.5 text-sm outline-none"
+                  style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
                 />
               </div>
               <div>
@@ -397,19 +399,19 @@ export default function ClassProfilePage() {
                   type="date"
                   value={todoDate}
                   onChange={(e) => setTodoDate(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
-                  style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
+                  className="w-full px-3 py-2.5 text-sm outline-none"
+                  style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
                 />
               </div>
             </div>
 
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setShowTodo(false)} className="flex-1 py-2.5 rounded-xl text-sm"
-                style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
+              <button onClick={() => setShowTodo(false)} className="flex-1 py-2.5 text-sm"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
                 Bekor
               </button>
-              <button onClick={addTodo} className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                style={{ background: "var(--accent)", color: "#fff" }}>
+              <button onClick={addTodo} className="flex-1 py-2.5 text-sm font-medium"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--cta)", color: "#fff" }}>
                 Qo'shish
               </button>
             </div>
@@ -420,15 +422,15 @@ export default function ClassProfilePage() {
       {/* Delete confirm */}
       {showDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "#00000060" }}
+          style={{ background: "rgba(0,0,0,0.25)", backdropFilter: "blur(6px)" }}
           onClick={(e) => e.target === e.currentTarget && setShowDelete(false)}>
-          <div className="w-full max-w-xs rounded-2xl p-5 animate-fade-in"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          <div className="w-full max-w-xs p-5 animate-fade-in"
+            style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)" }}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>Sinfni o'chirish</p>
+              <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Sinfni o'chirish</p>
               <button onClick={() => setShowDelete(false)}
-                className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                className="w-8 h-8 flex items-center justify-center"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
                 <X size={15} />
               </button>
             </div>
@@ -436,12 +438,12 @@ export default function ClassProfilePage() {
               <b>{cls.name}</b> sinfi va barcha ma'lumotlari o'chadi.
             </p>
             <div className="flex gap-2">
-              <button onClick={() => setShowDelete(false)} className="flex-1 py-2.5 rounded-xl text-sm"
-                style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
+              <button onClick={() => setShowDelete(false)} className="flex-1 py-2.5 text-sm"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
                 Bekor
               </button>
-              <button onClick={deleteClass} className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                style={{ background: "var(--error)", color: "#fff" }}>
+              <button onClick={deleteClass} className="flex-1 py-2.5 text-sm font-medium"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--error)", color: "#fff" }}>
                 O'chirish
               </button>
             </div>

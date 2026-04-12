@@ -4,8 +4,11 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import { UserProvider } from "@/lib/user-context";
+import { UserWSProvider } from "@/lib/user-ws";
+import { ThemeProvider } from "@/lib/theme-context";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
+import CameraFAB from "@/components/CameraFAB";
 
 export default function HomeLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -17,14 +20,19 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
   }, [router]);
 
   return (
-    <UserProvider>
-      <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg-primary)" }}>
-        <Sidebar />
-        <main className="flex-1 flex flex-col overflow-hidden">
-          {children}
-        </main>
-        <BottomNav />
-      </div>
-    </UserProvider>
+    <ThemeProvider>
+      <UserProvider>
+        <UserWSProvider>
+          <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg-primary)" }}>
+            <Sidebar />
+            <main className="flex-1 flex flex-col overflow-hidden">
+              {children}
+            </main>
+            <BottomNav />
+            <CameraFAB />
+          </div>
+        </UserWSProvider>
+      </UserProvider>
+    </ThemeProvider>
   );
 }

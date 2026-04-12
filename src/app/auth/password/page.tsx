@@ -5,12 +5,21 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ArrowLeft, Lock } from "lucide-react";
 import { setToken } from "@/lib/auth";
 
+function validatePassword(pw: string): string | null {
+  if (pw.length < 8) return "Parol kamida 8 ta belgidan iborat bo'lishi kerak";
+  if (!/[a-z]/.test(pw)) return "Parolda kichik harf bo'lishi kerak";
+  if (!/[A-Z]/.test(pw)) return "Parolda katta harf bo'lishi kerak";
+  if (!/\d/.test(pw)) return "Parolda raqam bo'lishi kerak";
+  return null;
+}
+
 function PasswordForm() {
   const router = useRouter();
   const params = useSearchParams();
 
   const tempToken = params.get("temp") ?? "";
   const rawMode = params.get("mode");
+  const emailParam = params.get("email") ?? "";
   const mode: "login" | "signup" | "reset" =
     rawMode === "signup" ? "signup" : rawMode === "reset" ? "reset" : "login";
 
@@ -25,6 +34,17 @@ function PasswordForm() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
   useEffect(() => {
+    // Login mode uses email from query param
+    if (mode === "login") {
+      if (!emailParam) {
+        router.replace("/auth/login");
+        return;
+      }
+      setEmail(emailParam);
+      return;
+    }
+
+    // Signup/reset mode uses temp token
     if (!tempToken) {
       router.replace("/auth/login");
       return;
@@ -35,38 +55,67 @@ function PasswordForm() {
     } catch {
       router.replace("/auth/login");
     }
-  }, [tempToken, router]);
+  }, [tempToken, emailParam, mode, router]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!password || password.length < 6) {
-      setError("Parol kamida 6 ta belgidan iborat bo'lishi kerak");
-      return;
-    }
-    if ((mode === "signup" || mode === "reset") && password !== confirm) {
-      setError("Parollar mos kelmadi");
-      return;
+
+    // Login mode — only check non-empty
+    if (mode === "login") {
+      if (!password) {
+        setError("Parolni kiriting");
+        return;
+      }
+    } else {
+      // Signup/reset — strong password validation
+      const pwError = validatePassword(password);
+      if (pwError) {
+        setError(pwError);
+        return;
+      }
+      if (password !== confirm) {
+        setError("Parollar mos kelmadi");
+        return;
+      }
     }
 
     setLoading(true);
     setError("");
 
     try {
-      const res = await fetch(`${apiUrl}/api/auth/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tempToken, password, mode }),
-      });
+      if (mode === "login") {
+        // Direct login with email + password
+        const res = await fetch(`${apiUrl}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
 
-      const data = await res.json();
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error ?? "Parol noto'g'ri");
+          return;
+        }
 
-      if (!res.ok) {
-        setError(data.error ?? "Xatolik yuz berdi");
-        return;
+        setToken(data.token);
+        router.replace("/home");
+      } else {
+        // Signup or reset — use temp token
+        const res = await fetch(`${apiUrl}/api/auth/complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tempToken, password, mode }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error ?? "Xatolik yuz berdi");
+          return;
+        }
+
+        setToken(data.token);
+        router.replace("/home");
       }
-
-      setToken(data.token);
-      router.replace("/home");
     } catch {
       setError("Server bilan aloqa yo'q");
     } finally {
@@ -77,9 +126,9 @@ function PasswordForm() {
   const title = mode === "signup" ? "Parol o'rnating" : mode === "reset" ? "Yangi parol" : "Parolni kiriting";
   const subtitle =
     mode === "signup"
-      ? "Hisobingiz uchun parol o'rnating"
+      ? "Hisobingiz uchun parol o'rnating (kamida 8 ta belgi, katta-kichik harf va raqam)"
       : mode === "reset"
-      ? "Google orqali tasdiqlandingiz. Yangi parol o'rnating"
+      ? "Yangi parol o'rnating (kamida 8 ta belgi, katta-kichik harf va raqam)"
       : "Hisobingizga kirish uchun parolni kiriting";
   const btnLabel = mode === "signup" ? "Ro'yxatdan o'tish" : mode === "reset" ? "Parolni yangilash" : "Kirish";
 
@@ -99,17 +148,17 @@ function PasswordForm() {
 
         {/* Card */}
         <div
-          className="card-3d rounded-3xl p-6"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
+          className="card-3d p-6"
+          style={{ background: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-card)" }}
         >
           <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: "var(--accent-light)" }}
+            className="w-12 h-12 flex items-center justify-center mb-4"
+            style={{ background: "var(--accent-light)", borderRadius: "var(--radius-md)" }}
           >
             <Lock size={20} style={{ color: "var(--accent)" }} />
           </div>
 
-          <h2 className="text-lg font-bold mb-1" style={{ color: "var(--text-primary)" }}>{title}</h2>
+          <h2 className="text-lg font-bold mb-1" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{title}</h2>
           <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>{subtitle}</p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -123,12 +172,13 @@ function PasswordForm() {
                 type="email"
                 value={email}
                 disabled
-                className="w-full px-4 py-3 rounded-2xl text-sm font-medium"
+                className="w-full px-4 py-3 text-sm font-medium"
                 style={{
                   background: "var(--accent-light)",
                   border: "1px solid var(--border)",
                   color: "var(--text-secondary)",
                   cursor: "not-allowed",
+                  borderRadius: "var(--radius-md)",
                 }}
               />
             </div>
@@ -142,14 +192,15 @@ function PasswordForm() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Kamida 6 ta belgi"
+                  onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                  placeholder={mode === "login" ? "Parolni kiriting" : "Kamida 8 ta belgi"}
                   autoFocus
-                  className="w-full px-4 py-3 pr-12 rounded-2xl text-sm outline-none transition-all"
+                  className="w-full px-4 py-3 pr-12 text-sm outline-none transition-all"
                   style={{
                     background: "var(--bg-primary)",
                     border: `1px solid ${error ? "var(--error)" : "var(--border)"}`,
                     color: "var(--text-primary)",
+                    borderRadius: "var(--radius-md)",
                   }}
                 />
                 <button
@@ -173,13 +224,14 @@ function PasswordForm() {
                   <input
                     type={showConfirm ? "text" : "password"}
                     value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
+                    onChange={(e) => { setConfirm(e.target.value); setError(""); }}
                     placeholder="Parolni qayta kiriting"
-                    className="w-full px-4 py-3 pr-12 rounded-2xl text-sm outline-none transition-all"
+                    className="w-full px-4 py-3 pr-12 text-sm outline-none transition-all"
                     style={{
                       background: "var(--bg-primary)",
                       border: `1px solid ${error ? "var(--error)" : "var(--border)"}`,
                       color: "var(--text-primary)",
+                      borderRadius: "var(--radius-md)",
                     }}
                   />
                   <button
@@ -202,11 +254,12 @@ function PasswordForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-2xl font-semibold text-sm transition-all hover:opacity-90 active:scale-95"
+              className="w-full py-3 font-semibold text-sm transition-all hover:opacity-90 active:scale-95"
               style={{
-                background: loading ? "var(--border)" : "var(--text-primary)",
-                color: loading ? "var(--text-muted)" : "var(--bg-card)",
+                background: loading ? "var(--border)" : "var(--cta)",
+                color: loading ? "var(--text-muted)" : "#fff",
                 cursor: loading ? "not-allowed" : "pointer",
+                borderRadius: "var(--radius-md)",
               }}
             >
               {loading ? "Yuklanmoqda..." : btnLabel}

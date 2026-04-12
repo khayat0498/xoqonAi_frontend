@@ -44,8 +44,8 @@ export default function TransferStudentModal({ student, classes, onSave, onClose
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-sm rounded-2xl overflow-hidden animate-fade-in"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
+        className="w-full max-w-sm overflow-hidden animate-fade-in"
+        style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}
       >
         {/* Header */}
         <div
@@ -53,7 +53,7 @@ export default function TransferStudentModal({ student, classes, onSave, onClose
           style={{ borderColor: "var(--border)" }}
         >
           <div>
-            <p className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>
+            <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
               Sinflarni boshqarish
             </p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
@@ -62,8 +62,8 @@ export default function TransferStudentModal({ student, classes, onSave, onClose
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:opacity-70"
-            style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+            className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70"
+            style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)", borderRadius: "var(--radius-sm)" }}
           >
             <X size={15} />
           </button>
@@ -77,18 +77,20 @@ export default function TransferStudentModal({ student, classes, onSave, onClose
               <button
                 key={cls.id}
                 onClick={() => toggle(cls.id)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-left w-full transition-all"
+                className="flex items-center gap-3 px-4 py-3 text-left w-full transition-all"
                 style={{
                   background: isEnrolled ? "var(--accent-light)" : "var(--bg-primary)",
                   border: `1px solid ${isEnrolled ? "var(--accent)" : "var(--border)"}`,
+                  borderRadius: "var(--radius-sm)",
                 }}
               >
                 <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0"
+                  className="w-9 h-9 flex items-center justify-center font-bold text-xs shrink-0"
                   style={{
                     background: isEnrolled ? "var(--accent)" : "var(--bg-card)",
                     color: isEnrolled ? "#fff" : "var(--accent)",
                     border: isEnrolled ? "none" : "1px solid var(--border)",
+                    borderRadius: "var(--radius-sm)",
                   }}
                 >
                   {cls.icon?.trim() || cls.name.charAt(0)}
@@ -119,11 +121,12 @@ export default function TransferStudentModal({ student, classes, onSave, onClose
           <button
             onClick={handleSave}
             disabled={!changed}
-            className="w-full py-3 rounded-xl text-sm font-medium transition-all"
+            className="w-full py-3 text-sm font-medium transition-all"
             style={{
-              background: changed ? "var(--accent)" : "var(--border)",
+              background: changed ? "var(--cta)" : "var(--border)",
               color: changed ? "#fff" : "var(--text-muted)",
               cursor: changed ? "pointer" : "default",
+              borderRadius: "var(--radius-sm)",
             }}
           >
             Saqlash

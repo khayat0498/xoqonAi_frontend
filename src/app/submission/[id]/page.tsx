@@ -1,12 +1,66 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MessageCircle, Download, Send } from "lucide-react";
-import { submissions } from "@/lib/mock-data";
+import { getToken } from "@/lib/auth";
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
+type Analysis = {
+  grade: string;
+  score: number;
+  feedback: string;
+  errors: string[];
+  suggestions: string[];
+};
+
+type Submission = {
+  id: string;
+  imageUrl: string;
+  subject: string | null;
+  status: string;
+  createdAt: string;
+  student: { name: string } | null;
+  analysis: Analysis | null;
+};
 
 export default function SubmissionPage() {
-  const submission = submissions[0];
-  const { analysis } = submission;
+  const { id } = useParams<{ id: string }>();
+  const [submission, setSubmission] = useState<Submission | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+    fetch(`${API}/api/submissions/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then(setSubmission)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen" style={{ background: "var(--bg-primary)" }}>
+        <p style={{ color: "var(--text-muted)" }}>Yuklanmoqda...</p>
+      </div>
+    );
+  }
+
+  if (!submission) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-3" style={{ background: "var(--bg-primary)" }}>
+        <p style={{ color: "var(--text-muted)" }}>Topilmadi</p>
+        <Link href="/home" className="text-sm font-medium" style={{ color: "var(--accent)" }}>Bosh sahifaga</Link>
+      </div>
+    );
+  }
+
+  const analysis = submission.analysis;
 
   return (
     <div className="bg-grid flex flex-col h-screen">
@@ -16,23 +70,23 @@ export default function SubmissionPage() {
         style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
       >
         <Link
-          href="/dashboard"
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ background: "var(--bg-primary)", color: "var(--text-secondary)" }}
+          href="/home"
+          className="w-8 h-8 flex items-center justify-center"
+          style={{ background: "var(--bg-primary)", color: "var(--text-secondary)", borderRadius: "var(--radius-sm)" }}
         >
           <ArrowLeft size={16} />
         </Link>
         <div className="flex-1">
-          <h1 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>
-            {submission.studentName}
+          <h1 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
+            {submission.student?.name ?? "Noma'lum"}
           </h1>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {submission.subject} · {submission.date}
+            {submission.subject ?? ""} · {new Date(submission.createdAt).toLocaleDateString("uz")}
           </p>
         </div>
         <button
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}
+          className="w-8 h-8 flex items-center justify-center"
+          style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: "var(--radius-sm)" }}
         >
           <Download size={15} />
         </button>
@@ -44,84 +98,75 @@ export default function SubmissionPage() {
 
           {/* Rasm */}
           <div
-            className="card-3d rounded-xl aspect-[4/3] flex items-center justify-center"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
+            className="card-3d aspect-[4/3] flex items-center justify-center overflow-hidden"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-card)" }}
           >
-            <div className="text-center" style={{ color: "var(--text-muted)" }}>
-              <span className="text-4xl">📄</span>
-              <p className="text-sm mt-2">Daftar rasmi</p>
-            </div>
+            {submission.imageUrl ? (
+              <img src={`${API}${submission.imageUrl}`} alt="Submission" className="w-full h-full object-contain" />
+            ) : (
+              <div className="text-center" style={{ color: "var(--text-muted)" }}>
+                <span className="text-4xl">📄</span>
+                <p className="text-sm mt-2">Daftar rasmi</p>
+              </div>
+            )}
           </div>
 
-          {/* AI Tahlili — Notebook card */}
-          <div
-            className="card-3d notebook rounded-xl overflow-hidden relative"
-            style={{ border: "1px solid var(--border)" }}
-          >
-            {/* Qizil margin chizig'i */}
+          {/* Status */}
+          {submission.status !== "done" && (
+            <div className="p-4 text-center" style={{ background: "var(--bg-card)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                {submission.status === "pending" && "Tahlil kutilmoqda..."}
+                {submission.status === "processing" && "AI tahlil qilmoqda..."}
+                {submission.status === "failed" && "Tahlil xatolik bilan tugadi"}
+              </p>
+            </div>
+          )}
+
+          {/* AI Tahlili */}
+          {analysis && (
             <div
-              className="absolute left-11 top-0 bottom-0 w-[2px]"
-              style={{ background: "rgba(239,68,68,0.25)" }}
-            />
-
-            <div className="relative" style={{ marginLeft: "3rem" }}>
-              {/* Sarlavha */}
-              <div
-                className="px-4 py-3 border-b flex items-center justify-between"
-                style={{ borderColor: "var(--notebook-line)" }}
-              >
-                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-                  AI Tahlili
-                </span>
-                <span
-                  className="text-xs font-bold px-2 py-0.5 rounded-lg"
-                  style={{ background: "var(--accent-light)", color: "var(--accent)" }}
-                >
-                  {analysis.errors.length} xato
-                </span>
-              </div>
-
-              <div className="px-4 py-5 flex flex-col gap-4">
-                {/* Baho — handwriting */}
-                <div>
-                  <p className="handwriting text-5xl leading-none" style={{ color: "var(--accent)" }}>
-                    {analysis.grade} / {analysis.maxGrade} ⭐
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Umumiy baho</p>
+              className="card-3d notebook overflow-hidden relative"
+              style={{ border: "1px solid var(--border-light)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-card)" }}
+            >
+              <div className="absolute left-11 top-0 bottom-0 w-[2px]" style={{ background: "rgba(239,68,68,0.25)" }} />
+              <div className="relative" style={{ marginLeft: "3rem" }}>
+                <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--notebook-line)" }}>
+                  <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>AI Tahlili</span>
+                  <span className="text-xs font-bold px-2 py-0.5" style={{ background: "var(--accent-light)", color: "var(--accent)", borderRadius: "var(--radius-sm)" }}>
+                    {analysis.errors?.length ?? 0} xato
+                  </span>
                 </div>
-
-                {/* Xatolar — handwriting */}
-                <div className="flex flex-col gap-3">
-                  {analysis.errors.map((error, i) => (
-                    <div key={i}>
-                      <p className="handwriting text-2xl leading-snug" style={{ color: "var(--error)" }}>
-                        {i + 1}. {error.title}
-                      </p>
-                      <p className="text-sm mt-0.5 ml-4 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                        {error.description}
-                      </p>
+                <div className="px-4 py-5 flex flex-col gap-4">
+                  <div>
+                    <p className="handwriting text-5xl leading-none" style={{ color: "var(--accent)" }}>
+                      {analysis.grade} / 5
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Umumiy baho ({analysis.score}/100)</p>
+                  </div>
+                  {analysis.errors && analysis.errors.length > 0 && (
+                    <div className="flex flex-col gap-3">
+                      {analysis.errors.map((error, i) => (
+                        <p key={i} className="handwriting text-2xl leading-snug" style={{ color: "var(--error)" }}>
+                          {i + 1}. {error}
+                        </p>
+                      ))}
                     </div>
-                  ))}
-                </div>
-
-                {/* Umumiy izoh — handwriting */}
-                <div
-                  className="pt-4 border-t"
-                  style={{ borderColor: "var(--notebook-line)" }}
-                >
-                  <p className="handwriting text-2xl italic leading-snug" style={{ color: "var(--text-secondary)" }}>
-                    → {analysis.comment}
-                  </p>
+                  )}
+                  <div className="pt-4 border-t" style={{ borderColor: "var(--notebook-line)" }}>
+                    <p className="handwriting text-2xl italic leading-snug" style={{ color: "var(--text-secondary)" }}>
+                      → {analysis.feedback}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Chat tugmasi */}
           <Link
-            href="/chat/1"
-            className="flex items-center justify-center gap-2 py-3.5 rounded-xl font-medium text-sm transition-all hover:opacity-80"
-            style={{ background: "var(--accent)", color: "#fff" }}
+            href={`/chat/${submission.id}`}
+            className="flex items-center justify-center gap-2 py-3.5 font-medium text-sm transition-all hover:opacity-80"
+            style={{ background: "var(--accent)", color: "#fff", borderRadius: "var(--radius-sm)" }}
           >
             <MessageCircle size={16} />
             Batafsil tushuntirish — Chat
@@ -129,13 +174,12 @@ export default function SubmissionPage() {
 
           {/* Telegram tugmasi */}
           <button
-            className="flex items-center justify-center gap-2 py-3.5 rounded-xl font-medium text-sm transition-all hover:opacity-80"
-            style={{ background: "#229ED9", color: "#fff" }}
+            className="flex items-center justify-center gap-2 py-3.5 font-medium text-sm transition-all hover:opacity-80"
+            style={{ background: "#229ED9", color: "#fff", borderRadius: "var(--radius-sm)" }}
           >
             <Send size={16} />
             Telegramga yuborish
           </button>
-
         </div>
       </div>
     </div>

@@ -1,82 +1,84 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Home,
   FolderOpen,
-  AlertCircle,
   Settings,
-  BarChart3,
   CalendarDays,
-  Camera,
 } from "lucide-react";
-import { currentUser } from "@/lib/mock-data";
+import { useUser } from "@/lib/user-context";
 
-type NavLink = { href: string; icon: React.ElementType } | null;
+type NavItem = { href: string; icon: React.ElementType; label: string };
 
-const studentLinks: NavLink[] = [
-  { href: "/home", icon: Home },
-  { href: "/dashboard", icon: FolderOpen },
-  null, // kamera tugmasi
-  { href: "/dashboard/errors", icon: AlertCircle },
-  { href: "/settings", icon: Settings },
+const studentLinks: NavItem[] = [
+  { href: "/home?tab=jildlar", label: "Jildlar",    icon: FolderOpen },
+  { href: "/home",             label: "Bosh sahifa", icon: Home },
+  { href: "/settings",         label: "Sozlamalar",  icon: Settings },
 ];
 
-const teacherLinks: NavLink[] = [
-  { href: "/home", icon: Home },
-  { href: "/schedule", icon: CalendarDays },
-  null, // kamera tugmasi
-  { href: "/dashboard/stats", icon: BarChart3 },
-  { href: "/settings", icon: Settings },
+const teacherLinks: NavItem[] = [
+  { href: "/home?tab=jildlar", label: "Jildlar",    icon: FolderOpen },
+  { href: "/home",             label: "Bosh sahifa", icon: Home },
+  { href: "/schedule",         label: "Jadval",      icon: CalendarDays },
+  { href: "/settings",         label: "Sozlamalar",  icon: Settings },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const links = currentUser.role === "student" ? studentLinks : teacherLinks;
+  const searchParams = useSearchParams();
+  const { user } = useUser();
+  const links = user?.role === "student" ? studentLinks : teacherLinks;
+  const currentTab = searchParams.get("tab");
 
   return (
     <nav className="md:hidden fixed bottom-6 inset-x-4 z-50">
       <div
-        className="flex justify-around items-center px-2 py-3 rounded-3xl shadow-2xl border"
+        className="flex justify-around items-center px-2 py-2"
         style={{
           background: "var(--bg-card)",
-          borderColor: "var(--border)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-xl)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          boxShadow: "var(--shadow-clay)",
         }}
       >
-        {links.map((link, i) => {
-          if (!link) {
-            return (
-              <button
-                key="camera"
-                className="w-14 h-14 rounded-2xl flex items-center justify-center text-white -mt-8"
-                style={{
-                  background: "var(--accent)",
-                  border: "4px solid var(--bg-primary)",
-                  boxShadow: "0 8px 24px rgba(19,191,168,0.4)",
-                }}
-              >
-                <Camera size={22} />
-              </button>
-            );
-          }
+        {links.map(({ href, label, icon: Icon }) => {
+          const hasQuery = href.includes("?");
+          let isActive: boolean;
 
-          const { href, icon: Icon } = link;
-          const active = pathname === href;
+          if (hasQuery) {
+            // Jildlar: active only when ?tab=jildlar is present
+            isActive = pathname === "/home" && currentTab === "jildlar";
+          } else if (href === "/home") {
+            // Home: active when on /home WITHOUT ?tab=jildlar
+            isActive = pathname === "/home" && currentTab !== "jildlar";
+          } else {
+            isActive = pathname === href;
+          }
 
           return (
             <Link
               key={href}
               href={href}
-              className="w-11 h-11 flex items-center justify-center rounded-xl transition-all"
+              className="flex flex-col items-center gap-0.5 py-1 px-3 transition-all"
               style={{
-                background: active ? "var(--accent-light)" : "transparent",
-                color: active ? "var(--accent)" : "var(--text-muted)",
+                color: isActive ? "var(--accent)" : "var(--text-muted)",
               }}
             >
-              <Icon size={21} />
+              <div
+                className="w-10 h-10 flex items-center justify-center transition-all"
+                style={{
+                  background: isActive ? "var(--accent-light)" : "transparent",
+                  borderRadius: "var(--radius-sm)",
+                  boxShadow: isActive ? "var(--shadow-clay-sm)" : "none",
+                }}
+              >
+                <Icon size={20} />
+              </div>
+              <span className="text-[10px] font-semibold">{label}</span>
             </Link>
           );
         })}

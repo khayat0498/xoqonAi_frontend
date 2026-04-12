@@ -4,6 +4,7 @@ export type Student = {
   id: string;
   name: string;
   submissionCount: number;
+  averageGrade?: number;
   telegramId?: string;
 };
 
@@ -17,62 +18,50 @@ export type ClassItem = {
   telegramGroupId?: string;
 };
 
-export const currentUser = {
-  id: "1",
-  name: "Abdulloh Karimov",
-  role: "teacher" as UserRole,
-  avatar: null,
+export type PlanType = "free" | "pro" | "premium" | "enterprise";
+
+export type Plan = {
+  key: PlanType;
+  name: string;
+  limit: number;
+  originalLimit: number;
+  maxStudentsPerClass: number;
+  maxClasses: number;
+  hasTelegram: boolean;
+  priceMonthly: number;
+  priceYearly: number;
+  price: string;
+  priceYear: string;
+  features: string[];
 };
 
-export const folders = [
-  { id: "1", name: "Matematika", icon: "📐", count: 12, color: "#EEF2FF" },
-  { id: "2", name: "Ona tili", icon: "📖", count: 8, color: "#F0FDF4" },
-  { id: "3", name: "Fizika", icon: "🔬", count: 5, color: "#FFF7ED" },
-  { id: "4", name: "IELTS", icon: "🌍", count: 3, color: "#FFF1F2" },
+export const plans: Plan[] = [
+  { key: "free",       name: "Free",       limit: 60,   originalLimit: 30,   maxStudentsPerClass: 10,  maxClasses: 1,  hasTelegram: false, priceMonthly: 0,      priceYearly: 0,        price: "Bepul",            priceYear: "Bepul",              features: ["60 ta rasm/oy", "Asosiy AI tahlil", "1 ta sinf", "Sinfga 10 o'quvchi"] },
+  { key: "pro",        name: "Pro",        limit: 400,  originalLimit: 200,  maxStudentsPerClass: 20,  maxClasses: 5,  hasTelegram: true,  priceMonthly: 49000,  priceYearly: 490000,   price: "49,000 so'm/oy",   priceYear: "490,000 so'm/yil",   features: ["400 ta rasm/oy", "Kengaytirilgan tahlil", "5 ta sinf", "Sinfga 20 o'quvchi", "Telegram bot"] },
+  { key: "premium",    name: "Premium",    limit: 2000, originalLimit: 1000, maxStudentsPerClass: 30,  maxClasses: 0,  hasTelegram: true,  priceMonthly: 149000, priceYearly: 1490000,  price: "149,000 so'm/oy",  priceYear: "1,490,000 so'm/yil", features: ["2000 ta rasm/oy", "To'liq AI tahlil", "Cheksiz sinf", "Sinfga 30 o'quvchi", "Telegram bot", "Eksport"] },
+  { key: "enterprise", name: "Enterprise", limit: 0,    originalLimit: 0,    maxStudentsPerClass: 0,   maxClasses: 0,  hasTelegram: true,  priceMonthly: 0,      priceYearly: 0,        price: "Kelishiladi",      priceYear: "Kelishiladi",        features: ["Cheksiz rasm", "Maxsus AI model", "API kirish", "Cheksiz sinf va o'quvchi", "Shaxsiy qo'llab-quvvatlash"] },
 ];
 
-export const classes: ClassItem[] = [
-  { id: "1", name: "9-A",  studentIds: ["1","2","3"], studentCount: 3, lastActivity: "Bugun" },
-  { id: "2", name: "9-B",  studentIds: ["4","5"],     studentCount: 2, lastActivity: "Kecha" },
-  { id: "3", name: "10-A", studentIds: ["6","7"],     studentCount: 2, lastActivity: "2 kun oldin" },
-  { id: "4", name: "10-B", studentIds: ["8"],         studentCount: 1, lastActivity: "3 kun oldin" },
-];
+/* ── Folder / File system ──────────────────────────── */
 
-export const students: Student[] = [
-  { id: "1", name: "Ali Valiyev",         submissionCount: 5 },
-  { id: "2", name: "Barno Hasanova",      submissionCount: 3 },
-  { id: "3", name: "Dilshod Rahimov",     submissionCount: 7 },
-  { id: "4", name: "Malika Yusupova",     submissionCount: 4 },
-  { id: "5", name: "Jasur Toshmatov",     submissionCount: 6 },
-  { id: "6", name: "Nilufar Ergasheva",   submissionCount: 2 },
-  { id: "7", name: "Sherzod Nazarov",     submissionCount: 8 },
-  { id: "8", name: "Zulfiya Abdullayeva", submissionCount: 1 },
-];
+export type Folder = {
+  id: string;
+  name: string;
+  type: "auto" | "custom";
+  icon?: string;
+  color?: string;
+  fileIds: string[];
+  createdAt: string;
+};
 
-export const submissions = [
-  {
-    id: "1",
-    studentName: "Ali Valiyev",
-    subject: "Matematika",
-    date: "24 Fevral 2026",
-    grade: "4/5",
-    errorCount: 3,
-    imageUrl: null,
-    analysis: {
-      grade: "4",
-      maxGrade: "5",
-      errors: [
-        { title: "3-masalada hisob xatosi", description: "Ko'paytirish amalida noto'g'ri natija chiqarilgan" },
-        { title: "5-masala to'liq emas", description: "Oxirgi qadamlar yozilmagan" },
-        { title: "Birlik ko'rsatilmagan", description: "Javobda o'lchov birligi yozilmagan" },
-      ],
-      comment: "Umumiy ish yaxshi. Asosiy tushunchalar o'zlashtirilgan, lekin hisoblash xatolariga e'tibor berish kerak.",
-    },
-  },
-];
+export type FileItem = {
+  id: string;
+  studentName: string;
+  subject: string;
+  grade: string;
+  date: string;
+  folderId: string;
+  submissionId?: string;
+};
 
-export const chatMessages = [
-  { id: "1", role: "assistant" as const, content: "Salom! Tahlil bilan tanishdingizmi? Qaysi qismni batafsil tushuntirishimni xohlaysiz?", time: "14:32" },
-  { id: "2", role: "user" as const, content: "3-masalani tushuntir", time: "14:33" },
-  { id: "3", role: "assistant" as const, content: "Albatta! 3-masalada ko'paytirish amali bajarilgan, lekin 4 × 7 = 28 bo'lishi kerak edi, lekin 24 deb yozilgan.", time: "14:33" },
-];
+export const SINFLAR_FOLDER_ID = "__sinflar__";

@@ -1,20 +1,24 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import {
   Home, FolderOpen, Bookmark, History, Settings,
   ChevronLeft, ChevronRight, BarChart3, AlertCircle,
-  CalendarDays, Moon, Sun, Pencil, User,
+  CalendarDays, Moon, Sun, Pencil, User, LogOut,
+  CreditCard, HelpCircle, MessageSquare, Layers,
 } from "lucide-react";
 import { useUser } from "@/lib/user-context";
+import { useTheme } from "@/lib/theme-context";
+import { useUserWS } from "@/lib/user-ws";
+import { getToken } from "@/lib/auth";
 
 const studentLinks = [
   { href: "/home",               label: "Bosh sahifa", icon: Home },
-  { href: "/dashboard",          label: "Papkalarim",  icon: FolderOpen },
+  { href: "/home?tab=jildlar",   label: "Jildlar",     icon: FolderOpen },
   { href: "/dashboard/errors",   label: "Xato banki",  icon: AlertCircle },
   { href: "/dashboard/bookmarks",label: "Bookmarks",   icon: Bookmark },
   { href: "/dashboard/history",  label: "Tarix",       icon: History },
@@ -22,23 +26,52 @@ const studentLinks = [
 
 const teacherLinks = [
   { href: "/home",           label: "Bosh sahifa", icon: Home },
+  { href: "/home?tab=jildlar", label: "Jildlar",   icon: FolderOpen },
   { href: "/schedule",       label: "Jadval",      icon: CalendarDays },
   { href: "/dashboard/stats",label: "Statistika",  icon: BarChart3 },
 ];
 
+const API = process.env.NEXT_PUBLIC_API_URL;
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get("tab");
   const [collapsed, setCollapsed] = useState(false);
-  const [dark, setDark] = useState(false);
+  const { dark, toggleDark } = useTheme();
   const fileRef = useRef<HTMLInputElement>(null);
   const { user, loading, uploadAvatar } = useUser();
+  const { lastEvent } = useUserWS();
+  const [used, setUsed] = useState<number | null>(null);
+  const [limit, setLimit] = useState<number>(60);
+  const [planKey, setPlanKey] = useState("free");
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+    const h = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+    fetch(`${API}/api/billing/my-plan`, { headers: h })
+      .then((r) => r.json())
+      .then((d) => setPlanKey(d.planKey ?? "free"))
+      .catch(() => {});
+    fetch(`${API}/api/submissions/usage/me`, { headers: h })
+      .then((r) => r.json())
+      .then((d) => { setUsed(d.used ?? 0); setLimit(d.limit ?? 60); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!lastEvent) return;
+    if (lastEvent.type === "usage_updated") {
+      setUsed(lastEvent.data.used);
+      setLimit(lastEvent.data.limit);
+    }
+    if (lastEvent.type === "plan_updated") {
+      setPlanKey(lastEvent.data.planKey);
+    }
+  }, [lastEvent]);
 
   const links = user?.role === "student" ? studentLinks : teacherLinks;
-
-  const toggleDark = () => {
-    setDark(!dark);
-    document.documentElement.setAttribute("data-theme", !dark ? "dark" : "");
-  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -47,73 +80,184 @@ export default function Sidebar() {
     e.target.value = "";
   };
 
-  const initials = user?.name?.charAt(0)?.toUpperCase() ?? "?";
-
   return (
     <aside
       className={clsx(
-        "hidden md:flex flex-col h-screen sticky top-0 transition-all duration-300 border-r",
-        collapsed ? "w-16" : "w-60"
+        "hidden md:flex flex-col h-screen sticky top-0 transition-all duration-300",
+        collapsed ? "w-[68px]" : "w-[260px]"
       )}
-      style={{ background: "var(--bg-sidebar)", borderColor: "var(--border)" }}
+      style={{
+        background: "var(--bg-sidebar)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderRight: "1px solid var(--border)",
+        boxShadow: "var(--shadow-clay-sm)",
+      }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b" style={{ borderColor: "var(--border)" }}>
-        <Image src="/logo.png" alt="Xoqon AI" width={32} height={32} className="rounded-lg shrink-0" />
+      <div
+        className="flex items-center gap-3"
+        style={{
+          padding: collapsed ? "24px 14px 20px" : "24px 20px 20px",
+          borderBottom: "1px solid var(--sidebar-border)",
+        }}
+      >
+        <div
+          className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0"
+          style={{
+            background: "var(--cta)",
+            boxShadow: "var(--shadow-clay-sm)",
+          }}
+        >
+          <Image src="/logo.png" alt="Xoqon AI" width={20} height={20} />
+        </div>
         {!collapsed && (
-          <span className="font-bold text-lg tracking-tight" style={{ color: "var(--text-primary)" }}>
-            Xoqon AI
-          </span>
+          <div className="flex flex-col">
+            <span
+              className="font-bold text-[1.1rem] tracking-tight leading-tight"
+              style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
+            >
+              Xoqon AI
+            </span>
+            <span
+              className="text-[0.65rem] uppercase tracking-[0.08em] font-semibold mt-px"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Smart Grading
+            </span>
+          </div>
         )}
       </div>
 
+      {/* Section Label */}
+      {!collapsed && (
+        <div
+          className="text-[0.62rem] uppercase tracking-[0.1em] font-bold"
+          style={{ color: "var(--text-muted)", padding: "18px 24px 6px" }}
+        >
+          Asosiy
+        </div>
+      )}
+
       {/* Nav links */}
-      <nav className="flex-1 px-2 py-4 flex flex-col gap-1">
+      <nav className="flex-1 px-[10px] py-2 flex flex-col gap-1">
         {links.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
+          const hasQuery = href.includes("?");
+          let active: boolean;
+          if (hasQuery) {
+            active = pathname === "/home" && currentTab === "jildlar";
+          } else if (href === "/home") {
+            active = pathname === "/home" && currentTab !== "jildlar";
+          } else {
+            active = pathname === href;
+          }
           return (
             <Link
               key={href}
               href={href}
               className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150",
-                active ? "font-medium" : "hover:opacity-80"
+                "flex items-center gap-[11px] py-[10px] transition-all duration-200 relative",
+                collapsed ? "px-[14px] justify-center" : "px-[14px]",
+                active ? "rounded-[var(--radius-sm)]" : "rounded-[var(--radius-sm)] hover:bg-[var(--sidebar-hover)]"
               )}
               style={{
-                background: active ? "var(--accent-light)" : "transparent",
-                color: active ? "var(--accent)" : "var(--text-secondary)",
+                background: active ? "var(--sidebar-active-bg)" : "transparent",
+                color: active ? "var(--sidebar-text-active)" : "var(--sidebar-text)",
+                boxShadow: active ? "var(--shadow-clay-sm)" : "none",
               }}
             >
-              <Icon size={18} className="shrink-0" />
-              {!collapsed && <span className="text-sm font-semibold">{label}</span>}
+              {active && (
+                <span
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-[3px]"
+                  style={{ background: "var(--cta)" }}
+                />
+              )}
+              <Icon size={19} className="shrink-0" style={{ opacity: active ? 1 : 0.6 }} />
+              {!collapsed && (
+                <span className="text-[0.87rem] font-medium">{label}</span>
+              )}
             </Link>
           );
         })}
       </nav>
 
+      {/* Extra links */}
+      {!collapsed && (
+        <div
+          className="text-[0.62rem] uppercase tracking-[0.1em] font-bold"
+          style={{ color: "var(--text-muted)", padding: "12px 24px 6px" }}
+        >
+          Boshqa
+        </div>
+      )}
+      <nav className="px-[10px] flex flex-col gap-1">
+        {[
+          { href: "/billing", label: "Billing", icon: CreditCard },
+          { href: "/plans", label: "Tarif rejalar", icon: Layers },
+          { href: "/contact", label: "Bog'lanish", icon: MessageSquare },
+          { href: "/faq", label: "Ko'p so'raladigan savollar", icon: HelpCircle },
+        ].map(({ href, label, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className={clsx(
+              "flex items-center gap-[11px] py-[10px] rounded-[var(--radius-sm)] transition-all hover:bg-[var(--sidebar-hover)]",
+              collapsed ? "px-[14px] justify-center" : "px-[14px]"
+            )}
+            style={{
+              background: pathname === href ? "var(--sidebar-active-bg)" : "transparent",
+              color: pathname === href ? "var(--sidebar-text-active)" : "var(--sidebar-text)",
+              boxShadow: pathname === href ? "var(--shadow-clay-sm)" : "none",
+            }}
+          >
+            <Icon size={19} className="shrink-0" style={{ opacity: pathname === href ? 1 : 0.6 }} />
+            {!collapsed && <span className="text-[0.87rem] font-medium">{label}</span>}
+          </Link>
+        ))}
+      </nav>
+
       {/* Bottom */}
-      <div className="px-2 pb-4 flex flex-col gap-1 border-t pt-3" style={{ borderColor: "var(--border)" }}>
+      <div
+        className="px-[10px] pb-3 flex flex-col gap-1 pt-3"
+        style={{ borderTop: "1px solid var(--sidebar-border)" }}
+      >
+        {/* Dark mode toggle */}
         <button
           onClick={toggleDark}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:opacity-70 w-full"
-          style={{ color: "var(--text-secondary)" }}
+          className={clsx(
+            "flex items-center gap-[11px] py-[10px] rounded-[var(--radius-sm)] transition-all w-full hover:bg-[var(--sidebar-hover)]",
+            collapsed ? "px-[14px] justify-center" : "px-[14px]"
+          )}
+          style={{ color: "var(--sidebar-text)", background: "none", border: "none" }}
         >
-          {dark ? <Sun size={18} /> : <Moon size={18} />}
-          {!collapsed && <span className="text-sm font-medium">{dark ? "Yorug' rejim" : "Qorong'u rejim"}</span>}
+          {dark ? <Sun size={19} style={{ opacity: 0.6 }} /> : <Moon size={19} style={{ opacity: 0.6 }} />}
+          {!collapsed && (
+            <span className="text-[0.87rem] font-medium">
+              {dark ? "Yorug' rejim" : "Qorong'u rejim"}
+            </span>
+          )}
         </button>
 
+        {/* Settings */}
         <Link
           href="/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:opacity-70"
-          style={{ color: "var(--text-secondary)" }}
+          className={clsx(
+            "flex items-center gap-[11px] py-[10px] rounded-[var(--radius-sm)] transition-all hover:bg-[var(--sidebar-hover)]",
+            collapsed ? "px-[14px] justify-center" : "px-[14px]"
+          )}
+          style={{ color: "var(--sidebar-text)" }}
         >
-          <Settings size={18} />
-          {!collapsed && <span className="text-sm font-medium">Sozlamalar</span>}
+          <Settings size={19} style={{ opacity: 0.6 }} />
+          {!collapsed && <span className="text-[0.87rem] font-medium">Sozlamalar</span>}
         </Link>
 
         {/* User */}
-        <div className="flex items-center gap-3 px-3 py-2.5 mt-1">
-          {/* Avatar + pencil */}
+        <div
+          className={clsx(
+            "flex items-center gap-[10px] py-[10px] mt-1",
+            collapsed ? "px-[12px] justify-center" : "px-[12px]"
+          )}
+        >
           <div className="relative shrink-0 group">
             <input
               ref={fileRef}
@@ -122,18 +266,22 @@ export default function Sidebar() {
               className="hidden"
               onChange={handleFileChange}
             />
-            <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-semibold"
-              style={{ background: "var(--accent)" }}
+            <div
+              className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-white text-[0.8rem] font-bold"
+              style={{
+                background: "linear-gradient(135deg, var(--accent), var(--cta))",
+                boxShadow: "var(--shadow-clay-sm)",
+              }}
             >
               {!loading && user?.avatarUrl
                 ? <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
-                : <User size={14} color="white" />
+                : <User size={15} color="white" />
               }
             </div>
             <button
               onClick={() => fileRef.current?.click()}
               className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{ background: "var(--text-primary)", color: "var(--bg-card)" }}
+              style={{ background: "var(--bg-card-solid)", color: "var(--accent)", boxShadow: "var(--shadow-clay-sm)" }}
             >
               <Pencil size={8} />
             </button>
@@ -142,14 +290,16 @@ export default function Sidebar() {
           {!collapsed && (
             <div className="flex-1 overflow-hidden">
               {loading ? (
-                <div className="h-3 w-20 rounded" style={{ background: "var(--border)" }} />
+                <div className="h-3 w-20 rounded" style={{ background: "var(--sidebar-border)" }} />
               ) : (
                 <>
-                  <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
+                  <p className="text-[0.82rem] font-semibold truncate" style={{ color: "var(--text-primary)" }}>
                     {user?.name ?? ""}
                   </p>
-                  <p className="text-xs font-medium truncate" style={{ color: "var(--text-muted)" }}>
-                    {user?.role === "student" ? "Student" : "O'qituvchi"}
+                  <p className="text-[0.68rem] font-bold uppercase tracking-wide" style={{
+                    color: planKey === "premium" ? "var(--warning)" : planKey === "pro" ? "var(--accent)" : "var(--text-muted)"
+                  }}>
+                    {planKey === "premium" ? "Premium" : planKey === "pro" ? "Pro" : "Free"}
                   </p>
                 </>
               )}
@@ -158,14 +308,44 @@ export default function Sidebar() {
         </div>
       </div>
 
+      {/* Usage bar */}
+      {!collapsed && used !== null && limit < 99999 && (
+        <Link
+          href="/billing"
+          className="mx-3 mb-3 p-3 rounded-xl block transition-all hover:opacity-80"
+          style={{ background: "var(--bg-primary)", border: "1px solid var(--border)" }}
+        >
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[0.67rem] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Oylik limit
+            </span>
+            <span className="text-[0.75rem] font-bold tabular-nums" style={{
+              color: used / limit >= 0.9 ? "var(--error)" : used / limit >= 0.7 ? "var(--warning)" : "var(--text-primary)"
+            }}>
+              {used} / {limit}
+            </span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+            <div
+              className="h-1.5 rounded-full transition-all duration-500"
+              style={{
+                width: `${Math.min((used / limit) * 100, 100)}%`,
+                background: used / limit >= 0.9 ? "var(--error)" : used / limit >= 0.7 ? "var(--warning)" : "var(--accent)",
+              }}
+            />
+          </div>
+        </Link>
+      )}
+
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-20 w-6 h-6 rounded-full border flex items-center justify-center transition-all hover:scale-110"
+        className="absolute -right-3 top-20 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:scale-110"
         style={{
-          background: "var(--bg-card)",
-          borderColor: "var(--border)",
+          background: "var(--bg-card-solid)",
+          border: "1px solid var(--border)",
           color: "var(--text-muted)",
+          boxShadow: "var(--shadow-clay-sm)",
         }}
       >
         {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}

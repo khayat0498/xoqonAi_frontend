@@ -9,7 +9,7 @@ type User = {
   email: string;
   name: string;
   avatarUrl: string | null;
-  role: "teacher" | "student";
+  role: "teacher" | "student" | "admin";
   createdAt: string;
 };
 
