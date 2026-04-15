@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { User, Bell } from "lucide-react";
@@ -26,12 +26,6 @@ const avatarColors = ["#6875f5","#4a9aaa","#e5a832","#3dbd7d","#7c83f5","#a78bfa
 
 const todayTasks: { id: string; cls: string; subject: string; icon: string; total: number; done: number }[] = [];
 
-const teacherStats = [
-  { label: "Jami sinflar",  value: "0",  icon: BookOpen,     color: "#4a9aaa", bg: "rgba(74, 154, 170, 0.12)" },
-  { label: "O'quvchilar",   value: "0",  icon: Users,         color: "#6875f5", bg: "rgba(104, 117, 245, 0.1)" },
-  { label: "Bu oy",         value: "0",  icon: CheckCircle2,  color: "#3dbd7d", bg: "rgba(61, 189, 125, 0.12)" },
-  { label: "Bu hafta",      value: "0",  icon: TrendingUp,    color: "#e05c5c", bg: "rgba(224, 92, 92, 0.1)" },
-];
 
 const PLAN_LABEL: Record<string, { label: string; color: string; bg: string }> = {
   free:    { label: "Free",    color: "var(--text-muted)",  bg: "var(--bg-primary)" },
@@ -95,6 +89,22 @@ function HomePageInner() {
   const [newClassName, setNewClassName] = useState("");
   const [planAlert, setPlanAlert] = useState<string | null>(null);
   const [deleteStudentId, setDeleteStudentId] = useState<string | null>(null);
+
+  const teacherStats = useMemo(() => {
+    const now = new Date();
+    const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const doneFiles = allFiles.filter(f => f.status === "done");
+    const thisMonth = doneFiles.filter(f => new Date(f.createdAt) >= startOfMonth).length;
+    const thisWeek = doneFiles.filter(f => new Date(f.createdAt) >= startOfWeek).length;
+    return [
+      { label: "Jami sinflar", value: String(classList.length),   icon: BookOpen,    color: "#4a9aaa", bg: "rgba(74,154,170,0.12)" },
+      { label: "O'quvchilar",  value: String(studentList.length), icon: Users,       color: "#6875f5", bg: "rgba(104,117,245,0.1)" },
+      { label: "Bu oy",        value: String(thisMonth),          icon: CheckCircle2,color: "#3dbd7d", bg: "rgba(61,189,125,0.12)" },
+      { label: "Bu hafta",     value: String(thisWeek),           icon: TrendingUp,  color: "#e05c5c", bg: "rgba(224,92,92,0.1)" },
+    ];
+  }, [classList, studentList, allFiles]);
   const [notifications, setNotifications] = useState<{ id: string; grade: string | null; score: number | null; subject: string | null; failed?: boolean }[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);

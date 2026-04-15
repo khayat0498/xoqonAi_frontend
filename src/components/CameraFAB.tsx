@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { Camera, X, Send, RotateCcw, Loader2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Camera, X, Send, RotateCcw, Loader2, Images } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -66,7 +66,13 @@ function enhanceImage(canvas: HTMLCanvasElement): HTMLCanvasElement {
 
 export default function CameraFAB() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const cvReady = useOpenCV();
+
+  // ── Student context from URL ──
+  const urlStudentId = searchParams.get("studentId");
+  const urlStudentName = searchParams.get("studentName");
+  const urlCamera = searchParams.get("camera");
 
   // ── Camera modal state ──
   const [camOpen, setCamOpen] = useState(false);
@@ -80,8 +86,18 @@ export default function CameraFAB() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
 
+  // ── URL da camera=1 bo'lsa avtomatik ochish ──
+  useEffect(() => {
+    if (urlCamera === "1" && !camOpen) {
+      setCamOpen(true);
+      document.body.classList.add("modal-open");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlCamera]);
+
   const videoRef   = useRef<HTMLVideoElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const contourRef = useRef<any>(null);
   const streamRef  = useRef<MediaStream | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -105,7 +121,8 @@ export default function CameraFAB() {
     setDetected(false);
     setCvLabel("Kamera yuklanmoqda...");
     document.body.classList.remove("modal-open");
-  }, [stopCamera]);
+    if (urlCamera === "1") router.replace("/home");
+  }, [stopCamera, urlCamera, router]);
 
   // ── Default yashil to'rtburchak ──
   function drawDefaultBorder() {
@@ -325,6 +342,20 @@ export default function CameraFAB() {
     }
   }
 
+  // ── Galereyadan rasm tanlash ──
+  function pickFromGallery(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      stopCamera();
+      setCamOpen(false);
+      setCaptured(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
   // ── AI ga yuborish ──
   async function sendToAI() {
     if (!captured) return;
@@ -336,6 +367,7 @@ export default function CameraFAB() {
       const fd = new FormData();
       fd.append("image", file);
       if (prompt.trim()) fd.append("subject", prompt.trim());
+      if (urlStudentId) fd.append("studentId", urlStudentId);
 
       const res = await fetch(`${API}/api/submissions`, {
         method: "POST",
@@ -392,7 +424,24 @@ export default function CameraFAB() {
           </div>
 
           {/* Capture tugma */}
-          <div className="flex justify-center py-6 shrink-0" style={{ background: "rgba(0,0,0,0.6)" }}>
+          <div className="flex items-center justify-center gap-8 py-6 shrink-0" style={{ background: "rgba(0,0,0,0.6)" }}>
+            {/* Galereya */}
+            <button
+              onClick={() => galleryInputRef.current?.click()}
+              className="w-12 h-12 rounded-2xl flex items-center justify-center"
+              style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
+            >
+              <Images size={22} />
+            </button>
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={pickFromGallery}
+            />
+
+            {/* Suratga olish */}
             <button
               onClick={captureAndCorrect}
               disabled={snapping}
@@ -409,6 +458,9 @@ export default function CameraFAB() {
                 : <Camera size={24} color="#fff" />
               }
             </button>
+
+            {/* Balans uchun bo'sh joy */}
+            <div className="w-12 h-12" />
           </div>
         </div>
       )}
@@ -422,9 +474,16 @@ export default function CameraFAB() {
 
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
-              <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-                Tahlilga yuborish
-              </p>
+              <div>
+                <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
+                  Tahlilga yuborish
+                </p>
+                {urlStudentName && (
+                  <p className="text-xs mt-0.5" style={{ color: "var(--accent)" }}>
+                    {decodeURIComponent(urlStudentName)}
+                  </p>
+                )}
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => { setCaptured(null); setCamOpen(true); }}
