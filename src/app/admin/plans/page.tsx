@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { getToken } from "@/lib/auth";
 import {
   Package, Plus, Trash2, Edit3, Save, X, Tag,
-  ToggleLeft, ToggleRight, ChevronUp, Gift
+  ToggleLeft, ToggleRight, ChevronUp, Gift, Settings
 } from "lucide-react";
 import { useAdminWS } from "@/lib/admin-ws";
 
@@ -442,20 +442,25 @@ export default function AdminPlansPage() {
   const [loading, setLoading] = useState(true);
   const [promoModal, setPromoModal] = useState<{ open: boolean; promo: Promotion | null }>({ open: false, promo: null });
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"plans" | "promos">("plans");
+  const [tab, setTab] = useState<"plans" | "promos" | "settings">("plans");
+  const [sysSettings, setSysSettings] = useState<Record<string, string>>({});
+  const [settingsSaving, setSettingsSaving] = useState(false);
   const { lastEvent } = useAdminWS();
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [configsRes, promosRes] = await Promise.all([
+      const [configsRes, promosRes, settingsRes] = await Promise.all([
         apiFetch("/api/plans/admin/configs"),
         apiFetch("/api/plans/admin/promotions"),
+        apiFetch("/api/plans/admin/settings"),
       ]);
       const configs = await configsRes.json();
       const promosData = await promosRes.json();
+      const settingsData = await settingsRes.json();
       setPlans(Array.isArray(configs) ? configs : []);
       setPromos(Array.isArray(promosData) ? promosData : []);
+      setSysSettings(settingsData ?? {});
     } finally {
       setLoading(false);
     }
@@ -493,6 +498,7 @@ export default function AdminPlansPage() {
         {[
           { key: "plans" as const, label: "Tariflar", icon: Package },
           { key: "promos" as const, label: "Aksiyalar", icon: Tag },
+          { key: "settings" as const, label: "Sozlamalar", icon: Settings },
         ].map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -527,6 +533,41 @@ export default function AdminPlansPage() {
           {plans.map(plan => (
             <PlanCard key={plan.key} plan={plan} onSaved={load} />
           ))}
+        </div>
+      ) : tab === "settings" ? (
+        /* ── Settings tab ── */
+        <div className="space-y-4">
+          <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>AI Model sozlamalari</p>
+            <div>
+              <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>Gemini model nomi</label>
+              <input
+                className="w-full rounded-xl px-3 py-2.5 text-sm outline-none font-mono"
+                style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                value={sysSettings.gemini_model ?? "gemini-1.5-flash"}
+                onChange={e => setSysSettings(s => ({ ...s, gemini_model: e.target.value }))}
+                placeholder="gemini-1.5-flash"
+              />
+              <p className="text-[11px] mt-1.5" style={{ color: "var(--text-muted)" }}>
+                Mavjud modellar: gemini-1.5-flash, gemini-1.5-pro, gemini-2.0-flash
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                setSettingsSaving(true);
+                await apiFetch("/api/plans/admin/settings", {
+                  method: "PATCH",
+                  body: JSON.stringify({ gemini_model: sysSettings.gemini_model }),
+                });
+                setSettingsSaving(false);
+              }}
+              disabled={settingsSaving}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
+              style={{ background: "var(--accent)", color: "#fff", opacity: settingsSaving ? 0.7 : 1 }}
+            >
+              {settingsSaving ? "Saqlanmoqda..." : "Saqlash"}
+            </button>
+          </div>
         </div>
       ) : (
         /* ── Promos tab ── */
