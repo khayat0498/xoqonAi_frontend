@@ -29,7 +29,7 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
               {children}
             </main>
             <Suspense fallback={null}><BottomNav /></Suspense>
-            <CameraFAB />
+            <Suspense fallback={null}><CameraFAB /></Suspense>
           </div>
         </UserWSProvider>
       </UserProvider>
