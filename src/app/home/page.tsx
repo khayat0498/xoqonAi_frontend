@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { User, Bell } from "lucide-react";
+import { User, Bell, Clock } from "lucide-react";
 import { Users, CheckCircle2, TrendingUp, BookOpen, Camera, Eye, Search, Folder, FolderOpen, FolderPlus, Trash2, Pencil, MoreVertical, ArrowUpDown, ChevronDown, ChevronLeft, Send, ListOrdered, FileText, FlaskConical, Plus, X } from "lucide-react";
 import { useUser } from "@/lib/user-context";
 import { useUserWS } from "@/lib/user-ws";
@@ -56,7 +56,13 @@ function HomePageInner() {
     if (lastEvent.type === "plan_updated") setPlanKey(lastEvent.data.planKey);
     if (lastEvent.type === "usage_updated") { setUsed(lastEvent.data.used); setLimit(lastEvent.data.limit); }
     if (lastEvent.type === "submission_done") {
-      setNotifications((prev) => [{ ...lastEvent.data }, ...prev]);
+      const done = { ...lastEvent.data, status: lastEvent.data.failed ? "failed" : "done" };
+      setNotifications((prev) => {
+        const idx = prev.findIndex(n => n.id === done.id);
+        if (idx >= 0) { const next = [...prev]; next[idx] = done; return next; }
+        return [done, ...prev];
+      });
+      setAllFiles((prev) => prev.map(f => f.id === done.id ? { ...f, status: done.status, score: done.score } : f));
       setUnreadCount((n) => n + 1);
     }
   }, [lastEvent]);
@@ -105,7 +111,7 @@ function HomePageInner() {
       { label: "Bu hafta",     value: String(thisWeek),           icon: TrendingUp,  color: "#e05c5c", bg: "rgba(224,92,92,0.1)" },
     ];
   }, [classList, studentList, allFiles]);
-  const [notifications, setNotifications] = useState<{ id: string; grade: string | null; score: number | null; subject: string | null; failed?: boolean }[]>([]);
+  const [notifications, setNotifications] = useState<{ id: string; grade: string | null; score: number | null; subject: string | null; failed?: boolean; status?: string }[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -152,10 +158,10 @@ function HomePageInner() {
       }
       await refreshFolders();
       // Initial notifications: recent done/failed submissions
-      const notifRes = await fetch(`${API}/api/submissions?status=done&limit=10`, { headers: authHeaders() });
+      const notifRes = await fetch(`${API}/api/submissions?limit=15`, { headers: authHeaders() });
       if (notifRes.ok) {
         const notifData = await notifRes.json();
-        setNotifications((notifData.data ?? []).map((s: Submission) => ({ id: s.id, grade: s.grade, score: s.score, subject: s.subject })));
+        setNotifications((notifData.data ?? []).map((s: Submission) => ({ id: s.id, grade: s.grade, score: s.score, subject: s.subject, status: s.status })));
       }
     }
     load();
@@ -514,36 +520,6 @@ function HomePageInner() {
                   </span>
                 )}
               </button>
-              {notifOpen && (
-                <div className="absolute right-0 top-12 w-72 rounded-xl shadow-xl z-50 overflow-hidden"
-                  style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                  <div className="px-4 py-2.5 border-b" style={{ borderColor: "var(--border)" }}>
-                    <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Natijalar</p>
-                  </div>
-                  <div className="max-h-72 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <p className="px-4 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>Hali natija yo'q</p>
-                    ) : notifications.map((n) => (
-                      <Link key={n.id} href={`/submission/${n.id}`}
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-primary)] transition-colors"
-                        onClick={() => setNotifOpen(false)}>
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
-                          style={{ background: n.failed ? "rgba(224,92,92,0.12)" : "rgba(61,189,125,0.12)", color: n.failed ? "#e05c5c" : "#3dbd7d" }}>
-                          {n.failed ? "!" : n.grade ?? "?"}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
-                            {n.subject ?? "Tahlil"}{n.failed ? " — xatolik" : ""}
-                          </p>
-                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                            {n.failed ? "AI tahlil muvaffaqiyatsiz" : `Ball: ${n.score ?? "—"}`}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
             <Link
               href="/settings"
@@ -586,36 +562,6 @@ function HomePageInner() {
                     </span>
                   )}
                 </button>
-                {notifOpen && (
-                  <div className="absolute right-0 top-11 w-72 rounded-xl shadow-xl z-50 overflow-hidden"
-                    style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-                    <div className="px-4 py-2.5 border-b" style={{ borderColor: "var(--border)" }}>
-                      <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Natijalar</p>
-                    </div>
-                    <div className="max-h-72 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <p className="px-4 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>Hali natija yo'q</p>
-                      ) : notifications.map((n) => (
-                        <Link key={n.id} href={`/submission/${n.id}`}
-                          className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--bg-primary)] transition-colors"
-                          onClick={() => setNotifOpen(false)}>
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
-                            style={{ background: n.failed ? "rgba(224,92,92,0.12)" : "rgba(61,189,125,0.12)", color: n.failed ? "#e05c5c" : "#3dbd7d" }}>
-                            {n.failed ? "!" : n.grade ?? "?"}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
-                              {n.subject ?? "Tahlil"}{n.failed ? " — xatolik" : ""}
-                            </p>
-                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                              {n.failed ? "AI tahlil muvaffaqiyatsiz" : `Ball: ${n.score ?? "—"}`}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
               <Link
                 href="/settings"
@@ -1886,6 +1832,67 @@ function HomePageInner() {
                 <a href="/plans">Tarifni yangilash</a>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Notifications full-screen ── */}
+      {notifOpen && (
+        <div className="fixed inset-0 z-[200] flex flex-col" style={{ background: "var(--bg-primary)" }}>
+          {/* Header */}
+          <div className="flex items-center gap-3 px-4 py-4 shrink-0"
+            style={{ background: "var(--bg-card)", borderBottom: "1px solid var(--border)" }}>
+            <button onClick={() => setNotifOpen(false)}
+              className="w-8 h-8 flex items-center justify-center"
+              style={{ background: "var(--bg-primary)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+              <X size={16} />
+            </button>
+            <h1 className="text-base font-semibold flex-1" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
+              Tahlil natijalari
+            </h1>
+            {unreadCount > 0 && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(224,92,92,0.12)", color: "#e05c5c" }}>
+                {unreadCount} yangi
+              </span>
+            )}
+          </div>
+
+          {/* List */}
+          <div className="flex-1 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full gap-3">
+                <Bell size={32} style={{ color: "var(--text-muted)" }} />
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>Hali natija yo'q</p>
+              </div>
+            ) : notifications.map((n) => (
+              <Link key={n.id} href={`/submission/${n.id}`}
+                className="flex items-center gap-4 px-4 py-4"
+                style={{ borderBottom: "1px solid var(--border)" }}
+                onClick={() => setNotifOpen(false)}>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-base font-bold"
+                  style={{
+                    background: n.failed ? "rgba(224,92,92,0.12)" : (n.status === "done") ? "rgba(61,189,125,0.12)" : "rgba(234,179,8,0.12)",
+                    color: n.failed ? "#e05c5c" : (n.status === "done") ? "#3dbd7d" : "#ca8a04"
+                  }}>
+                  {n.failed ? "!" : (n.status === "pending" || n.status === "processing")
+                    ? <Clock size={18} />
+                    : `${n.score ?? "—"}`}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                    {n.subject ?? "Tahlil"}{n.failed ? " — xatolik" : ""}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                    {n.failed ? "Tahlil xatolik bilan tugadi"
+                      : (n.status === "pending" || n.status === "processing")
+                      ? "Tahlil qilinmoqda..."
+                      : `Ball: ${n.score ?? "—"}`}
+                  </p>
+                </div>
+                <ChevronDown size={15} style={{ color: "var(--text-muted)", transform: "rotate(-90deg)", flexShrink: 0 }} />
+              </Link>
+            ))}
           </div>
         </div>
       )}

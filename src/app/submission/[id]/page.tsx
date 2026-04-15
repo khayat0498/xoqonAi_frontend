@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, Download, Send } from "lucide-react";
+import { ArrowLeft, MessageCircle, Download, Send, RotateCcw } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -30,6 +30,7 @@ export default function SubmissionPage() {
   const { id } = useParams<{ id: string }>();
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     const token = getToken();
@@ -42,6 +43,18 @@ export default function SubmissionPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
+
+  async function retry() {
+    if (!submission || retrying) return;
+    setRetrying(true);
+    const token = getToken();
+    const res = await fetch(`${API}/api/submissions/${id}/retry`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) setSubmission((s) => s ? { ...s, status: "processing", analysis: null } : s);
+    setRetrying(false);
+  }
 
   if (loading) {
     return (
@@ -84,6 +97,14 @@ export default function SubmissionPage() {
             {submission.subject ?? ""} · {new Date(submission.createdAt).toLocaleDateString("uz")}
           </p>
         </div>
+        <button
+          onClick={retry}
+          disabled={retrying || submission.status === "processing"}
+          className="w-8 h-8 flex items-center justify-center"
+          style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: "var(--radius-sm)", opacity: retrying ? 0.5 : 1 }}
+        >
+          <RotateCcw size={15} className={retrying ? "animate-spin" : ""} />
+        </button>
         <button
           className="w-8 h-8 flex items-center justify-center"
           style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: "var(--radius-sm)" }}

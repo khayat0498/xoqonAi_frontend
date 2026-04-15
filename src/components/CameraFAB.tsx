@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Camera, X, Send, RotateCcw, Loader2, Images } from "lucide-react";
+import { Camera, X, Send, RotateCcw, Loader2, Images, FolderOpen, ChevronRight } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -74,6 +74,13 @@ export default function CameraFAB() {
   const urlStudentName = searchParams.get("studentName");
   const urlCamera = searchParams.get("camera");
 
+  // ── Folder tanlash state ──
+  type Folder = { id: string; name: string };
+  const [folderModal, setFolderModal] = useState(false);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+  const [foldersLoading, setFoldersLoading] = useState(false);
+
   // ── Camera modal state ──
   const [camOpen, setCamOpen] = useState(false);
   const [detected, setDetected] = useState(false);
@@ -120,6 +127,8 @@ export default function CameraFAB() {
     setSendError("");
     setDetected(false);
     setCvLabel("Kamera yuklanmoqda...");
+    setSelectedFolder(null);
+    setFolderModal(false);
     document.body.classList.remove("modal-open");
     if (urlCamera === "1") router.replace("/home");
   }, [stopCamera, urlCamera, router]);
@@ -342,6 +351,30 @@ export default function CameraFAB() {
     }
   }
 
+  // ── Folder tanlash modali ochish ──
+  async function openFolderPicker() {
+    setFolderModal(true);
+    setFoldersLoading(true);
+    try {
+      const res = await fetch(`${API}/api/folders`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFolders(data.data ?? data ?? []);
+      }
+    } finally {
+      setFoldersLoading(false);
+    }
+  }
+
+  function selectFolderAndOpenCamera(folder: Folder) {
+    setSelectedFolder(folder);
+    setFolderModal(false);
+    setCamOpen(true);
+    document.body.classList.add("modal-open");
+  }
+
   // ── Galereyadan rasm tanlash ──
   function pickFromGallery(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -368,6 +401,7 @@ export default function CameraFAB() {
       fd.append("image", file);
       if (prompt.trim()) fd.append("subject", prompt.trim());
       if (urlStudentId) fd.append("studentId", urlStudentId);
+      if (selectedFolder) fd.append("folderId", selectedFolder.id);
 
       const res = await fetch(`${API}/api/submissions`, {
         method: "POST",
@@ -393,7 +427,7 @@ export default function CameraFAB() {
       {/* ── FAB tugma ── */}
       <div className="fixed z-50 bottom-28 right-4 md:bottom-8 md:right-8">
         <button
-          onClick={() => { setCamOpen(true); document.body.classList.add("modal-open"); }}
+          onClick={openFolderPicker}
           className="w-14 h-14 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
           style={{
             background: "var(--cta)",
@@ -405,6 +439,50 @@ export default function CameraFAB() {
           <Camera size={24} />
         </button>
       </div>
+
+      {/* ── Folder tanlash modali ── */}
+      {folderModal && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}
+          onClick={e => e.target === e.currentTarget && setFolderModal(false)}>
+          <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl overflow-hidden"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
+              <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
+                Jild tanlang
+              </p>
+              <button onClick={() => setFolderModal(false)}
+                className="w-8 h-8 flex items-center justify-center"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
+                <X size={15} />
+              </button>
+            </div>
+            <div className="overflow-y-auto max-h-72">
+              {foldersLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 size={20} className="animate-spin" style={{ color: "var(--accent)" }} />
+                </div>
+              ) : folders.length === 0 ? (
+                <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>
+                  Jild topilmadi
+                </p>
+              ) : (
+                folders.map(folder => (
+                  <button key={folder.id} onClick={() => selectFolderAndOpenCamera(folder)}
+                    className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors"
+                    style={{ borderBottom: "1px solid var(--border)" }}>
+                    <FolderOpen size={18} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                    <span className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                      {folder.name}
+                    </span>
+                    <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Kamera modali ── */}
       {camOpen && (
@@ -481,6 +559,11 @@ export default function CameraFAB() {
                 {urlStudentName && (
                   <p className="text-xs mt-0.5" style={{ color: "var(--accent)" }}>
                     {decodeURIComponent(urlStudentName)}
+                  </p>
+                )}
+                {selectedFolder && (
+                  <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+                    <FolderOpen size={11} /> {selectedFolder.name}
                   </p>
                 )}
               </div>

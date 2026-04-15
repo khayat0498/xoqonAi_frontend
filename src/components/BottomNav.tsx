@@ -33,7 +33,7 @@ export default function BottomNav() {
   const currentTab = searchParams.get("tab");
 
   return (
-    <nav className="md:hidden fixed bottom-6 inset-x-4 z-50">
+    <nav className="md:hidden fixed bottom-2 inset-x-4 z-50">
       <div
         className="flex justify-around items-center px-2 py-2"
         style={{
