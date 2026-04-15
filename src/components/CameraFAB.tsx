@@ -235,13 +235,9 @@ export default function CameraFAB() {
     contourRef.current = best;
 
     if (best) {
-      drawBorder(best, true);
       setDetected(true);
-      setCvLabel("Hujjat aniqlandi");
     } else {
-      drawDefaultBorder();
       setDetected(false);
-      setCvLabel("Suratga olishga tayyor");
     }
 
     src.delete(); gray.delete(); blurred.delete();
@@ -392,15 +388,7 @@ export default function CameraFAB() {
           {/* Kamera */}
           <div className="flex-1 relative overflow-hidden">
             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-            <canvas ref={overlayRef} className="absolute inset-0 w-full h-full" style={{ pointerEvents: "none" }} />
 
-            {/* Status */}
-            <div
-              className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap"
-              style={{ background: "rgba(0,0,0,0.55)", color: detected ? "#4ade80" : "#fff", backdropFilter: "blur(8px)" }}
-            >
-              {cvLabel}
-            </div>
           </div>
 
           {/* Capture tugma */}
