@@ -104,7 +104,36 @@ export default function CameraFAB() {
     setSendError("");
     setDetected(false);
     setCvLabel("Kamera yuklanmoqda...");
+    document.body.classList.remove("modal-open");
   }, [stopCamera]);
+
+  // ── Default yashil to'rtburchak ──
+  function drawDefaultBorder() {
+    const ov = overlayRef.current;
+    if (!ov) return;
+    const ctx = ov.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, ov.width, ov.height);
+    const pad = 24;
+    const x = pad, y = pad, w = ov.width - pad*2, h = ov.height - pad*2;
+    ctx.strokeStyle = "#22c55e";
+    ctx.lineWidth = 3;
+    ctx.shadowColor = "#22c55e";
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = "rgba(34,197,94,0.05)";
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 12);
+    ctx.fill();
+    ctx.stroke();
+    // Burchak nuqtalar
+    [[x,y],[x+w,y],[x+w,y+h],[x,y+h]].forEach(([px,py]) => {
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#22c55e";
+      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI*2); ctx.fill();
+    });
+  }
 
   // ── Kontur chizish ──
   function drawBorder(contour: any, stable: boolean) {
@@ -208,11 +237,11 @@ export default function CameraFAB() {
     if (best) {
       drawBorder(best, true);
       setDetected(true);
-      setCvLabel("Hujjat aniqlandi — suratga olish mumkin");
+      setCvLabel("Hujjat aniqlandi");
     } else {
-      drawBorder(null, false);
+      drawDefaultBorder();
       setDetected(false);
-      setCvLabel("Hujjatni kameraga ko'rsating");
+      setCvLabel("Suratga olishga tayyor");
     }
 
     src.delete(); gray.delete(); blurred.delete();
@@ -256,38 +285,42 @@ export default function CameraFAB() {
 
   // ── Rasmga olish ──
   async function captureAndCorrect() {
-    const cv = getCV();
     const video = videoRef.current;
-    if (!video || video.readyState < 2 || !contourRef.current) return;
+    if (!video || video.readyState < 2) return;
     setSnapping(true);
     try {
       const fc = document.createElement("canvas");
       fc.width = video.videoWidth; fc.height = video.videoHeight;
       fc.getContext("2d")!.drawImage(video, 0, 0);
-      const srcMat = cv.imread(fc);
 
-      const raw: Point[] = [];
-      for (let i = 0; i < contourRef.current.rows; i++)
-        raw.push({ x: contourRef.current.data32S[i*2], y: contourRef.current.data32S[i*2+1] });
+      let dataUrl: string;
 
-      const rx = video.videoWidth / AW, ry = video.videoHeight / AH;
-      const corners = raw.map(c => ({ x: c.x * rx, y: c.y * ry }));
-      const [tl, tr, br, bl] = orderCorners(corners);
+      if (contourRef.current) {
+        // Hujjat aniqlangan — perspective transform
+        const cv = getCV();
+        const srcMat = cv.imread(fc);
+        const raw: Point[] = [];
+        for (let i = 0; i < contourRef.current.rows; i++)
+          raw.push({ x: contourRef.current.data32S[i*2], y: contourRef.current.data32S[i*2+1] });
+        const rx = video.videoWidth / AW, ry = video.videoHeight / AH;
+        const corners = raw.map(c => ({ x: c.x * rx, y: c.y * ry }));
+        const [tl, tr, br, bl] = orderCorners(corners);
+        const w = Math.max(Math.hypot(tr.x-tl.x, tr.y-tl.y), Math.hypot(br.x-bl.x, br.y-bl.y));
+        const h = Math.max(Math.hypot(bl.x-tl.x, bl.y-tl.y), Math.hypot(br.x-tr.x, br.y-tr.y));
+        const srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [tl.x,tl.y, tr.x,tr.y, br.x,br.y, bl.x,bl.y]);
+        const dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [0,0, w,0, w,h, 0,h]);
+        const M = cv.getPerspectiveTransform(srcPts, dstPts);
+        const warped = new cv.Mat();
+        cv.warpPerspective(srcMat, warped, M, new cv.Size(w, h));
+        const wc = document.createElement("canvas");
+        cv.imshow(wc, warped);
+        [srcMat, warped, M, srcPts, dstPts].forEach(m => m.delete());
+        dataUrl = enhanceImage(wc).toDataURL("image/jpeg", 0.95);
+      } else {
+        // Hujjat aniqlanmagan — oddiy foto
+        dataUrl = enhanceImage(fc).toDataURL("image/jpeg", 0.95);
+      }
 
-      const w = Math.max(Math.hypot(tr.x-tl.x, tr.y-tl.y), Math.hypot(br.x-bl.x, br.y-bl.y));
-      const h = Math.max(Math.hypot(bl.x-tl.x, bl.y-tl.y), Math.hypot(br.x-tr.x, br.y-tr.y));
-
-      const srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [tl.x,tl.y, tr.x,tr.y, br.x,br.y, bl.x,bl.y]);
-      const dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [0,0, w,0, w,h, 0,h]);
-      const M = cv.getPerspectiveTransform(srcPts, dstPts);
-      const warped = new cv.Mat();
-      cv.warpPerspective(srcMat, warped, M, new cv.Size(w, h));
-
-      const wc = document.createElement("canvas");
-      cv.imshow(wc, warped);
-      [srcMat, warped, M, srcPts, dstPts].forEach(m => m.delete());
-
-      const dataUrl = enhanceImage(wc).toDataURL("image/jpeg", 0.95);
       stopCamera();
       setCamOpen(false);
       setCaptured(dataUrl);
@@ -332,7 +365,7 @@ export default function CameraFAB() {
       {/* ── FAB tugma ── */}
       <div className="fixed z-50 bottom-28 right-4 md:bottom-8 md:right-8">
         <button
-          onClick={() => setCamOpen(true)}
+          onClick={() => { setCamOpen(true); document.body.classList.add("modal-open"); }}
           className="w-14 h-14 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
           style={{
             background: "var(--cta)",
@@ -374,11 +407,11 @@ export default function CameraFAB() {
           <div className="flex justify-center py-6 shrink-0" style={{ background: "rgba(0,0,0,0.6)" }}>
             <button
               onClick={captureAndCorrect}
-              disabled={!detected || snapping}
+              disabled={snapping}
               className="w-16 h-16 rounded-full flex items-center justify-center transition-all"
               style={{
-                background: detected ? "#22c55e" : "rgba(255,255,255,0.2)",
-                boxShadow: detected ? "0 0 24px rgba(34,197,94,0.5)" : "none",
+                background: "#22c55e",
+                boxShadow: "0 0 24px rgba(34,197,94,0.5)",
                 border: "4px solid rgba(255,255,255,0.3)",
                 transform: snapping ? "scale(0.9)" : "scale(1)",
               }}

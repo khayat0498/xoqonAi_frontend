@@ -429,7 +429,7 @@ function HomePageInner() {
       {!isJildlarMode && (<>
       {/* Hero — clay style */}
       <div
-        className="mx-4 md:mx-6 mt-4 px-6 pt-6 pb-7 shrink-0 relative overflow-hidden"
+        className="mx-4 md:mx-6 mt-4 px-6 pt-6 pb-7 shrink-0 relative"
         style={{
           background: "var(--bg-card)",
           backdropFilter: "blur(4px)",
@@ -440,8 +440,10 @@ function HomePageInner() {
         }}
       >
         {/* Dekor doiralar — yumshoq */}
-        <div style={{ position: "absolute", right: -30, top: -40, width: 140, height: 140, borderRadius: "50%", background: "rgba(74, 154, 170, 0.06)" }} />
-        <div style={{ position: "absolute", right: 50, bottom: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(104, 117, 245, 0.05)" }} />
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: "var(--radius-lg)", pointerEvents: "none" }}>
+          <div style={{ position: "absolute", right: -30, top: -40, width: 140, height: 140, borderRadius: "50%", background: "rgba(74, 154, 170, 0.06)" }} />
+          <div style={{ position: "absolute", right: 50, bottom: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(104, 117, 245, 0.05)" }} />
+        </div>
 
         <div className="relative flex items-center justify-between">
           <div className="flex-1 min-w-0">
