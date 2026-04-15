@@ -6,7 +6,6 @@ import { Camera, X, Send, RotateCcw, Loader2 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
-// @ts-expect-error - cv is loaded from opencv.js script
 const getCV = () => (window as any).cv;
 
 const AW = 320, AH = 240;

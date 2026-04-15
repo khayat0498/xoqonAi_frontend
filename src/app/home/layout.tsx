@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import { UserProvider } from "@/lib/user-context";
@@ -24,11 +24,11 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
       <UserProvider>
         <UserWSProvider>
           <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg-primary)" }}>
-            <Sidebar />
+            <Suspense fallback={null}><Sidebar /></Suspense>
             <main className="flex-1 flex flex-col overflow-hidden">
               {children}
             </main>
-            <BottomNav />
+            <Suspense fallback={null}><BottomNav /></Suspense>
             <CameraFAB />
           </div>
         </UserWSProvider>

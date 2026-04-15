@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -38,7 +39,7 @@ const PLAN_LABEL: Record<string, { label: string; color: string; bg: string }> =
   premium: { label: "Premium", color: "var(--warning)",     bg: "var(--warning-bg)" },
 };
 
-export default function HomePage() {
+function HomePageInner() {
   const { user } = useUser();
   const { lastEvent } = useUserWS();
   const searchParams = useSearchParams();
@@ -1877,5 +1878,13 @@ export default function HomePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={null}>
+      <HomePageInner />
+    </Suspense>
   );
 }
