@@ -9,6 +9,7 @@ export type WSEvent =
   | { type: "new_request"; data: Record<string, unknown> }
   | { type: "request_updated"; data: { id: string; status: string } }
   | { type: "stats_refresh" }
+  | { type: "plans_updated" }
   | { type: "connected" };
 
 type AdminWSContextType = {
