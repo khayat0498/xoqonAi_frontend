@@ -194,15 +194,15 @@ export default function SubmissionPage() {
                         onKeyDown={(e) => { if (e.key === "Enter") { e.currentTarget.blur(); } }}
                         placeholder="—"
                         maxLength={10}
-                        className="handwriting text-5xl leading-none bg-transparent outline-none border-b-2 w-24 text-center"
+                        className="text-5xl font-bold leading-none bg-transparent outline-none border-b-2 w-24 text-center"
                         style={{
-                          color: "var(--accent)",
+                          color: "var(--grade-color)",
                           borderColor: "rgba(74,154,170,0.4)",
-                          caretColor: "var(--accent)",
+                          caretColor: "var(--grade-color)",
                         }}
                       />
-                      <span className="handwriting text-5xl leading-none pb-0.5" style={{ color: "var(--text-muted)" }}>/</span>
-                      <span className="handwriting text-5xl leading-none pb-0.5" style={{ color: "var(--text-muted)" }}>5</span>
+                      <span className="text-5xl font-bold leading-none pb-0.5" style={{ color: "var(--grade-color)", opacity: 0.4 }}>/</span>
+                      <span className="text-5xl font-bold leading-none pb-0.5" style={{ color: "var(--grade-color)", opacity: 0.4 }}>5</span>
                       {gradeSaved && (
                         <span className="flex items-center gap-1 text-xs pb-1" style={{ color: "var(--success)" }}>
                           <Check size={12} /> Saqlandi
@@ -214,14 +214,14 @@ export default function SubmissionPage() {
                   {analysis.errors && analysis.errors.length > 0 && (
                     <div className="flex flex-col gap-3">
                       {analysis.errors.map((error, i) => (
-                        <p key={i} className="handwriting text-2xl leading-snug" style={{ color: "var(--error)" }}>
+                        <p key={i} className="text-sm leading-snug" style={{ color: "var(--error)" }}>
                           {i + 1}. {error}
                         </p>
                       ))}
                     </div>
                   )}
                   <div className="pt-4 border-t" style={{ borderColor: "var(--notebook-line)" }}>
-                    <p className="handwriting text-2xl italic leading-snug" style={{ color: "var(--text-secondary)" }}>
+                    <p className="text-sm italic leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                       → {analysis.feedback}
                     </p>
                   </div>
