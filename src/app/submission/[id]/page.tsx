@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, Download, Send, RotateCcw } from "lucide-react";
+import { ArrowLeft, MessageCircle, Download, Send, RotateCcw, Check } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -22,7 +22,7 @@ type Submission = {
   subject: string | null;
   status: string;
   createdAt: string;
-  student: { name: string } | null;
+  student: { name: string; telegramId: string | null } | null;
   analysis: Analysis | null;
 };
 
@@ -31,6 +31,10 @@ export default function SubmissionPage() {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
+  const [grade, setGrade] = useState("");
+  const [gradeSaved, setGradeSaved] = useState(false);
+  const [sending, setSending] = useState(false);
+  const gradeInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const token = getToken();
@@ -39,10 +43,32 @@ export default function SubmissionPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
-      .then(setSubmission)
+      .then((data) => { setSubmission(data); setGrade(data.analysis?.grade ?? ""); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
+
+  async function saveGrade(value: string) {
+    if (!value.trim()) return;
+    const token = getToken();
+    const res = await fetch(`${API}/api/submissions/${id}/grade`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ grade: value.trim() }),
+    });
+    if (res.ok) {
+      setGradeSaved(true);
+      setTimeout(() => setGradeSaved(false), 2000);
+    }
+  }
+
+  async function sendToStudent() {
+    if (!grade.trim()) return;
+    setSending(true);
+    await saveGrade(grade);
+    // Telegram bot integratsiyasi keyinroq
+    setSending(false);
+  }
 
   async function retry() {
     if (!submission || retrying) return;
@@ -159,10 +185,31 @@ export default function SubmissionPage() {
                 </div>
                 <div className="px-4 py-5 flex flex-col gap-4">
                   <div>
-                    <p className="handwriting text-5xl leading-none" style={{ color: "var(--accent)" }}>
-                      {analysis.grade} / 5
-                    </p>
-                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Umumiy baho ({analysis.score}/100)</p>
+                    <div className="flex items-end gap-2">
+                      <input
+                        ref={gradeInputRef}
+                        value={grade}
+                        onChange={(e) => setGrade(e.target.value)}
+                        onBlur={(e) => saveGrade(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.currentTarget.blur(); } }}
+                        placeholder="—"
+                        maxLength={10}
+                        className="handwriting text-5xl leading-none bg-transparent outline-none border-b-2 w-24 text-center"
+                        style={{
+                          color: "var(--accent)",
+                          borderColor: "rgba(74,154,170,0.4)",
+                          caretColor: "var(--accent)",
+                        }}
+                      />
+                      <span className="handwriting text-5xl leading-none pb-0.5" style={{ color: "var(--text-muted)" }}>/</span>
+                      <span className="handwriting text-5xl leading-none pb-0.5" style={{ color: "var(--text-muted)" }}>5</span>
+                      {gradeSaved && (
+                        <span className="flex items-center gap-1 text-xs pb-1" style={{ color: "var(--success)" }}>
+                          <Check size={12} /> Saqlandi
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Umumiy baho ({analysis.score}/100) · tahrirlash mumkin</p>
                   </div>
                   {analysis.errors && analysis.errors.length > 0 && (
                     <div className="flex flex-col gap-3">
@@ -195,11 +242,13 @@ export default function SubmissionPage() {
 
           {/* Telegram tugmasi */}
           <button
+            onClick={sendToStudent}
+            disabled={sending || !grade.trim() || !analysis}
             className="flex items-center justify-center gap-2 py-3.5 font-medium text-sm transition-all hover:opacity-80"
-            style={{ background: "#229ED9", color: "#fff", borderRadius: "var(--radius-sm)" }}
+            style={{ background: "#229ED9", color: "#fff", borderRadius: "var(--radius-sm)", opacity: (sending || !grade.trim() || !analysis) ? 0.6 : 1 }}
           >
             <Send size={16} />
-            Telegramga yuborish
+            {sending ? "Yuborilmoqda..." : `${grade.trim() || "—"} baho bilan yuborish`}
           </button>
         </div>
       </div>
