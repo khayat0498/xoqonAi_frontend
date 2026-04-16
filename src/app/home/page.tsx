@@ -168,15 +168,7 @@ function HomePageInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      const inMobile = notifRef.current?.contains(e.target as Node);
-      const inDesktop = notifRefDesktop.current?.contains(e.target as Node);
-      if (!inMobile && !inDesktop) setNotifOpen(false);
-    }
-    if (notifOpen) document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [notifOpen]);
+  // Full-screen overlay — outside click listener kerak emas, X tugmasi bilan yopiladi
 
   useEffect(() => {
     if (todayTasks.length === 0) return;
