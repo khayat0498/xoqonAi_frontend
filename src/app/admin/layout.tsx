@@ -6,13 +6,14 @@ import { AdminWSProvider, useAdminWS } from "@/lib/admin-ws";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Users, FileText, ShieldCheck, Wifi, WifiOff, Package } from "lucide-react";
+import { LayoutDashboard, Users, FileText, ShieldCheck, Wifi, WifiOff, Package, CreditCard } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/users", label: "Foydalanuvchilar", icon: Users },
   { href: "/admin/requests", label: "So'rovlar", icon: FileText },
   { href: "/admin/plans", label: "Tariflar", icon: Package },
+  { href: "/admin/billing", label: "Billing", icon: CreditCard },
 ];
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
