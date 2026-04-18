@@ -16,14 +16,15 @@ function UserSearch({ onSelectUser }: { onSelectUser: (user: { id: string; name:
   const debouncedQuery = useDebounce(query, 300);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const fetchUsers = useCallback(async (q: string) => {
+  const fetchUsers = useCallback(async (searchQuery: string) => {
     setLoading(true);
+    const url = `${API}/api/users/all?limit=50&search=${searchQuery}`;
     try {
-      const res = await fetch(`${API}/api/users/search?q=${q}`, {
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${getToken()}` },
       });
       const data = await res.json();
-      setResults(data);
+      setResults(data?.users || []);
     } catch (error) {
       setResults([]);
     } finally {
@@ -33,11 +34,6 @@ function UserSearch({ onSelectUser }: { onSelectUser: (user: { id: string; name:
 
   useEffect(() => {
     if (!isOpen) return;
-    // Don't search for 1 char, but do search for empty (on initial focus)
-    if (debouncedQuery.length === 1) {
-      setResults([]);
-      return;
-    }
     fetchUsers(debouncedQuery);
   }, [debouncedQuery, isOpen, fetchUsers]);
 
