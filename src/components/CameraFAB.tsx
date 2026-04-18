@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Camera, X, Send, RotateCcw, Loader2, Images, FolderOpen, ChevronRight, BookOpen, ClipboardList, Plus } from "lucide-react";
+import { Camera, X, Send, RotateCcw, Loader2, Images, ChevronRight, BookOpen } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -51,8 +51,6 @@ function enhanceImage(canvas: HTMLCanvasElement): HTMLCanvasElement {
 }
 
 type Folder = { id: string; name: string; icon?: string | null; subjectId?: string | null; subjectName?: string | null; subjectIcon?: string | null };
-type Subject = { id: string; name: string; icon: string | null; prompt: string };
-type Assignment = { id: string; name: string; condition: string };
 
 export default function CameraFAB() {
   const router = useRouter();
@@ -67,22 +65,13 @@ export default function CameraFAB() {
   const urlCondition   = searchParams.get("condition");
 
   // ── Step state ──
-  const [step, setStep] = useState<"idle" | "folder" | "subject" | "assignment" | "cam" | "confirm">("idle");
+  const [step, setStep] = useState<"idle" | "folder" | "condition" | "cam" | "confirm">("idle");
 
   // ── Data ──
-  const [folders, setFolders]           = useState<Folder[]>([]);
-  const [subjects, setSubjects]         = useState<Subject[]>([]);
-  const [assignments, setAssignments]   = useState<Assignment[]>([]);
-  const [selectedFolder, setSelectedFolder]       = useState<Folder | null>(null);
-  const [selectedSubject, setSelectedSubject]     = useState<Subject | null>(null);
-  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
-  const [loading, setLoading]           = useState(false);
-
-  // Assignment create
-  const [creatingAsg, setCreatingAsg]   = useState(false);
-  const [newAsgName, setNewAsgName]     = useState("");
-  const [newAsgCondition, setNewAsgCondition] = useState("");
-  const [savingAsg, setSavingAsg]       = useState(false);
+  const [folders, setFolders]       = useState<Folder[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+  const [folderCondition, setFolderCondition] = useState("");
+  const [loading, setLoading]       = useState(false);
 
   // ── Camera ──
   const [detected, setDetected]   = useState(false);
@@ -117,8 +106,7 @@ export default function CameraFAB() {
     stopCamera();
     setStep("idle");
     setCaptured(null); setPrompt(""); setSendError(""); setDetected(false);
-    setSelectedFolder(null); setSelectedSubject(null); setSelectedAssignment(null);
-    setCreatingAsg(false); setNewAsgName(""); setNewAsgCondition("");
+    setSelectedFolder(null); setFolderCondition("");
     document.body.classList.remove("modal-open");
     if (urlCamera === "1") router.replace("/home");
   }, [stopCamera, urlCamera, router]);
@@ -132,57 +120,11 @@ export default function CameraFAB() {
     setLoading(false);
   }
 
-  // ── Step: folder tanlanganda — subject biriktirilgan bo'lsa o'tkazib yuboramiz ──
-  async function selectFolder(folder: Folder) {
+  // ── Folder tanlanganda — condition stepiga o'tamiz ──
+  function selectFolder(folder: Folder) {
     setSelectedFolder(folder);
-    setLoading(true);
-    if (folder.subjectId) {
-      // Folder allaqachon subjectga biriktirilgan — subject stepini o'tkazamiz
-      const fakeSubject: Subject = { id: folder.subjectId, name: folder.subjectName ?? "", icon: folder.subjectIcon ?? null, prompt: "" };
-      setSelectedSubject(fakeSubject);
-      setStep("assignment");
-      const res = await fetch(`${API}/api/assignments?subjectId=${folder.subjectId}`, { headers: { Authorization: `Bearer ${getToken()}` } });
-      if (res.ok) setAssignments(await res.json());
-    } else {
-      setStep("subject");
-      const res = await fetch(`${API}/api/subjects`, { headers: { Authorization: `Bearer ${getToken()}` } });
-      if (res.ok) setSubjects(await res.json());
-    }
-    setLoading(false);
-  }
-
-  // ── Step: assignment ──
-  async function selectSubject(subject: Subject) {
-    setSelectedSubject(subject);
-    setStep("assignment");
-    setLoading(true);
-    const res = await fetch(`${API}/api/assignments?subjectId=${subject.id}`, { headers: { Authorization: `Bearer ${getToken()}` } });
-    if (res.ok) setAssignments(await res.json());
-    setLoading(false);
-  }
-
-  // ── Assignment yaratish ──
-  async function createAndSelectAssignment() {
-    if (!newAsgName.trim() || !selectedSubject) return;
-    setSavingAsg(true);
-    const res = await fetch(`${API}/api/assignments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({ name: newAsgName.trim(), condition: newAsgCondition.trim(), subjectId: selectedSubject.id }),
-    });
-    if (res.ok) {
-      const asg = await res.json();
-      setSelectedAssignment(asg);
-      setCreatingAsg(false);
-      setNewAsgName(""); setNewAsgCondition("");
-      openCamera();
-    }
-    setSavingAsg(false);
-  }
-
-  function selectAssignment(asg: Assignment) {
-    setSelectedAssignment(asg);
-    openCamera();
+    setFolderCondition("");
+    setStep("condition");
   }
 
   function openCamera() {
@@ -332,13 +274,15 @@ export default function CameraFAB() {
       const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
       const fd = new FormData();
       fd.append("image", file);
-      if (prompt.trim()) fd.append("subject", prompt.trim());
+      // Subject: from folder's subject, else from URL (class flow)
+      if (selectedFolder?.subjectName) fd.append("subject", selectedFolder.subjectName);
       else if (urlSubject) fd.append("subject", urlSubject);
+      // Condition: from folder condition step, else from URL (class flow)
+      if (folderCondition.trim()) fd.append("condition", folderCondition.trim());
+      else if (urlCondition) fd.append("condition", urlCondition);
       if (urlStudentId) fd.append("studentId", urlStudentId);
       if (urlClassId) fd.append("classId", urlClassId);
-      if (urlCondition) fd.append("condition", urlCondition);
       if (selectedFolder) fd.append("folderId", selectedFolder.id);
-      if (selectedAssignment) fd.append("assignmentId", selectedAssignment.id);
 
       const res = await fetch(`${API}/api/submissions`, {
         method: "POST",
@@ -371,7 +315,7 @@ export default function CameraFAB() {
         </button>
       </div>
 
-      {/* ── STEP 1: Folder ── */}
+      {/* ── STEP 1: Folder tanlash ── */}
       {step === "folder" && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}
@@ -409,8 +353,8 @@ export default function CameraFAB() {
         </div>
       )}
 
-      {/* ── STEP 2: Fan ── */}
-      {step === "subject" && (
+      {/* ── STEP 2: Masala sharti ── */}
+      {step === "condition" && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}
           onClick={e => e.target === e.currentTarget && closeAll()}>
@@ -418,97 +362,39 @@ export default function CameraFAB() {
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
               <div>
-                <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>Fan tanlang</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{selectedFolder?.name}</p>
+                <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>Masala sharti</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{selectedFolder?.icon} {selectedFolder?.name}</p>
               </div>
               <button onClick={closeAll} className="w-8 h-8 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
                 <X size={15} />
               </button>
             </div>
-            <div className="overflow-y-auto max-h-72">
-              {loading ? (
-                <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: "var(--accent)" }} /></div>
-              ) : subjects.length === 0 ? (
-                <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>Bu jildda fan yo'q</p>
-              ) : subjects.map(s => (
-                <button key={s.id} onClick={() => selectSubject(s)}
-                  className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-[var(--surface-hover)]"
-                  style={{ borderBottom: "1px solid var(--border)" }}>
-                  <span className="text-xl">{s.icon || "📖"}</span>
-                  <span className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{s.name}</span>
-                  <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── STEP 3: Topshiriq ── */}
-      {step === "assignment" && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}
-          onClick={e => e.target === e.currentTarget && closeAll()}>
-          <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl overflow-hidden"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
-              <div>
-                <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>Topshiriq tanlang</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{selectedSubject?.icon} {selectedSubject?.name}</p>
+            {selectedFolder?.subjectName && (
+              <div className="mx-5 mt-4 flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "var(--accent-light)" }}>
+                <BookOpen size={14} style={{ color: "var(--accent)" }} />
+                <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>
+                  {selectedFolder.subjectIcon} {selectedFolder.subjectName}
+                </span>
               </div>
-              <button onClick={closeAll} className="w-8 h-8 flex items-center justify-center"
-                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
-                <X size={15} />
-              </button>
+            )}
+            <div className="px-5 pt-4 pb-2">
+              <textarea
+                autoFocus
+                value={folderCondition}
+                onChange={e => setFolderCondition(e.target.value)}
+                placeholder="Masalan: Darslik 45-bet, 3-mashq... (ixtiyoriy)"
+                rows={4}
+                className="w-full px-3 py-2.5 text-sm outline-none resize-none"
+                style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
+              />
             </div>
-            <div className="overflow-y-auto max-h-64">
-              {loading ? (
-                <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: "var(--accent)" }} /></div>
-              ) : (
-                <>
-                  {assignments.map(a => (
-                    <button key={a.id} onClick={() => selectAssignment(a)}
-                      className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-[var(--surface-hover)]"
-                      style={{ borderBottom: "1px solid var(--border)" }}>
-                      <ClipboardList size={16} style={{ color: "var(--cta)", flexShrink: 0 }} />
-                      <span className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{a.name}</span>
-                      <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
-                    </button>
-                  ))}
-                  {/* Yangi topshiriq */}
-                  {!creatingAsg ? (
-                    <button onClick={() => setCreatingAsg(true)}
-                      className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-[var(--surface-hover)]">
-                      <Plus size={16} style={{ color: "var(--accent)", flexShrink: 0 }} />
-                      <span className="text-sm font-medium" style={{ color: "var(--accent)" }}>Yangi topshiriq</span>
-                    </button>
-                  ) : (
-                    <div className="px-5 py-4 flex flex-col gap-2">
-                      <input autoFocus value={newAsgName} onChange={e => setNewAsgName(e.target.value)}
-                        placeholder="Topshiriq nomi"
-                        className="clay-input w-full px-3 py-2 text-sm outline-none"
-                        style={{ color: "var(--text-primary)" }} />
-                      <textarea value={newAsgCondition} onChange={e => setNewAsgCondition(e.target.value)}
-                        placeholder="Masala sharti (ixtiyoriy)"
-                        rows={3}
-                        className="w-full px-3 py-2 text-sm outline-none resize-none"
-                        style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }} />
-                      <div className="flex gap-2">
-                        <button onClick={() => setCreatingAsg(false)} className="flex-1 py-2 text-sm"
-                          style={{ color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
-                          Bekor
-                        </button>
-                        <button onClick={createAndSelectAssignment} disabled={savingAsg || !newAsgName.trim()}
-                          className="flex-1 py-2 text-sm font-bold text-white"
-                          style={{ background: "var(--cta)", borderRadius: "var(--radius-sm)", opacity: savingAsg || !newAsgName.trim() ? 0.6 : 1 }}>
-                          {savingAsg ? "..." : "Yaratish"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+            <div className="px-5 pb-5">
+              <button onClick={openCamera}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all"
+                style={{ background: "var(--cta)", color: "#fff" }}>
+                <Camera size={16} /> Kamerani ochish
+              </button>
             </div>
           </div>
         </div>
@@ -520,8 +406,8 @@ export default function CameraFAB() {
           <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ background: "rgba(0,0,0,0.6)" }}>
             <div>
               <p className="text-sm font-semibold text-white">Hujjatni skanerlash</p>
-              {selectedAssignment && (
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{selectedAssignment.name}</p>
+              {selectedFolder && (
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{selectedFolder.icon} {selectedFolder.name}</p>
               )}
             </div>
             <button onClick={closeAll} className="p-2" style={{ color: "rgba(255,255,255,0.7)" }}>
@@ -560,10 +446,10 @@ export default function CameraFAB() {
                 <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>Tahlilga yuborish</p>
                 <div className="flex flex-col gap-0.5 mt-0.5">
                   {urlStudentName && <p className="text-xs" style={{ color: "var(--accent)" }}>{decodeURIComponent(urlStudentName)}</p>}
-                  {selectedSubject && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{selectedSubject.icon} {selectedSubject.name}</p>}
-                  {urlSubject && !selectedSubject && <p className="text-xs" style={{ color: "var(--text-muted)" }}>📖 {urlSubject}</p>}
-                  {selectedAssignment && <p className="text-xs" style={{ color: "var(--text-muted)" }}>📋 {selectedAssignment.name}</p>}
-                  {urlCondition && <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>📝 {decodeURIComponent(urlCondition)}</p>}
+                  {selectedFolder?.subjectName && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{selectedFolder.subjectIcon} {selectedFolder.subjectName}</p>}
+                  {urlSubject && !selectedFolder?.subjectName && <p className="text-xs" style={{ color: "var(--text-muted)" }}>📖 {urlSubject}</p>}
+                  {folderCondition.trim() && <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>📝 {folderCondition}</p>}
+                  {urlCondition && !folderCondition.trim() && <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>📝 {decodeURIComponent(urlCondition)}</p>}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -579,10 +465,10 @@ export default function CameraFAB() {
             <div className="mx-5 mt-4 rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
               <img src={captured} alt="Skan" className="w-full object-contain max-h-52" />
             </div>
-            {!selectedAssignment && (
+            {!selectedFolder?.subjectId && !urlSubject && (
               <div className="px-5 mt-3">
                 <label className="text-[11px] font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>
-                  Fan / ko'rsatma (ixtiyoriy)
+                  Fan / ko&apos;rsatma (ixtiyoriy)
                 </label>
                 <input className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
                   style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}

@@ -89,9 +89,9 @@ function HomePageInner() {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderIcon, setNewFolderIcon] = useState("📁");
-  const [newFolderSubject, setNewFolderSubject] = useState<SubjectItem | null>(null);
   const [subjectList, setSubjectList] = useState<SubjectItem[]>([]);
-  const [subjectListLoading, setSubjectListLoading] = useState(false);
+  // Subject-first navigation: null = show subjects, "__none__" = fansiz folders, "<id>" = subject's folders
+  const [viewingSubjectId, setViewingSubjectId] = useState<string | null>(null);
   const [editIcon, setEditIcon] = useState("📁");
   const [nameError, setNameError] = useState("");
   const [menuOpenFolder, setMenuOpenFolder] = useState<string | null>(null);
@@ -161,15 +161,17 @@ function HomePageInner() {
 
   useEffect(() => {
     async function load() {
-      const [classRes, studentRes] = await Promise.all([
+      const [classRes, studentRes, subjectsRes] = await Promise.all([
         fetch(`${API}/api/classes`, { headers: authHeaders() }),
         fetch(`${API}/api/students`, { headers: authHeaders() }),
+        fetch(`${API}/api/subjects`, { headers: authHeaders() }),
       ]);
       if (classRes.ok) setClassList(await classRes.json());
       if (studentRes.ok) {
         const data = await studentRes.json();
         setStudentList(data.students ?? []);
       }
+      if (subjectsRes.ok) setSubjectList(await subjectsRes.json());
       await refreshFolders();
       // Initial notifications: recent done/failed submissions
       const notifRes = await fetch(`${API}/api/submissions?limit=15`, { headers: authHeaders() });
@@ -291,18 +293,6 @@ function HomePageInner() {
 
   const q = search.toLowerCase();
 
-  const sortedFolders = sortItems(
-    folderList.filter((f) => f.name.toLowerCase().includes(q)),
-    sortBy,
-    {
-      "name-asc": (a, b) => a.name.localeCompare(b.name),
-      "name-desc": (a, b) => b.name.localeCompare(a.name),
-      "date-new": (a, b) => b.createdAt.localeCompare(a.createdAt),
-      "date-old": (a, b) => a.createdAt.localeCompare(b.createdAt),
-      "files": (a, b) => (b.submissionCount ?? 0) - (a.submissionCount ?? 0),
-    },
-  );
-
   const sortedClasses = sortItems(
     classList.filter((c) => c.name.toLowerCase().includes(q)),
     sortBy,
@@ -334,6 +324,27 @@ function HomePageInner() {
       "date-new": (a, b) => b.createdAt.localeCompare(a.createdAt),
       "date-old": (a, b) => a.createdAt.localeCompare(b.createdAt),
       "subject": (a, b) => (a.subject ?? "").localeCompare(b.subject ?? ""),
+    },
+  );
+
+  // Subject-first folder navigation helpers
+  const viewingSubjectInfo = viewingSubjectId && viewingSubjectId !== "__none__"
+    ? subjectList.find(s => s.id === viewingSubjectId) ?? null
+    : null;
+  const foldersForView = viewingSubjectId === null
+    ? []
+    : viewingSubjectId === "__none__"
+    ? folderList.filter(f => !f.subjectId)
+    : folderList.filter(f => f.subjectId === viewingSubjectId);
+  const sortedFoldersForView = sortItems(
+    foldersForView.filter(f => f.name.toLowerCase().includes(q)),
+    sortBy,
+    {
+      "name-asc": (a, b) => a.name.localeCompare(b.name),
+      "name-desc": (a, b) => b.name.localeCompare(a.name),
+      "date-new": (a, b) => b.createdAt.localeCompare(a.createdAt),
+      "date-old": (a, b) => a.createdAt.localeCompare(b.createdAt),
+      "files": (a, b) => (b.submissionCount ?? 0) - (a.submissionCount ?? 0),
     },
   );
 
@@ -778,384 +789,267 @@ function HomePageInner() {
           {/* ═══ Papkalarim / Jildlar-Folders Tab ═══ */}
           {((isJildlarMode && jildlarSubTab === "folders") || (!isJildlarMode && activeTab === "papkalarim")) && (
             <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-              <div className="flex items-center gap-2 mb-3 shrink-0">
-                <div className="clay-input flex items-center gap-2 px-3 py-2 flex-1">
-                  <Search size={14} style={{ color: "var(--text-muted)" }} />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Papka qidirish..."
-                    className="bg-transparent outline-none text-sm flex-1"
-                    style={{ color: "var(--text-primary)" }}
-                  />
-                </div>
-                {renderSortBtn()}
-              </div>
-              <div className="flex-1 overflow-y-auto md:px-2">
-              {viewMode === "grid" ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {/* Sinflar auto-folder — switches to Sinflar tab */}
-                  <button
-                    onClick={() => setActiveTab("sinflarim")}
-                    className="flex flex-col items-center gap-2 p-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    style={{
-                      background: "var(--bg-card)",
-                      backdropFilter: "blur(8px)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius-md)",
-                      boxShadow: "var(--shadow-clay-sm)",
-                    }}
-                  >
-                    <span className="text-3xl">🏫</span>
-                    <span className="text-sm font-semibold text-center truncate w-full" style={{ color: "var(--text-primary)" }}>Sinflar</span>
-                    <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{classList.length} ta sinf</span>
-                  </button>
 
-                  {/* Custom folders */}
-                  {sortedFolders.map((folder) => (
-                    <div
-                      key={folder.id}
-                      className="relative flex flex-col items-center gap-2 p-4 transition-all hover:scale-[1.02] active:scale-[0.98] group"
-                      style={{
-                        background: "var(--bg-card)",
-                        backdropFilter: "blur(8px)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "var(--radius-md)",
-                        boxShadow: "var(--shadow-clay-sm)",
-                      }}
-                    >
-                      {/* ⋮ Context menu */}
-                      <div className="absolute top-2 right-2" ref={menuOpenFolder === folder.id ? menuRef : undefined}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setMenuOpenFolder(menuOpenFolder === folder.id ? null : folder.id); }}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg transition-all"
-                          style={{ color: "var(--text-muted)", background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-clay-sm)" }}
-                        >
-                          <MoreVertical size={14} />
+              {/* ── Fan tanlash bosqichi (subjects view) ── */}
+              {viewingSubjectId === null ? (
+                <div className="flex-1 overflow-y-auto md:px-2">
+                  {viewMode === "grid" ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {subjectList.map(s => {
+                        const cnt = folderList.filter(f => f.subjectId === s.id).length;
+                        return (
+                          <button key={s.id} onClick={() => setViewingSubjectId(s.id)}
+                            className="flex flex-col items-center gap-2 p-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay-sm)" }}>
+                            <span className="text-3xl">{s.icon || "📖"}</span>
+                            <span className="text-sm font-semibold text-center truncate w-full" style={{ color: "var(--text-primary)" }}>{s.name}</span>
+                            <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{cnt} ta jild</span>
+                          </button>
+                        );
+                      })}
+                      {/* Fansiz jildlar */}
+                      {folderList.filter(f => !f.subjectId).length > 0 && (
+                        <button onClick={() => setViewingSubjectId("__none__")}
+                          className="flex flex-col items-center gap-2 p-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                          style={{ background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay-sm)" }}>
+                          <span className="text-3xl">📁</span>
+                          <span className="text-sm font-semibold text-center truncate w-full" style={{ color: "var(--text-muted)" }}>Fansiz jildlar</span>
+                          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{folderList.filter(f => !f.subjectId).length} ta jild</span>
                         </button>
-                        {menuOpenFolder === folder.id && (
-                          <div
-                            className="absolute right-0 top-9 z-50 animate-fade-in py-1"
-                            style={{
-                              background: "var(--bg-card-solid)",
-                              border: "1px solid var(--border)",
-                              borderRadius: "var(--radius-sm)",
-                              boxShadow: "var(--shadow-clay)",
-                              minWidth: 140,
-                            }}
-                          >
-                            <button
-                              onClick={() => { setEditingFolder(folder.id); setEditName(folder.name); setEditIcon(folder.icon ?? "📁"); setNameError(""); setMenuOpenFolder(null); }}
-                              className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
-                              style={{ color: "var(--text-primary)" }}
-                            >
-                              <Pencil size={13} /> Tahrirlash
-                            </button>
-                            <button
-                              onClick={() => { handleDeleteFolder(folder.id); setMenuOpenFolder(null); }}
-                              className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
-                              style={{ color: "var(--error)" }}
-                            >
-                              <Trash2 size={13} /> O'chirish
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {editingFolder === folder.id ? (
-                        <div className="flex flex-col items-center gap-2 w-full">
-                          <IconPicker value={editIcon} onChange={(ic) => { setEditIcon(ic); handleUpdateFolderIcon(folder.id, ic); }} size={40} />
-                          <input
-                            autoFocus
-                            value={editName}
-                            onChange={(e) => { setEditName(e.target.value); setNameError(""); }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                if (localFolderNameExists(editName.trim(), folder.id)) { setNameError("Bu nom band!"); return; }
-                                handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError("");
-                              }
-                              if (e.key === "Escape") { setEditingFolder(null); setNameError(""); }
-                            }}
-                            onBlur={() => {
-                              if (!localFolderNameExists(editName.trim(), folder.id)) {
-                                handleRenameFolder(folder.id, editName.trim(), editIcon);
-                              }
-                              setEditingFolder(null); setNameError("");
-                            }}
-                            className="clay-input w-full px-2 py-1 text-sm text-center outline-none"
-                            style={{ color: "var(--text-primary)" }}
-                          />
-                          {nameError && <p className="text-[11px] font-semibold" style={{ color: "var(--error)" }}>{nameError}</p>}
-                        </div>
-                      ) : (
-                        <Link href={`/folder/${folder.id}`} className="flex flex-col items-center gap-2 w-full">
-                          <span className="text-3xl">{folder.icon || "📁"}</span>
-                          <span className="text-sm font-semibold text-center truncate w-full" style={{ color: "var(--text-primary)" }}>{folder.name}</span>
-                          {folder.subjectName && (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
-                              {folder.subjectIcon} {folder.subjectName}
-                            </span>
-                          )}
-                          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{folder.submissionCount ?? 0} ta fayl</span>
-                        </Link>
+                      )}
+                      {subjectList.length === 0 && (
+                        <p className="col-span-2 text-sm text-center py-12" style={{ color: "var(--text-muted)" }}>Fan qo&apos;shilmagan. Admin paneldan fanlar qo&apos;shing.</p>
                       )}
                     </div>
-                  ))}
-
-                  {/* Yangi papka yaratish */}
-                  {creatingFolder ? (
-                    <div
-                      className="flex flex-col items-center justify-center gap-2 p-4"
-                      style={{
-                        background: "var(--bg-card)",
-                        border: "2px dashed var(--accent)",
-                        borderRadius: "var(--radius-md)",
-                        boxShadow: "var(--shadow-clay-sm)",
-                      }}
-                    >
-                      <IconPicker value={newFolderIcon} onChange={setNewFolderIcon} size={40} />
-                      <input
-                        autoFocus
-                        value={newFolderName}
-                        onChange={(e) => { setNewFolderName(e.target.value); setNameError(""); }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && newFolderName.trim()) {
-                            if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
-                            handleCreateFolder(newFolderName.trim(), newFolderIcon, newFolderSubject?.id);
-                            setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null);
-                          }
-                          if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null); }
-                        }}
-                        placeholder="Papka nomi..."
-                        className="clay-input w-full px-2 py-1 text-sm text-center outline-none"
-                        style={{ color: "var(--text-primary)" }}
-                      />
-                      {/* Fan tanlash */}
-                      <div className="w-full">
-                        {subjectListLoading ? (
-                          <div className="w-4 h-4 border-2 border-transparent rounded-full animate-spin mx-auto" style={{ borderTopColor: "var(--accent)" }} />
-                        ) : (
-                          <div className="flex flex-wrap gap-1 justify-center">
-                            <button onClick={() => setNewFolderSubject(null)}
-                              className="px-2 py-0.5 text-[10px] font-semibold rounded-full"
-                              style={{ background: !newFolderSubject ? "var(--accent)" : "var(--bg-primary)", color: !newFolderSubject ? "#fff" : "var(--text-muted)", border: "1px solid var(--border)" }}>
-                              Fansiz
-                            </button>
-                            {subjectList.map(s => (
-                              <button key={s.id} onClick={() => setNewFolderSubject(s)}
-                                className="px-2 py-0.5 text-[10px] font-semibold rounded-full"
-                                style={{ background: newFolderSubject?.id === s.id ? "var(--accent)" : "var(--bg-primary)", color: newFolderSubject?.id === s.id ? "#fff" : "var(--text-muted)", border: "1px solid var(--border)" }}>
-                                {s.icon} {s.name}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      {nameError && <p className="text-[11px] font-semibold" style={{ color: "var(--error)" }}>{nameError}</p>}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            if (!newFolderName.trim()) return;
-                            if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
-                            handleCreateFolder(newFolderName.trim(), newFolderIcon, newFolderSubject?.id);
-                            setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null);
-                          }}
-                          className="px-3 py-1 text-xs font-bold text-white"
-                          style={{ background: "var(--cta)", borderRadius: 8 }}
-                        >
-                          OK
-                        </button>
-                        <button
-                          onClick={() => { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null); }}
-                          className="px-3 py-1 text-xs font-bold"
-                          style={{ color: "var(--text-muted)", background: "var(--bg-card)", borderRadius: 8, border: "1px solid var(--border)" }}
-                        >
-                          Bekor
-                        </button>
-                      </div>
-                    </div>
                   ) : (
-                    <button
-                      onClick={async () => { setCreatingFolder(true); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null); setSubjectListLoading(true); const r = await fetch(\`${API}/api/subjects\`, { headers: authHeaders() }); if (r.ok) setSubjectList(await r.json()); setSubjectListLoading(false); }}
-                      className="flex flex-col items-center justify-center gap-2 p-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                      style={{
-                        background: "transparent",
-                        border: "2px dashed var(--border)",
-                        borderRadius: "var(--radius-md)",
-                      }}
-                    >
-                      <FolderPlus size={24} style={{ color: "var(--accent)" }} />
-                      <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>Yangi papka</span>
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      {subjectList.map(s => {
+                        const cnt = folderList.filter(f => f.subjectId === s.id).length;
+                        return (
+                          <button key={s.id} onClick={() => setViewingSubjectId(s.id)}
+                            className="flex items-center gap-3 px-4 py-3 transition-all hover:scale-[1.01] text-left"
+                            style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}>
+                            <span className="text-xl">{s.icon || "📖"}</span>
+                            <span className="text-sm font-semibold flex-1" style={{ color: "var(--text-primary)" }}>{s.name}</span>
+                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>{cnt} ta jild</span>
+                          </button>
+                        );
+                      })}
+                      {folderList.filter(f => !f.subjectId).length > 0 && (
+                        <button onClick={() => setViewingSubjectId("__none__")}
+                          className="flex items-center gap-3 px-4 py-3 transition-all hover:scale-[1.01] text-left"
+                          style={{ background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}>
+                          <span className="text-xl">📁</span>
+                          <span className="text-sm font-semibold flex-1" style={{ color: "var(--text-muted)" }}>Fansiz jildlar</span>
+                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>{folderList.filter(f => !f.subjectId).length} ta jild</span>
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               ) : (
-                /* List view */
-                <div className="flex flex-col gap-2">
-                  {/* Sinflar auto-folder — switches to Sinflar tab */}
-                  <button
-                    onClick={() => setActiveTab("sinflarim")}
-                    className="flex items-center gap-3 px-4 py-3 transition-all hover:scale-[1.01] text-left"
-                    style={{
-                      background: "var(--bg-card)",
-                      backdropFilter: "blur(8px)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius-sm)",
-                      boxShadow: "var(--shadow-clay-sm)",
-                    }}
-                  >
-                    <span className="text-xl">🏫</span>
-                    <span className="text-sm font-semibold flex-1" style={{ color: "var(--text-primary)" }}>Sinflar</span>
-                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>{classList.length} ta sinf</span>
-                  </button>
-
-                  {/* Custom folders */}
-                  {sortedFolders.map((folder) => (
-                    <div
-                      key={folder.id}
-                      className="flex items-center gap-3 px-4 py-3 transition-all group"
-                      style={{
-                        background: "var(--bg-card)",
-                        backdropFilter: "blur(8px)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "var(--radius-sm)",
-                        boxShadow: "var(--shadow-clay-sm)",
-                      }}
-                    >
-                      {editingFolder === folder.id ? (
-                        <>
-                          <IconPicker value={editIcon} onChange={(ic) => { setEditIcon(ic); handleUpdateFolderIcon(folder.id, ic); }} size={32} />
-                          <input
-                            autoFocus
-                            value={editName}
-                            onChange={(e) => { setEditName(e.target.value); setNameError(""); }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                if (localFolderNameExists(editName.trim(), folder.id)) { setNameError("Bu nom band!"); return; }
-                                handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError("");
-                              }
-                              if (e.key === "Escape") { setEditingFolder(null); setNameError(""); }
-                            }}
-                            onBlur={() => {
-                              if (!localFolderNameExists(editName.trim(), folder.id)) {
-                                handleRenameFolder(folder.id, editName.trim(), editIcon);
-                              }
-                              setEditingFolder(null); setNameError("");
-                            }}
-                            className="clay-input flex-1 px-2 py-1 text-sm outline-none"
-                            style={{ color: "var(--text-primary)" }}
-                          />
-                          {nameError && <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--error)" }}>{nameError}</span>}
-                        </>
-                      ) : (
-                        <>
-                        <span className="text-xl">{folder.icon || "📁"}</span>
-                        <Link href={`/folder/${folder.id}`} className="flex-1 min-w-0">
-                          <span className="text-sm font-semibold truncate block" style={{ color: "var(--text-primary)" }}>{folder.name}</span>
-                          {folder.subjectName && (
-                            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{folder.subjectIcon} {folder.subjectName}</span>
-                          )}
-                        </Link>
-                        </>
-                      )}
-                      <span className="text-xs shrink-0" style={{ color: "var(--text-muted)" }}>{folder.submissionCount ?? 0} ta fayl</span>
-                      {/* ⋮ Actions */}
-                      <div className="relative shrink-0" ref={menuOpenFolder === folder.id ? menuRef : undefined}>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setMenuOpenFolder(menuOpenFolder === folder.id ? null : folder.id); }}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg transition-all"
-                          style={{ color: "var(--text-muted)" }}
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                        {menuOpenFolder === folder.id && (
-                          <div
-                            className="absolute right-0 top-9 z-50 animate-fade-in py-1"
-                            style={{
-                              background: "var(--bg-card-solid)",
-                              border: "1px solid var(--border)",
-                              borderRadius: "var(--radius-sm)",
-                              boxShadow: "var(--shadow-clay)",
-                              minWidth: 140,
-                            }}
-                          >
-                            <button
-                              onClick={() => { setEditingFolder(folder.id); setEditName(folder.name); setEditIcon(folder.icon ?? "📁"); setNameError(""); setMenuOpenFolder(null); }}
-                              className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
-                              style={{ color: "var(--text-primary)" }}
-                            >
-                              <Pencil size={13} /> Tahrirlash
-                            </button>
-                            <button
-                              onClick={() => { handleDeleteFolder(folder.id); setMenuOpenFolder(null); }}
-                              className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
-                              style={{ color: "var(--error)" }}
-                            >
-                              <Trash2 size={13} /> O'chirish
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                /* ── Fan ichidagi jildlar ── */
+                <>
+                  {/* Header: back + subject name + search */}
+                  <div className="flex items-center gap-2 mb-3 shrink-0">
+                    <button onClick={() => { setViewingSubjectId(null); setSearch(""); }}
+                      className="w-9 h-9 flex items-center justify-center shrink-0"
+                      style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-secondary)" }}>
+                      <ChevronLeft size={16} />
+                    </button>
+                    <div className="flex items-center gap-2 px-3 py-2 flex-1"
+                      style={{ background: "var(--accent-light)", border: "1px solid var(--accent)", borderRadius: "var(--radius-sm)" }}>
+                      <span className="text-base">{viewingSubjectInfo?.icon || "📁"}</span>
+                      <span className="text-sm font-bold flex-1 truncate" style={{ color: "var(--accent)" }}>
+                        {viewingSubjectInfo?.name || "Fansiz jildlar"}
+                      </span>
                     </div>
-                  ))}
-
-                  {/* Yangi papka */}
-                  {creatingFolder ? (
-                    <div
-                      className="flex items-center gap-3 px-4 py-3"
-                      style={{
-                        background: "var(--bg-card)",
-                        border: "2px dashed var(--accent)",
-                        borderRadius: "var(--radius-sm)",
-                      }}
-                    >
-                      <IconPicker value={newFolderIcon} onChange={setNewFolderIcon} size={32} />
-                      <input
-                        autoFocus
-                        value={newFolderName}
-                        onChange={(e) => { setNewFolderName(e.target.value); setNameError(""); }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && newFolderName.trim()) {
-                            if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
-                            handleCreateFolder(newFolderName.trim(), newFolderIcon);
-                            setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
-                          }
-                          if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }
-                        }}
-                        placeholder="Papka nomi..."
-                        className="clay-input flex-1 px-2 py-1 text-sm outline-none"
-                        style={{ color: "var(--text-primary)" }}
-                      />
-                      {nameError && <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--error)" }}>{nameError}</span>}
-                      <button
-                        onClick={() => {
-                          if (!newFolderName.trim()) return;
-                          if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
-                          handleCreateFolder(newFolderName.trim(), newFolderIcon);
-                          setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
-                        }}
-                        className="px-3 py-1.5 text-xs font-bold text-white"
-                        style={{ background: "var(--cta)", borderRadius: 8 }}
-                      >
-                        OK
-                      </button>
+                    {renderSortBtn()}
+                  </div>
+                  <div className="clay-input flex items-center gap-2 px-3 py-2 mb-3 shrink-0">
+                    <Search size={14} style={{ color: "var(--text-muted)" }} />
+                    <input value={search} onChange={e => setSearch(e.target.value)}
+                      placeholder="Jild qidirish..." className="bg-transparent outline-none text-sm flex-1"
+                      style={{ color: "var(--text-primary)" }} />
+                  </div>
+                  <div className="flex-1 overflow-y-auto md:px-2">
+                  {viewMode === "grid" ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {sortedFoldersForView.map((folder) => (
+                        <div key={folder.id}
+                          className="relative flex flex-col items-center gap-2 p-4 transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                          style={{ background: "var(--bg-card)", backdropFilter: "blur(8px)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay-sm)" }}>
+                          <div className="absolute top-2 right-2" ref={menuOpenFolder === folder.id ? menuRef : undefined}>
+                            <button onClick={e => { e.stopPropagation(); setMenuOpenFolder(menuOpenFolder === folder.id ? null : folder.id); }}
+                              className="w-7 h-7 flex items-center justify-center rounded-lg transition-all"
+                              style={{ color: "var(--text-muted)", background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-clay-sm)" }}>
+                              <MoreVertical size={14} />
+                            </button>
+                            {menuOpenFolder === folder.id && (
+                              <div className="absolute right-0 top-9 z-50 animate-fade-in py-1"
+                                style={{ background: "var(--bg-card-solid)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay)", minWidth: 140 }}>
+                                <button onClick={() => { setEditingFolder(folder.id); setEditName(folder.name); setEditIcon(folder.icon ?? "📁"); setNameError(""); setMenuOpenFolder(null); }}
+                                  className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
+                                  style={{ color: "var(--text-primary)" }}>
+                                  <Pencil size={13} /> Tahrirlash
+                                </button>
+                                <button onClick={() => { handleDeleteFolder(folder.id); setMenuOpenFolder(null); }}
+                                  className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
+                                  style={{ color: "var(--error)" }}>
+                                  <Trash2 size={13} /> O&apos;chirish
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          {editingFolder === folder.id ? (
+                            <div className="flex flex-col items-center gap-2 w-full">
+                              <IconPicker value={editIcon} onChange={ic => { setEditIcon(ic); handleUpdateFolderIcon(folder.id, ic); }} size={40} />
+                              <input autoFocus value={editName}
+                                onChange={e => { setEditName(e.target.value); setNameError(""); }}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") { if (localFolderNameExists(editName.trim(), folder.id)) { setNameError("Bu nom band!"); return; } handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError(""); }
+                                  if (e.key === "Escape") { setEditingFolder(null); setNameError(""); }
+                                }}
+                                onBlur={() => { if (!localFolderNameExists(editName.trim(), folder.id)) handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError(""); }}
+                                className="clay-input w-full px-2 py-1 text-sm text-center outline-none" style={{ color: "var(--text-primary)" }} />
+                              {nameError && <p className="text-[11px] font-semibold" style={{ color: "var(--error)" }}>{nameError}</p>}
+                            </div>
+                          ) : (
+                            <Link href={`/folder/${folder.id}`} className="flex flex-col items-center gap-2 w-full">
+                              <span className="text-3xl">{folder.icon || "📁"}</span>
+                              <span className="text-sm font-semibold text-center truncate w-full" style={{ color: "var(--text-primary)" }}>{folder.name}</span>
+                              <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{folder.submissionCount ?? 0} ta fayl</span>
+                            </Link>
+                          )}
+                        </div>
+                      ))}
+                      {/* Yangi jild */}
+                      {creatingFolder ? (
+                        <div className="flex flex-col items-center justify-center gap-2 p-4"
+                          style={{ background: "var(--bg-card)", border: "2px dashed var(--accent)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay-sm)" }}>
+                          <IconPicker value={newFolderIcon} onChange={setNewFolderIcon} size={40} />
+                          <input autoFocus value={newFolderName}
+                            onChange={e => { setNewFolderName(e.target.value); setNameError(""); }}
+                            onKeyDown={e => {
+                              if (e.key === "Enter" && newFolderName.trim()) {
+                                if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
+                                handleCreateFolder(newFolderName.trim(), newFolderIcon, viewingSubjectId === "__none__" ? null : viewingSubjectId);
+                                setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
+                              }
+                              if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }
+                            }}
+                            placeholder="Jild nomi..." className="clay-input w-full px-2 py-1 text-sm text-center outline-none" style={{ color: "var(--text-primary)" }} />
+                          {nameError && <p className="text-[11px] font-semibold" style={{ color: "var(--error)" }}>{nameError}</p>}
+                          <div className="flex gap-2">
+                            <button onClick={() => {
+                              if (!newFolderName.trim()) return;
+                              if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
+                              handleCreateFolder(newFolderName.trim(), newFolderIcon, viewingSubjectId === "__none__" ? null : viewingSubjectId);
+                              setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
+                            }} className="px-3 py-1 text-xs font-bold text-white" style={{ background: "var(--cta)", borderRadius: 8 }}>OK</button>
+                            <button onClick={() => { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }}
+                              className="px-3 py-1 text-xs font-bold"
+                              style={{ color: "var(--text-muted)", background: "var(--bg-card)", borderRadius: 8, border: "1px solid var(--border)" }}>Bekor</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => { setCreatingFolder(true); setNewFolderIcon("📁"); setNameError(""); }}
+                          className="flex flex-col items-center justify-center gap-2 p-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                          style={{ background: "transparent", border: "2px dashed var(--border)", borderRadius: "var(--radius-md)" }}>
+                          <FolderPlus size={24} style={{ color: "var(--accent)" }} />
+                          <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>Yangi jild</span>
+                        </button>
+                      )}
                     </div>
                   ) : (
-                    <button
-                      onClick={async () => { setCreatingFolder(true); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null); setSubjectListLoading(true); const r = await fetch(\`${API}/api/subjects\`, { headers: authHeaders() }); if (r.ok) setSubjectList(await r.json()); setSubjectListLoading(false); }}
-                      className="flex items-center gap-3 px-4 py-3 transition-all"
-                      style={{
-                        border: "2px dashed var(--border)",
-                        borderRadius: "var(--radius-sm)",
-                      }}
-                    >
-                      <FolderPlus size={18} style={{ color: "var(--accent)" }} />
-                      <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>Yangi papka</span>
-                    </button>
+                    /* List view */
+                    <div className="flex flex-col gap-2">
+                      {sortedFoldersForView.map((folder) => (
+                        <div key={folder.id} className="flex items-center gap-3 px-4 py-3 transition-all group"
+                          style={{ background: "var(--bg-card)", backdropFilter: "blur(8px)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}>
+                          {editingFolder === folder.id ? (
+                            <>
+                              <IconPicker value={editIcon} onChange={ic => { setEditIcon(ic); handleUpdateFolderIcon(folder.id, ic); }} size={32} />
+                              <input autoFocus value={editName}
+                                onChange={e => { setEditName(e.target.value); setNameError(""); }}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") { if (localFolderNameExists(editName.trim(), folder.id)) { setNameError("Bu nom band!"); return; } handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError(""); }
+                                  if (e.key === "Escape") { setEditingFolder(null); setNameError(""); }
+                                }}
+                                onBlur={() => { if (!localFolderNameExists(editName.trim(), folder.id)) handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError(""); }}
+                                className="clay-input flex-1 px-2 py-1 text-sm outline-none" style={{ color: "var(--text-primary)" }} />
+                              {nameError && <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--error)" }}>{nameError}</span>}
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-xl">{folder.icon || "📁"}</span>
+                              <Link href={`/folder/${folder.id}`} className="flex-1 min-w-0">
+                                <span className="text-sm font-semibold truncate block" style={{ color: "var(--text-primary)" }}>{folder.name}</span>
+                              </Link>
+                            </>
+                          )}
+                          <span className="text-xs shrink-0" style={{ color: "var(--text-muted)" }}>{folder.submissionCount ?? 0} ta fayl</span>
+                          <div className="relative shrink-0" ref={menuOpenFolder === folder.id ? menuRef : undefined}>
+                            <button onClick={e => { e.stopPropagation(); setMenuOpenFolder(menuOpenFolder === folder.id ? null : folder.id); }}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg transition-all"
+                              style={{ color: "var(--text-muted)" }}>
+                              <MoreVertical size={16} />
+                            </button>
+                            {menuOpenFolder === folder.id && (
+                              <div className="absolute right-0 top-9 z-50 animate-fade-in py-1"
+                                style={{ background: "var(--bg-card-solid)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay)", minWidth: 140 }}>
+                                <button onClick={() => { setEditingFolder(folder.id); setEditName(folder.name); setEditIcon(folder.icon ?? "📁"); setNameError(""); setMenuOpenFolder(null); }}
+                                  className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
+                                  style={{ color: "var(--text-primary)" }}>
+                                  <Pencil size={13} /> Tahrirlash
+                                </button>
+                                <button onClick={() => { handleDeleteFolder(folder.id); setMenuOpenFolder(null); }}
+                                  className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
+                                  style={{ color: "var(--error)" }}>
+                                  <Trash2 size={13} /> O&apos;chirish
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {/* Yangi jild */}
+                      {creatingFolder ? (
+                        <div className="flex items-center gap-3 px-4 py-3"
+                          style={{ background: "var(--bg-card)", border: "2px dashed var(--accent)", borderRadius: "var(--radius-sm)" }}>
+                          <IconPicker value={newFolderIcon} onChange={setNewFolderIcon} size={32} />
+                          <input autoFocus value={newFolderName}
+                            onChange={e => { setNewFolderName(e.target.value); setNameError(""); }}
+                            onKeyDown={e => {
+                              if (e.key === "Enter" && newFolderName.trim()) {
+                                if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
+                                handleCreateFolder(newFolderName.trim(), newFolderIcon, viewingSubjectId === "__none__" ? null : viewingSubjectId);
+                                setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
+                              }
+                              if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }
+                            }}
+                            placeholder="Jild nomi..." className="clay-input flex-1 px-2 py-1 text-sm outline-none" style={{ color: "var(--text-primary)" }} />
+                          {nameError && <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--error)" }}>{nameError}</span>}
+                          <button onClick={() => {
+                            if (!newFolderName.trim()) return;
+                            if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
+                            handleCreateFolder(newFolderName.trim(), newFolderIcon, viewingSubjectId === "__none__" ? null : viewingSubjectId);
+                            setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
+                          }} className="px-3 py-1.5 text-xs font-bold text-white" style={{ background: "var(--cta)", borderRadius: 8 }}>OK</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => { setCreatingFolder(true); setNewFolderIcon("📁"); setNameError(""); }}
+                          className="flex items-center gap-3 px-4 py-3 transition-all"
+                          style={{ border: "2px dashed var(--border)", borderRadius: "var(--radius-sm)" }}>
+                          <FolderPlus size={18} style={{ color: "var(--accent)" }} />
+                          <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>Yangi jild</span>
+                        </button>
+                      )}
+                    </div>
                   )}
-                </div>
+                  </div>
+                </>
               )}
-              </div>
             </div>
           )}
 
