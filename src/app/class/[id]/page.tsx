@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Camera, FileText, Search, Plus, X,
-  MoreVertical, Pencil, Trash2, Check, UserPlus, Send, Timer,
+  MoreVertical, Pencil, Trash2, Check, UserPlus, Send, Timer, BookOpen, ChevronRight,
 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 import { useUserWS } from "@/lib/user-ws";
@@ -56,6 +56,15 @@ export default function ClassPage() {
   const [sendStudent, setSendStudent] = useState<ClassStudent | null>(null);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
+
+  // Fan + masala sharti modal (uy ishi tekshirish)
+  type SubjectItem = { id: string; name: string; icon: string | null };
+  const [checkStudent, setCheckStudent] = useState<ClassStudent | null>(null);
+  const [checkSubjects, setCheckSubjects] = useState<SubjectItem[]>([]);
+  const [checkLoading, setCheckLoading] = useState(false);
+  const [checkSelectedSubject, setCheckSelectedSubject] = useState<SubjectItem | null>(null);
+  const [checkCondition, setCheckCondition] = useState("");
+  const [checkStep, setCheckStep] = useState<"subject" | "condition">("subject");
 
   const { lastEvent } = useUserWS();
 
@@ -181,6 +190,31 @@ export default function ClassPage() {
   const filtered = studentList.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const openCheckModal = async (student: ClassStudent) => {
+    setActiveStudent(null);
+    setCheckStudent(student);
+    setCheckStep("subject");
+    setCheckSelectedSubject(null);
+    setCheckCondition("");
+    setCheckLoading(true);
+    const res = await fetch(`${API}/api/subjects`, { headers: authHeaders() });
+    if (res.ok) setCheckSubjects(await res.json());
+    setCheckLoading(false);
+  };
+
+  const goToCamera = (student: ClassStudent) => {
+    const params = new URLSearchParams({
+      studentId: student.id,
+      studentName: student.name,
+      camera: "1",
+    });
+    if (cls?.id) params.set("classId", cls.id);
+    if (checkSelectedSubject) params.set("subject", checkSelectedSubject.name);
+    if (checkCondition.trim()) params.set("condition", checkCondition.trim());
+    setCheckStudent(null);
+    window.location.href = `/home?${params.toString()}`;
+  };
 
   const classStudentIds = studentList.map((s) => s.id);
   const notInClass = allStudents.filter(
@@ -362,7 +396,9 @@ export default function ClassPage() {
                             <span style={{ position: "absolute", top: "50%", left: "2px", right: "2px", height: "1.5px", background: "var(--text-muted)", transform: "rotate(-35deg)", opacity: 0.5 }} />
                           )}
                         </button>
-                        <button className="flex-1 h-8 flex items-center justify-center hover:opacity-80" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff" }} title="Tekshirish">
+                        <button
+                          onClick={() => void openCheckModal(student)}
+                          className="flex-1 h-8 flex items-center justify-center hover:opacity-80" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff" }} title="Tekshirish">
                           <Camera size={14} />
                         </button>
                         <Link href="/submission/1" className="w-8 h-8 flex items-center justify-center hover:opacity-70"
@@ -420,7 +456,9 @@ export default function ClassPage() {
               </button>
             </div>
             <div className="p-4 flex flex-col gap-2">
-              <button className="flex items-center gap-3 px-4 py-3.5 font-medium text-sm" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff" }}>
+              <button
+                onClick={() => void openCheckModal(activeStudent)}
+                className="flex items-center gap-3 px-4 py-3.5 font-medium text-sm" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff" }}>
                 <Camera size={18} /> Uy ishini tekshirish
               </button>
               <button
@@ -587,6 +625,93 @@ export default function ClassPage() {
                 Chiqarish
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Fan + masala sharti modal ── */}
+      {checkStudent && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)" }}
+          onClick={(e) => e.target === e.currentTarget && setCheckStudent(null)}>
+          <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl overflow-hidden animate-fade-in"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+
+            {/* Header */}
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
+                  {checkStep === "subject" ? "Fan tanlang" : "Masala sharti"}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{checkStudent.name}</p>
+              </div>
+              <button onClick={() => setCheckStudent(null)} className="w-8 h-8 flex items-center justify-center"
+                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                <X size={15} />
+              </button>
+            </div>
+
+            {checkStep === "subject" ? (
+              /* Fan tanlash */
+              <div className="overflow-y-auto max-h-72">
+                {checkLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="w-5 h-5 border-2 border-transparent rounded-full animate-spin" style={{ borderTopColor: "var(--accent)" }} />
+                  </div>
+                ) : checkSubjects.length === 0 ? (
+                  <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>Fan topilmadi</p>
+                ) : checkSubjects.map((s) => (
+                  <button key={s.id} onClick={() => { setCheckSelectedSubject(s); setCheckStep("condition"); }}
+                    className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:opacity-80"
+                    style={{ borderBottom: "1px solid var(--border)" }}>
+                    <span className="text-xl">{s.icon || "📖"}</span>
+                    <span className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{s.name}</span>
+                    <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
+                  </button>
+                ))}
+                {/* Fan tanlamasdan to'g'ri kameraga */}
+                <button onClick={() => { setCheckSelectedSubject(null); goToCamera(checkStudent); }}
+                  className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:opacity-80">
+                  <span className="text-xl">📷</span>
+                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>Fansiz tekshirish</span>
+                  <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
+                </button>
+              </div>
+            ) : (
+              /* Masala sharti */
+              <div className="px-5 py-4 space-y-3">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium"
+                  style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
+                  <BookOpen size={14} />
+                  {checkSelectedSubject?.icon} {checkSelectedSubject?.name}
+                </div>
+                <div>
+                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>
+                    Masala sharti (ixtiyoriy)
+                  </label>
+                  <textarea
+                    autoFocus
+                    rows={4}
+                    className="w-full px-3 py-2.5 text-sm outline-none resize-none"
+                    style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
+                    placeholder="Masalan: 1-mashq a va b variantlarni ishlang..."
+                    value={checkCondition}
+                    onChange={(e) => setCheckCondition(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setCheckStep("subject")} className="px-4 py-2.5 text-sm"
+                    style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                    Orqaga
+                  </button>
+                  <button onClick={() => goToCamera(checkStudent)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold"
+                    style={{ borderRadius: "var(--radius-sm)", background: "var(--cta)", color: "#fff" }}>
+                    <Camera size={15} /> Kamera
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

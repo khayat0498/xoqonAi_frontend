@@ -62,6 +62,9 @@ export default function CameraFAB() {
   const urlStudentId   = searchParams.get("studentId");
   const urlStudentName = searchParams.get("studentName");
   const urlCamera      = searchParams.get("camera");
+  const urlClassId     = searchParams.get("classId");
+  const urlSubject     = searchParams.get("subject");
+  const urlCondition   = searchParams.get("condition");
 
   // ── Step state ──
   const [step, setStep] = useState<"idle" | "folder" | "subject" | "assignment" | "cam" | "confirm">("idle");
@@ -321,7 +324,10 @@ export default function CameraFAB() {
       const fd = new FormData();
       fd.append("image", file);
       if (prompt.trim()) fd.append("subject", prompt.trim());
+      else if (urlSubject) fd.append("subject", urlSubject);
       if (urlStudentId) fd.append("studentId", urlStudentId);
+      if (urlClassId) fd.append("classId", urlClassId);
+      if (urlCondition) fd.append("condition", urlCondition);
       if (selectedFolder) fd.append("folderId", selectedFolder.id);
       if (selectedAssignment) fd.append("assignmentId", selectedAssignment.id);
 
@@ -541,7 +547,9 @@ export default function CameraFAB() {
                 <div className="flex flex-col gap-0.5 mt-0.5">
                   {urlStudentName && <p className="text-xs" style={{ color: "var(--accent)" }}>{decodeURIComponent(urlStudentName)}</p>}
                   {selectedSubject && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{selectedSubject.icon} {selectedSubject.name}</p>}
+                  {urlSubject && !selectedSubject && <p className="text-xs" style={{ color: "var(--text-muted)" }}>📖 {urlSubject}</p>}
                   {selectedAssignment && <p className="text-xs" style={{ color: "var(--text-muted)" }}>📋 {selectedAssignment.name}</p>}
+                  {urlCondition && <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>📝 {decodeURIComponent(urlCondition)}</p>}
                 </div>
               </div>
               <div className="flex gap-2">
