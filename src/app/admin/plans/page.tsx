@@ -537,6 +537,7 @@ export default function AdminPlansPage() {
       ) : tab === "settings" ? (
         /* ── Settings tab ── */
         <div className="space-y-4">
+          {/* AI Model */}
           <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
             <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>AI Model sozlamalari</p>
             <div>
@@ -544,12 +545,12 @@ export default function AdminPlansPage() {
               <input
                 className="w-full rounded-xl px-3 py-2.5 text-sm outline-none font-mono"
                 style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
-                value={sysSettings.gemini_model ?? "gemini-1.5-flash"}
+                value={sysSettings.gemini_model ?? "gemini-3-flash-preview"}
                 onChange={e => setSysSettings(s => ({ ...s, gemini_model: e.target.value }))}
-                placeholder="gemini-1.5-flash"
+                placeholder="gemini-3-flash-preview"
               />
               <p className="text-[11px] mt-1.5" style={{ color: "var(--text-muted)" }}>
-                Mavjud modellar: gemini-1.5-flash, gemini-1.5-pro, gemini-2.0-flash
+                Mavjud modellar: gemini-3-flash-preview, gemini-1.5-flash, gemini-2.0-flash
               </p>
             </div>
             <button
@@ -566,6 +567,70 @@ export default function AdminPlansPage() {
               style={{ background: "var(--accent)", color: "#fff", opacity: settingsSaving ? 0.7 : 1 }}
             >
               {settingsSaving ? "Saqlanmoqda..." : "Saqlash"}
+            </button>
+          </div>
+
+          {/* Pay per use narxlar */}
+          <div className="rounded-2xl p-5 space-y-4" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Pay per use narxlar</p>
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>Dollar kursi (1$ = ? so'm)</label>
+                <input
+                  type="number"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+                  style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                  value={sysSettings.usd_rate_uzs ?? ""}
+                  onChange={e => setSysSettings(s => ({ ...s, usd_rate_uzs: e.target.value }))}
+                  placeholder="12800"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>Input narx ($ / 1M token)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                    value={sysSettings.gemini_input_price_usd ?? ""}
+                    onChange={e => setSysSettings(s => ({ ...s, gemini_input_price_usd: e.target.value }))}
+                    placeholder="0.10"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>Output narx ($ / 1M token)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                    value={sysSettings.gemini_output_price_usd ?? ""}
+                    onChange={e => setSysSettings(s => ({ ...s, gemini_output_price_usd: e.target.value }))}
+                    placeholder="0.40"
+                  />
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                setSettingsSaving(true);
+                await fetch(`${API}/api/balance/pricing`, {
+                  method: "POST",
+                  headers: authHeaders(),
+                  body: JSON.stringify({
+                    usdRateUzs: Number(sysSettings.usd_rate_uzs),
+                    inputPriceUsd: Number(sysSettings.gemini_input_price_usd),
+                    outputPriceUsd: Number(sysSettings.gemini_output_price_usd),
+                  }),
+                });
+                setSettingsSaving(false);
+              }}
+              disabled={settingsSaving}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
+              style={{ background: "#7C3AED", color: "#fff", opacity: settingsSaving ? 0.7 : 1 }}
+            >
+              {settingsSaving ? "Saqlanmoqda..." : "Narxlarni saqlash"}
             </button>
           </div>
         </div>

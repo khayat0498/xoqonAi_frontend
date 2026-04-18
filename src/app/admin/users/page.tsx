@@ -44,22 +44,26 @@ export default function AdminUsersPage() {
   const [planExpandedId, setPlanExpandedId] = useState<string | null>(null);
   const [grantingPlan, setGrantingPlan] = useState<string | null>(null);
   const [topupAmounts, setTopupAmounts] = useState<Record<string, string>>({});
+  const [topupBonuses, setTopupBonuses] = useState<Record<string, string>>({});
   const [toppingUp, setToppingUp] = useState<string | null>(null);
 
   const handleTopup = async (userId: string) => {
     const amount = Number(topupAmounts[userId]);
     if (!amount || amount <= 0) return;
+    const bonus = Number(topupBonuses[userId] ?? 0);
+    const total = amount + Math.floor(amount * bonus / 100);
     setToppingUp(userId);
     try {
       await fetch(`${API}/api/balance/topup`, {
         method: "POST",
         headers: h(),
-        body: JSON.stringify({ userId, amountUzs: amount, note: "Admin to'ldirish" }),
+        body: JSON.stringify({ userId, amountUzs: amount, bonusPercent: bonus }),
       });
       setUsers((prev) => prev.map((u) =>
-        u.id === userId ? { ...u, balanceUzs: (u.balanceUzs ?? 0) + amount } : u
+        u.id === userId ? { ...u, balanceUzs: (u.balanceUzs ?? 0) + total } : u
       ));
       setTopupAmounts((prev) => ({ ...prev, [userId]: "" }));
+      setTopupBonuses((prev) => ({ ...prev, [userId]: "" }));
     } finally {
       setToppingUp(null);
     }
@@ -379,26 +383,46 @@ export default function AdminUsersPage() {
                     </div>
                     {/* Pay per use topup */}
                     {(user.planKey === "pay_per_use") && (
-                      <div className="flex items-center gap-2 pt-1">
-                        <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "var(--bg-primary)", border: "1px solid #7C3AED" }}>
-                          <input
-                            type="number"
-                            placeholder="Miqdor (so'm)"
-                            value={topupAmounts[user.id] ?? ""}
-                            onChange={(e) => setTopupAmounts((prev) => ({ ...prev, [user.id]: e.target.value }))}
-                            className="flex-1 bg-transparent outline-none text-sm"
-                            style={{ color: "var(--text-primary)" }}
-                          />
-                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>so'm</span>
+                      <div className="space-y-2 pt-1">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "var(--bg-primary)", border: "1px solid #7C3AED" }}>
+                            <input
+                              type="number"
+                              placeholder="Miqdor"
+                              value={topupAmounts[user.id] ?? ""}
+                              onChange={(e) => setTopupAmounts((prev) => ({ ...prev, [user.id]: e.target.value }))}
+                              className="flex-1 bg-transparent outline-none text-sm"
+                              style={{ color: "var(--text-primary)" }}
+                            />
+                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>so'm</span>
+                          </div>
+                          <div className="flex items-center gap-1 px-3 py-2 rounded-lg w-20" style={{ background: "var(--bg-primary)", border: "1px solid var(--border)" }}>
+                            <input
+                              type="number"
+                              placeholder="0"
+                              min={0}
+                              max={100}
+                              value={topupBonuses[user.id] ?? ""}
+                              onChange={(e) => setTopupBonuses((prev) => ({ ...prev, [user.id]: e.target.value }))}
+                              className="w-full bg-transparent outline-none text-sm text-center"
+                              style={{ color: "var(--text-primary)" }}
+                            />
+                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>%</span>
+                          </div>
+                          <button
+                            onClick={() => handleTopup(user.id)}
+                            disabled={!!toppingUp || !topupAmounts[user.id]}
+                            className="px-4 py-2 text-xs font-bold rounded-lg"
+                            style={{ background: "#7C3AED", color: "#fff", opacity: toppingUp === user.id ? 0.7 : 1 }}
+                          >
+                            {toppingUp === user.id ? "..." : "Qo'shish"}
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleTopup(user.id)}
-                          disabled={!!toppingUp || !topupAmounts[user.id]}
-                          className="px-4 py-2 text-xs font-bold rounded-lg"
-                          style={{ background: "#7C3AED", color: "#fff", opacity: toppingUp === user.id ? 0.7 : 1 }}
-                        >
-                          {toppingUp === user.id ? "..." : "Qo'shish"}
-                        </button>
+                        {topupAmounts[user.id] && Number(topupBonuses[user.id]) > 0 && (
+                          <p className="text-[11px] px-1" style={{ color: "#7C3AED" }}>
+                            {Number(topupAmounts[user.id]).toLocaleString()} + {Number(topupBonuses[user.id])}% bonus = {(Number(topupAmounts[user.id]) + Math.floor(Number(topupAmounts[user.id]) * Number(topupBonuses[user.id]) / 100)).toLocaleString()} so'm
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
