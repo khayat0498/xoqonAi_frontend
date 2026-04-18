@@ -171,7 +171,10 @@ function HomePageInner() {
         const data = await studentRes.json();
         setStudentList(data.students ?? []);
       }
-      if (subjectsRes.ok) setSubjectList(await subjectsRes.json());
+      if (subjectsRes.ok) {
+        const data = await subjectsRes.json();
+        setSubjectList([{ id: "__general__", name: "Umumiy", icon: "📚" }, ...data]);
+      }
       await refreshFolders();
       // Initial notifications: recent done/failed submissions
       const notifRes = await fetch(`${API}/api/submissions?limit=15`, { headers: authHeaders() });
@@ -328,12 +331,15 @@ function HomePageInner() {
   );
 
   // Subject-first folder navigation helpers
-  const viewingSubjectInfo = viewingSubjectId && viewingSubjectId !== "__none__"
+  const isGeneralView = (id: string | null) => id === "__none__" || id === "__general__";
+  const viewingSubjectInfo = viewingSubjectId && !isGeneralView(viewingSubjectId)
     ? subjectList.find(s => s.id === viewingSubjectId) ?? null
+    : viewingSubjectId === "__general__"
+    ? { id: "__general__", name: "Umumiy", icon: "📚" }
     : null;
   const foldersForView = viewingSubjectId === null
     ? []
-    : viewingSubjectId === "__none__"
+    : isGeneralView(viewingSubjectId)
     ? folderList.filter(f => !f.subjectId)
     : folderList.filter(f => f.subjectId === viewingSubjectId);
   const sortedFoldersForView = sortItems(
@@ -796,7 +802,7 @@ function HomePageInner() {
                   {viewMode === "grid" ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {subjectList.map(s => {
-                        const cnt = folderList.filter(f => f.subjectId === s.id).length;
+                        const cnt = s.id === "__general__" ? folderList.filter(f => !f.subjectId).length : folderList.filter(f => f.subjectId === s.id).length;
                         return (
                           <button key={s.id} onClick={() => setViewingSubjectId(s.id)}
                             className="flex flex-col items-center gap-2 p-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
@@ -807,16 +813,6 @@ function HomePageInner() {
                           </button>
                         );
                       })}
-                      {/* Fansiz jildlar */}
-                      {folderList.filter(f => !f.subjectId).length > 0 && (
-                        <button onClick={() => setViewingSubjectId("__none__")}
-                          className="flex flex-col items-center gap-2 p-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                          style={{ background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay-sm)" }}>
-                          <span className="text-3xl">📁</span>
-                          <span className="text-sm font-semibold text-center truncate w-full" style={{ color: "var(--text-muted)" }}>Fansiz jildlar</span>
-                          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{folderList.filter(f => !f.subjectId).length} ta jild</span>
-                        </button>
-                      )}
                       {subjectList.length === 0 && (
                         <p className="col-span-2 text-sm text-center py-12" style={{ color: "var(--text-muted)" }}>Fan qo&apos;shilmagan. Admin paneldan fanlar qo&apos;shing.</p>
                       )}
@@ -824,7 +820,7 @@ function HomePageInner() {
                   ) : (
                     <div className="flex flex-col gap-2">
                       {subjectList.map(s => {
-                        const cnt = folderList.filter(f => f.subjectId === s.id).length;
+                        const cnt = s.id === "__general__" ? folderList.filter(f => !f.subjectId).length : folderList.filter(f => f.subjectId === s.id).length;
                         return (
                           <button key={s.id} onClick={() => setViewingSubjectId(s.id)}
                             className="flex items-center gap-3 px-4 py-3 transition-all hover:scale-[1.01] text-left"
@@ -835,15 +831,6 @@ function HomePageInner() {
                           </button>
                         );
                       })}
-                      {folderList.filter(f => !f.subjectId).length > 0 && (
-                        <button onClick={() => setViewingSubjectId("__none__")}
-                          className="flex items-center gap-3 px-4 py-3 transition-all hover:scale-[1.01] text-left"
-                          style={{ background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}>
-                          <span className="text-xl">📁</span>
-                          <span className="text-sm font-semibold flex-1" style={{ color: "var(--text-muted)" }}>Fansiz jildlar</span>
-                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>{folderList.filter(f => !f.subjectId).length} ta jild</span>
-                        </button>
-                      )}
                     </div>
                   )}
                 </div>
@@ -861,7 +848,7 @@ function HomePageInner() {
                       style={{ background: "var(--accent-light)", border: "1px solid var(--accent)", borderRadius: "var(--radius-sm)" }}>
                       <span className="text-base">{viewingSubjectInfo?.icon || "📁"}</span>
                       <span className="text-sm font-bold flex-1 truncate" style={{ color: "var(--accent)" }}>
-                        {viewingSubjectInfo?.name || "Fansiz jildlar"}
+                        {viewingSubjectInfo?.name || "Umumiy"}
                       </span>
                     </div>
                     {renderSortBtn()}
@@ -933,7 +920,7 @@ function HomePageInner() {
                             onKeyDown={e => {
                               if (e.key === "Enter" && newFolderName.trim()) {
                                 if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
-                                handleCreateFolder(newFolderName.trim(), newFolderIcon, viewingSubjectId === "__none__" ? null : viewingSubjectId);
+                                handleCreateFolder(newFolderName.trim(), newFolderIcon, isGeneralView(viewingSubjectId) ? null : viewingSubjectId);
                                 setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
                               }
                               if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }
@@ -944,7 +931,7 @@ function HomePageInner() {
                             <button onClick={() => {
                               if (!newFolderName.trim()) return;
                               if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
-                              handleCreateFolder(newFolderName.trim(), newFolderIcon, viewingSubjectId === "__none__" ? null : viewingSubjectId);
+                              handleCreateFolder(newFolderName.trim(), newFolderIcon, isGeneralView(viewingSubjectId) ? null : viewingSubjectId);
                               setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
                             }} className="px-3 py-1 text-xs font-bold text-white" style={{ background: "var(--cta)", borderRadius: 8 }}>OK</button>
                             <button onClick={() => { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }}
@@ -1023,7 +1010,7 @@ function HomePageInner() {
                             onKeyDown={e => {
                               if (e.key === "Enter" && newFolderName.trim()) {
                                 if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
-                                handleCreateFolder(newFolderName.trim(), newFolderIcon, viewingSubjectId === "__none__" ? null : viewingSubjectId);
+                                handleCreateFolder(newFolderName.trim(), newFolderIcon, isGeneralView(viewingSubjectId) ? null : viewingSubjectId);
                                 setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
                               }
                               if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }
@@ -1033,7 +1020,7 @@ function HomePageInner() {
                           <button onClick={() => {
                             if (!newFolderName.trim()) return;
                             if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
-                            handleCreateFolder(newFolderName.trim(), newFolderIcon, viewingSubjectId === "__none__" ? null : viewingSubjectId);
+                            handleCreateFolder(newFolderName.trim(), newFolderIcon, isGeneralView(viewingSubjectId) ? null : viewingSubjectId);
                             setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
                           }} className="px-3 py-1.5 text-xs font-bold text-white" style={{ background: "var(--cta)", borderRadius: 8 }}>OK</button>
                         </div>

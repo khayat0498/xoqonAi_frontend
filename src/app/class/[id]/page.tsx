@@ -91,8 +91,9 @@ export default function ClassPage() {
       }
       if (subjectsRes.ok) {
         const data = await subjectsRes.json();
-        setSessionSubjects(data);
-        setSendSubjects(data);
+        const withGeneral = [{ id: "__general__", name: "Umumiy", icon: "📚" }, ...data];
+        setSessionSubjects(withGeneral);
+        setSendSubjects(withGeneral);
       }
     }
     load();
