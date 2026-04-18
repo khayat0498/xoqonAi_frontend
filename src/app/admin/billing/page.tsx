@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getToken } from "@/lib/auth";
 import { DollarSign, Coins, Search, X } from "lucide-react";
-import { useDebounce } from "@/lib/hooks/useDebounce"; // Assuming a debounce hook exists
+import { useDebounce } from "@/lib/hooks/useDebounce";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -11,55 +11,84 @@ const API = process.env.NEXT_PUBLIC_API_URL;
 function UserSearch({ onSelectUser }: { onSelectUser: (user: { id: string; name: string; email: string }) => void }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const debouncedQuery = useDebounce(query, 300);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const fetchUsers = useCallback(async (q: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/api/users/search?q=${q}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const data = await res.json();
+      setResults(data);
+    } catch (error) {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (debouncedQuery.length < 2) {
+    if (!isOpen) return;
+    // Don't search for 1 char, but do search for empty (on initial focus)
+    if (debouncedQuery.length === 1) {
       setResults([]);
       return;
     }
-    setLoading(true);
-    fetch(`${API}/api/users/search?q=${debouncedQuery}`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    })
-      .then(res => res.json())
-      .then(data => setResults(data))
-      .finally(() => setLoading(false));
-  }, [debouncedQuery]);
+    fetchUsers(debouncedQuery);
+  }, [debouncedQuery, isOpen, fetchUsers]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSelect = (user: any) => {
     onSelectUser(user);
     setQuery("");
-    setResults([]);
+    setIsOpen(false);
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <Input
         type="text"
         placeholder="Ism yoki email bo'yicha qidirish..."
         value={query}
         onChange={e => setQuery(e.target.value)}
+        onFocus={() => setIsOpen(true)}
       />
-      {results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 p-2 rounded-lg z-10" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-          {results.map(user => (
-            <div
-              key={user.id}
-              onClick={() => handleSelect(user)}
-              className="p-2 text-sm hover:bg-[var(--bg-primary)] rounded-md cursor-pointer"
-            >
-              <p className="font-medium" style={{ color: "var(--text-primary)" }}>{user.name}</p>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>{user.email}</p>
-            </div>
-          ))}
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1 p-2 rounded-lg z-10 max-h-60 overflow-y-auto" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          {loading ? (
+            <div className="p-2 text-center text-xs text-slate-400">Yuklanmoqda...</div>
+          ) : results.length > 0 ? (
+            results.map(user => (
+              <div
+                key={user.id}
+                onClick={() => handleSelect(user)}
+                className="p-2 text-sm hover:bg-[var(--bg-primary)] rounded-md cursor-pointer"
+              >
+                <p className="font-medium" style={{ color: "var(--text-primary)" }}>{user.name}</p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>{user.email}</p>
+              </div>
+            ))
+          ) : (
+            <div className="p-2 text-center text-xs text-slate-400">Natija topilmadi</div>
+          )}
         </div>
       )}
     </div>
   );
 }
-
 
 function Section({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) {
   return (
