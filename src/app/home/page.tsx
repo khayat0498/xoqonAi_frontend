@@ -1408,6 +1408,14 @@ function HomePageInner() {
                           </div>
                           <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{cls.createdAt?.slice(0, 10)}</span>
                         </Link>
+                        <Link
+                          href={`/class/${cls.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold transition-all hover:opacity-80 mt-1"
+                          style={{ background: "var(--cta)", color: "#fff", borderRadius: "var(--radius-sm)" }}
+                        >
+                          <Camera size={12} /> Tekshirish
+                        </Link>
                       )}
                     </div>
                   ))}
@@ -1466,6 +1474,14 @@ function HomePageInner() {
                           <span className="text-xs font-semibold px-2.5 py-1 shrink-0" style={{ color: "var(--accent)", background: "var(--accent-light)", borderRadius: 8 }}>
                             {cls.studentCount}
                           </span>
+                          <Link
+                            href={`/class/${cls.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-8 h-8 flex items-center justify-center shrink-0 hover:opacity-80 transition-all"
+                            style={{ background: "var(--cta)", borderRadius: "var(--radius-sm)", color: "#fff" }}
+                          >
+                            <Camera size={14} />
+                          </Link>
                         </>
                       )}
                       {/* ⋮ Actions */}
