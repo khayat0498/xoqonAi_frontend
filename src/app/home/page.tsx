@@ -41,13 +41,21 @@ function HomePageInner() {
   const [planKey, setPlanKey] = useState("free");
   const [used, setUsed] = useState(0);
   const [limit, setLimit] = useState(60);
+  const [balanceUzs, setBalanceUzs] = useState<number | null>(null);
 
   useEffect(() => {
     const token = getToken();
     if (!token) return;
     const h = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
     fetch(`${API}/api/billing/my-plan`, { headers: h })
-      .then((r) => r.json()).then((d) => setPlanKey(d.planKey ?? "free")).catch(() => {});
+      .then((r) => r.json()).then((d) => {
+        const key = d.planKey ?? "free";
+        setPlanKey(key);
+        if (key === "pay_per_use") {
+          fetch(`${API}/api/balance/me`, { headers: h })
+            .then((r) => r.json()).then((b) => setBalanceUzs(b.balanceUzs ?? 0)).catch(() => {});
+        }
+      }).catch(() => {});
     fetch(`${API}/api/submissions/usage/me`, { headers: h })
       .then((r) => r.json()).then((d) => { setUsed(d.used ?? 0); setLimit(d.limit ?? 60); }).catch(() => {});
   }, []);
@@ -56,6 +64,7 @@ function HomePageInner() {
     if (!lastEvent) return;
     if (lastEvent.type === "plan_updated") setPlanKey(lastEvent.data.planKey);
     if (lastEvent.type === "usage_updated") { setUsed(lastEvent.data.used); setLimit(lastEvent.data.limit); }
+    if (lastEvent.type === "balance_updated") setBalanceUzs(lastEvent.data.balanceUzs);
     if (lastEvent.type === "submission_done") {
       const done = { ...lastEvent.data, status: lastEvent.data.failed ? "failed" : "done" };
       setNotifications((prev) => {
@@ -485,7 +494,9 @@ function HomePageInner() {
             </h1>
             {/* Usage — desktop */}
             <p className="hidden md:block text-xs mt-1 font-semibold tabular-nums" style={{ color: "var(--text-muted)" }}>
-              {used} / {limit >= 99999 ? "∞" : limit} ta tekshiruv
+              {planKey === "pay_per_use"
+                ? `${(balanceUzs ?? 0).toLocaleString()} so'm`
+                : `${used} / ${limit >= 99999 ? "∞" : limit} ta tekshiruv`}
             </p>
             {/* Inline stats — mobile only */}
             <div className="flex items-center gap-3 mt-2 md:hidden flex-wrap">
@@ -537,7 +548,9 @@ function HomePageInner() {
                 border: `1px solid ${PLAN_LABEL[planKey]?.color ?? "var(--border)"}`,
               }}
             >
-              {PLAN_LABEL[planKey]?.label ?? "Free"} · {used}/{limit >= 99999 ? "∞" : limit}
+              {planKey === "pay_per_use"
+                ? `${(balanceUzs ?? 0).toLocaleString()} so'm`
+                : `${PLAN_LABEL[planKey]?.label ?? "Free"} · ${used}/${limit >= 99999 ? "∞" : limit}`}
             </Link>
             <div className="flex items-center gap-2">
               {/* Bell */}

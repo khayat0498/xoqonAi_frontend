@@ -20,6 +20,8 @@ type UserItem = {
   emailVerified: boolean;
   blocked?: boolean;
   createdAt: string;
+  planKey?: string | null;
+  balanceUzs?: number | null;
 };
 
 type Pagination = { page: number; limit: number; total: number; totalPages: number };
@@ -41,6 +43,27 @@ export default function AdminUsersPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [planExpandedId, setPlanExpandedId] = useState<string | null>(null);
   const [grantingPlan, setGrantingPlan] = useState<string | null>(null);
+  const [topupAmounts, setTopupAmounts] = useState<Record<string, string>>({});
+  const [toppingUp, setToppingUp] = useState<string | null>(null);
+
+  const handleTopup = async (userId: string) => {
+    const amount = Number(topupAmounts[userId]);
+    if (!amount || amount <= 0) return;
+    setToppingUp(userId);
+    try {
+      await fetch(`${API}/api/balance/topup`, {
+        method: "POST",
+        headers: h(),
+        body: JSON.stringify({ userId, amountUzs: amount, note: "Admin to'ldirish" }),
+      });
+      setUsers((prev) => prev.map((u) =>
+        u.id === userId ? { ...u, balanceUzs: (u.balanceUzs ?? 0) + amount } : u
+      ));
+      setTopupAmounts((prev) => ({ ...prev, [userId]: "" }));
+    } finally {
+      setToppingUp(null);
+    }
+  };
 
   const PLAN_OPTIONS = [
     { key: "free",        label: "Free",        color: "var(--text-muted)",  bg: "var(--bg-primary)" },
@@ -226,6 +249,19 @@ export default function AdminUsersPage() {
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{ background: rc.bg, color: rc.color }}>
                         {rc.label}
                       </span>
+                      {user.planKey && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{
+                          background: user.planKey === "pay_per_use" ? "#EDE9FE" : user.planKey === "premium" ? "var(--warning-bg)" : user.planKey === "pro" ? "var(--accent-light)" : "var(--bg-primary)",
+                          color: user.planKey === "pay_per_use" ? "#7C3AED" : user.planKey === "premium" ? "var(--warning)" : user.planKey === "pro" ? "var(--accent)" : "var(--text-muted)",
+                        }}>
+                          {user.planKey === "pay_per_use" ? "Pay per use" : user.planKey}
+                        </span>
+                      )}
+                      {user.planKey === "pay_per_use" && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={{ background: "var(--bg-primary)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                          {(user.balanceUzs ?? 0).toLocaleString()} so'm
+                        </span>
+                      )}
                       {user.blocked && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{ background: "#FEF2F2", color: "var(--error)" }}>
                           Bloklangan
@@ -327,18 +363,44 @@ export default function AdminUsersPage() {
 
                 {/* Plan selector */}
                 {planExpandedId === user.id && !isMe && (
-                  <div className="px-3 pb-3 flex flex-wrap gap-2">
-                    {PLAN_OPTIONS.map((p) => (
-                      <button
-                        key={p.key}
-                        onClick={() => handleGrantPlan(user.id, p.key)}
-                        disabled={!!grantingPlan}
-                        className="flex-1 py-2 text-xs font-bold rounded-lg transition-all"
-                        style={{ background: p.bg, color: p.color, border: `1px solid ${p.color}`, minWidth: 80 }}
-                      >
-                        {grantingPlan === p.key ? "..." : p.label}
-                      </button>
-                    ))}
+                  <div className="px-3 pb-3 flex flex-col gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {PLAN_OPTIONS.map((p) => (
+                        <button
+                          key={p.key}
+                          onClick={() => handleGrantPlan(user.id, p.key)}
+                          disabled={!!grantingPlan}
+                          className="flex-1 py-2 text-xs font-bold rounded-lg transition-all"
+                          style={{ background: p.bg, color: p.color, border: `1px solid ${p.color}`, minWidth: 80 }}
+                        >
+                          {grantingPlan === p.key ? "..." : p.label}
+                        </button>
+                      ))}
+                    </div>
+                    {/* Pay per use topup */}
+                    {(user.planKey === "pay_per_use") && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "var(--bg-primary)", border: "1px solid #7C3AED" }}>
+                          <input
+                            type="number"
+                            placeholder="Miqdor (so'm)"
+                            value={topupAmounts[user.id] ?? ""}
+                            onChange={(e) => setTopupAmounts((prev) => ({ ...prev, [user.id]: e.target.value }))}
+                            className="flex-1 bg-transparent outline-none text-sm"
+                            style={{ color: "var(--text-primary)" }}
+                          />
+                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>so'm</span>
+                        </div>
+                        <button
+                          onClick={() => handleTopup(user.id)}
+                          disabled={!!toppingUp || !topupAmounts[user.id]}
+                          className="px-4 py-2 text-xs font-bold rounded-lg"
+                          style={{ background: "#7C3AED", color: "#fff", opacity: toppingUp === user.id ? 0.7 : 1 }}
+                        >
+                          {toppingUp === user.id ? "..." : "Qo'shish"}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

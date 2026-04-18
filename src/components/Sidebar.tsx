@@ -46,6 +46,8 @@ export default function Sidebar() {
   const [used, setUsed] = useState<number | null>(null);
   const [limit, setLimit] = useState<number>(60);
   const [planKey, setPlanKey] = useState("free");
+  const [balanceUzs, setBalanceUzs] = useState<number | null>(null);
+
 
   useEffect(() => {
     const token = getToken();
@@ -59,6 +61,10 @@ export default function Sidebar() {
       .then((r) => r.json())
       .then((d) => { setUsed(d.used ?? 0); setLimit(d.limit ?? 60); })
       .catch(() => {});
+    fetch(`${API}/api/balance/me`, { headers: h })
+      .then((r) => r.json())
+      .then((d) => setBalanceUzs(d.balanceUzs ?? null))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -69,6 +75,9 @@ export default function Sidebar() {
     }
     if (lastEvent.type === "plan_updated") {
       setPlanKey(lastEvent.data.planKey);
+    }
+    if (lastEvent.type === "balance_updated") {
+      setBalanceUzs(lastEvent.data.balanceUzs);
     }
   }, [lastEvent]);
 
@@ -298,9 +307,9 @@ export default function Sidebar() {
                     {user?.name ?? ""}
                   </p>
                   <p className="text-[0.68rem] font-bold uppercase tracking-wide" style={{
-                    color: planKey === "premium" ? "var(--warning)" : planKey === "pro" ? "var(--accent)" : "var(--text-muted)"
+                    color: planKey === "premium" ? "var(--warning)" : planKey === "pro" ? "var(--accent)" : planKey === "pay_per_use" ? "var(--success)" : "var(--text-muted)"
                   }}>
-                    {planKey === "premium" ? "Premium" : planKey === "pro" ? "Pro" : "Free"}
+                    {planKey === "premium" ? "Premium" : planKey === "pro" ? "Pro" : planKey === "pay_per_use" ? "Pay per use" : "Free"}
                   </p>
                 </>
               )}
@@ -309,8 +318,29 @@ export default function Sidebar() {
         </div>
       </div>
 
+      {/* Balance bar (Pay-per-use) */}
+      {!collapsed && planKey === 'pay_per_use' && balanceUzs !== null && (
+        <Link
+          href="/billing"
+          className="mx-3 mb-3 p-3 rounded-xl block transition-all hover:opacity-80"
+          style={{ background: "var(--bg-primary)", border: "1px solid var(--border)" }}
+        >
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[0.67rem] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Balans
+            </span>
+            <span className="text-[0.75rem] font-bold tabular-nums" style={{ color: "var(--accent)" }}>
+              {new Intl.NumberFormat('uz-UZ').format(balanceUzs)} UZS
+            </span>
+          </div>
+          <div className="text-[0.7rem] text-right" style={{ color: "var(--text-muted)" }}>
+            Hisobni to'ldirish →
+          </div>
+        </Link>
+      )}
+
       {/* Usage bar */}
-      {!collapsed && used !== null && limit < 99999 && (
+      {!collapsed && planKey !== 'pay_per_use' && used !== null && limit < 99999 && (
         <Link
           href="/billing"
           className="mx-3 mb-3 p-3 rounded-xl block transition-all hover:opacity-80"

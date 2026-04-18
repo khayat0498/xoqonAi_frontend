@@ -202,7 +202,7 @@ export default function HistoryPage() {
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         {item.costUzs ? (
                           <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-                            {item.costUzs.toLocaleString()} so'm
+                            {item.costUzs.toLocaleString()}uzs
                           </span>
                         ) : (
                           <span className="text-xs" style={{ color: "var(--text-muted)" }}>—</span>
