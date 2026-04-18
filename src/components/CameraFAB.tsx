@@ -50,7 +50,7 @@ function enhanceImage(canvas: HTMLCanvasElement): HTMLCanvasElement {
   return out;
 }
 
-type Folder = { id: string; name: string; icon?: string | null };
+type Folder = { id: string; name: string; icon?: string | null; subjectId?: string | null; subjectName?: string | null; subjectIcon?: string | null };
 type Subject = { id: string; name: string; icon: string | null; prompt: string };
 type Assignment = { id: string; name: string; condition: string };
 
@@ -132,13 +132,22 @@ export default function CameraFAB() {
     setLoading(false);
   }
 
-  // ── Step: subject ──
+  // ── Step: folder tanlanganda — subject biriktirilgan bo'lsa o'tkazib yuboramiz ──
   async function selectFolder(folder: Folder) {
     setSelectedFolder(folder);
-    setStep("subject");
     setLoading(true);
-    const res = await fetch(`${API}/api/subjects?folderId=${folder.id}`, { headers: { Authorization: `Bearer ${getToken()}` } });
-    if (res.ok) setSubjects(await res.json());
+    if (folder.subjectId) {
+      // Folder allaqachon subjectga biriktirilgan — subject stepini o'tkazamiz
+      const fakeSubject: Subject = { id: folder.subjectId, name: folder.subjectName ?? "", icon: folder.subjectIcon ?? null, prompt: "" };
+      setSelectedSubject(fakeSubject);
+      setStep("assignment");
+      const res = await fetch(`${API}/api/assignments?subjectId=${folder.subjectId}`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (res.ok) setAssignments(await res.json());
+    } else {
+      setStep("subject");
+      const res = await fetch(`${API}/api/subjects`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (res.ok) setSubjects(await res.json());
+    }
     setLoading(false);
   }
 
@@ -386,7 +395,12 @@ export default function CameraFAB() {
                   className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-[var(--surface-hover)]"
                   style={{ borderBottom: "1px solid var(--border)" }}>
                   <span className="text-xl">{f.icon || "📁"}</span>
-                  <span className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{f.name}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{f.name}</p>
+                    {f.subjectName && (
+                      <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>{f.subjectIcon} {f.subjectName}</p>
+                    )}
+                  </div>
                   <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
                 </button>
               ))}

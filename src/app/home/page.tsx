@@ -17,7 +17,8 @@ function authHeaders() {
 
 type ClassItem = { id: string; name: string; icon: string | null; telegramGroupId: string | null; studentCount: number; createdAt: string };
 type Student = { id: string; name: string; telegramId: string | null; classCount: number; createdAt: string };
-type FolderType = { id: string; name: string; icon: string | null; createdAt: string; submissionCount: number };
+type FolderType = { id: string; name: string; icon: string | null; subjectId?: string | null; subjectName?: string | null; subjectIcon?: string | null; createdAt: string; submissionCount: number };
+type SubjectItem = { id: string; name: string; icon: string | null };
 type Submission = { id: string; studentName: string | null; subject: string | null; status: string; grade: string | null; score: number | null; folderId: string | null; createdAt: string };
 import ViewToggle from "@/components/ViewToggle";
 import IconPicker from "@/components/IconPicker";
@@ -88,6 +89,9 @@ function HomePageInner() {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderIcon, setNewFolderIcon] = useState("📁");
+  const [newFolderSubject, setNewFolderSubject] = useState<SubjectItem | null>(null);
+  const [subjectList, setSubjectList] = useState<SubjectItem[]>([]);
+  const [subjectListLoading, setSubjectListLoading] = useState(false);
   const [editIcon, setEditIcon] = useState("📁");
   const [nameError, setNameError] = useState("");
   const [menuOpenFolder, setMenuOpenFolder] = useState<string | null>(null);
@@ -224,8 +228,8 @@ function HomePageInner() {
   const localFolderNameExists = (name: string, excludeId?: string) =>
     folderList.some(f => f.id !== excludeId && f.name.toLowerCase().trim() === name.toLowerCase().trim());
 
-  const handleCreateFolder = async (name: string, icon: string) => {
-    const res = await fetch(`${API}/api/folders`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ name, icon }) });
+  const handleCreateFolder = async (name: string, icon: string, subjectId?: string | null) => {
+    const res = await fetch(`${API}/api/folders`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ name, icon, subjectId: subjectId ?? null }) });
     if (res.ok) await refreshFolders();
   };
   const handleDeleteFolder = async (id: string) => {
@@ -887,6 +891,11 @@ function HomePageInner() {
                         <Link href={`/folder/${folder.id}`} className="flex flex-col items-center gap-2 w-full">
                           <span className="text-3xl">{folder.icon || "📁"}</span>
                           <span className="text-sm font-semibold text-center truncate w-full" style={{ color: "var(--text-primary)" }}>{folder.name}</span>
+                          {folder.subjectName && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
+                              {folder.subjectIcon} {folder.subjectName}
+                            </span>
+                          )}
                           <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{folder.submissionCount ?? 0} ta fayl</span>
                         </Link>
                       )}
@@ -912,23 +921,44 @@ function HomePageInner() {
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && newFolderName.trim()) {
                             if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
-                            handleCreateFolder(newFolderName.trim(), newFolderIcon);
-                            setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
+                            handleCreateFolder(newFolderName.trim(), newFolderIcon, newFolderSubject?.id);
+                            setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null);
                           }
-                          if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }
+                          if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null); }
                         }}
                         placeholder="Papka nomi..."
                         className="clay-input w-full px-2 py-1 text-sm text-center outline-none"
                         style={{ color: "var(--text-primary)" }}
                       />
+                      {/* Fan tanlash */}
+                      <div className="w-full">
+                        {subjectListLoading ? (
+                          <div className="w-4 h-4 border-2 border-transparent rounded-full animate-spin mx-auto" style={{ borderTopColor: "var(--accent)" }} />
+                        ) : (
+                          <div className="flex flex-wrap gap-1 justify-center">
+                            <button onClick={() => setNewFolderSubject(null)}
+                              className="px-2 py-0.5 text-[10px] font-semibold rounded-full"
+                              style={{ background: !newFolderSubject ? "var(--accent)" : "var(--bg-primary)", color: !newFolderSubject ? "#fff" : "var(--text-muted)", border: "1px solid var(--border)" }}>
+                              Fansiz
+                            </button>
+                            {subjectList.map(s => (
+                              <button key={s.id} onClick={() => setNewFolderSubject(s)}
+                                className="px-2 py-0.5 text-[10px] font-semibold rounded-full"
+                                style={{ background: newFolderSubject?.id === s.id ? "var(--accent)" : "var(--bg-primary)", color: newFolderSubject?.id === s.id ? "#fff" : "var(--text-muted)", border: "1px solid var(--border)" }}>
+                                {s.icon} {s.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       {nameError && <p className="text-[11px] font-semibold" style={{ color: "var(--error)" }}>{nameError}</p>}
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
                             if (!newFolderName.trim()) return;
                             if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
-                            handleCreateFolder(newFolderName.trim(), newFolderIcon);
-                            setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
+                            handleCreateFolder(newFolderName.trim(), newFolderIcon, newFolderSubject?.id);
+                            setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null);
                           }}
                           className="px-3 py-1 text-xs font-bold text-white"
                           style={{ background: "var(--cta)", borderRadius: 8 }}
@@ -936,7 +966,7 @@ function HomePageInner() {
                           OK
                         </button>
                         <button
-                          onClick={() => { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }}
+                          onClick={() => { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null); }}
                           className="px-3 py-1 text-xs font-bold"
                           style={{ color: "var(--text-muted)", background: "var(--bg-card)", borderRadius: 8, border: "1px solid var(--border)" }}
                         >
@@ -946,7 +976,7 @@ function HomePageInner() {
                     </div>
                   ) : (
                     <button
-                      onClick={() => { setCreatingFolder(true); setNewFolderIcon("📁"); setNameError(""); }}
+                      onClick={async () => { setCreatingFolder(true); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null); setSubjectListLoading(true); const r = await fetch(\`${API}/api/subjects\`, { headers: authHeaders() }); if (r.ok) setSubjectList(await r.json()); setSubjectListLoading(false); }}
                       className="flex flex-col items-center justify-center gap-2 p-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
                       style={{
                         background: "transparent",
@@ -1022,6 +1052,9 @@ function HomePageInner() {
                         <span className="text-xl">{folder.icon || "📁"}</span>
                         <Link href={`/folder/${folder.id}`} className="flex-1 min-w-0">
                           <span className="text-sm font-semibold truncate block" style={{ color: "var(--text-primary)" }}>{folder.name}</span>
+                          {folder.subjectName && (
+                            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{folder.subjectIcon} {folder.subjectName}</span>
+                          )}
                         </Link>
                         </>
                       )}
@@ -1109,7 +1142,7 @@ function HomePageInner() {
                     </div>
                   ) : (
                     <button
-                      onClick={() => { setCreatingFolder(true); setNewFolderIcon("📁"); setNameError(""); }}
+                      onClick={async () => { setCreatingFolder(true); setNewFolderIcon("📁"); setNameError(""); setNewFolderSubject(null); setSubjectListLoading(true); const r = await fetch(\`${API}/api/subjects\`, { headers: authHeaders() }); if (r.ok) setSubjectList(await r.json()); setSubjectListLoading(false); }}
                       className="flex items-center gap-3 px-4 py-3 transition-all"
                       style={{
                         border: "2px dashed var(--border)",

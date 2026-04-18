@@ -629,90 +629,110 @@ export default function ClassPage() {
         </div>
       )}
 
-      {/* ── Fan + masala sharti modal ── */}
+      {/* ── Fan + masala sharti — FULL SCREEN ── */}
       {checkStudent && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-          style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)" }}
-          onClick={(e) => e.target === e.currentTarget && setCheckStudent(null)}>
-          <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl overflow-hidden animate-fade-in"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+        <div className="fixed inset-0 z-50 flex flex-col animate-fade-in" style={{ background: "var(--bg-primary)" }}>
 
-            {/* Header */}
-            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
-              <div>
-                <p className="font-semibold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-                  {checkStep === "subject" ? "Fan tanlang" : "Masala sharti"}
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{checkStudent.name}</p>
+          {/* Header */}
+          <div className="px-5 pt-safe-top pb-4 flex items-center gap-3 shrink-0"
+            style={{ background: "linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 100%)", paddingTop: "max(env(safe-area-inset-top), 16px)" }}>
+            <button
+              onClick={checkStep === "condition" ? () => setCheckStep("subject") : () => setCheckStudent(null)}
+              className="w-9 h-9 flex items-center justify-center rounded-xl"
+              style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
+              <ArrowLeft size={18} />
+            </button>
+            <div className="flex-1">
+              <p className="text-base font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>
+                {checkStep === "subject" ? "Fan tanlang" : "Masala sharti"}
+              </p>
+              <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
+                {checkStep === "condition" && checkSelectedSubject
+                  ? `${checkSelectedSubject.icon ?? "📖"} ${checkSelectedSubject.name} · `
+                  : ""}
+                {checkStudent.name}
+              </p>
+            </div>
+            <button onClick={() => setCheckStudent(null)} className="w-9 h-9 flex items-center justify-center rounded-xl"
+              style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
+              <X size={18} />
+            </button>
+          </div>
+
+          {checkStep === "subject" ? (
+            /* ── Fan tanlash ── */
+            <div className="flex-1 overflow-y-auto">
+              {checkLoading ? (
+                <div className="flex justify-center py-16">
+                  <div className="w-6 h-6 border-2 border-transparent rounded-full animate-spin" style={{ borderTopColor: "var(--accent)" }} />
+                </div>
+              ) : (
+                <div className="p-4 space-y-2">
+                  {checkSubjects.map((s) => (
+                    <button key={s.id}
+                      onClick={() => { setCheckSelectedSubject(s); setCheckStep("condition"); }}
+                      className="w-full flex items-center gap-4 px-5 py-4 text-left transition-all hover:opacity-80 active:scale-[0.98]"
+                      style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay-sm)" }}>
+                      <span className="text-3xl">{s.icon || "📖"}</span>
+                      <span className="flex-1 text-base font-semibold" style={{ color: "var(--text-primary)" }}>{s.name}</span>
+                      <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
+                    </button>
+                  ))}
+                  {checkSubjects.length === 0 && (
+                    <p className="text-center py-16 text-sm" style={{ color: "var(--text-muted)" }}>Fan topilmadi</p>
+                  )}
+                  {/* Fansiz tekshirish */}
+                  <button
+                    onClick={() => { setCheckSelectedSubject(null); goToCamera(checkStudent); }}
+                    className="w-full flex items-center gap-4 px-5 py-4 text-left transition-all hover:opacity-80"
+                    style={{ background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: "var(--radius-md)" }}>
+                    <span className="text-3xl">📷</span>
+                    <span className="flex-1 text-base font-medium" style={{ color: "var(--text-muted)" }}>Fansiz tekshirish</span>
+                    <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* ── Masala sharti ── */
+            <div className="flex-1 flex flex-col p-5 gap-4">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                style={{ background: "var(--accent-light)" }}>
+                <BookOpen size={18} style={{ color: "var(--accent)" }} />
+                <span className="text-sm font-bold" style={{ color: "var(--accent)" }}>
+                  {checkSelectedSubject?.icon} {checkSelectedSubject?.name}
+                </span>
               </div>
-              <button onClick={() => setCheckStudent(null)} className="w-8 h-8 flex items-center justify-center"
-                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                <X size={15} />
+              <div className="flex-1 flex flex-col">
+                <label className="text-sm font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>
+                  Masala sharti
+                </label>
+                <textarea
+                  autoFocus
+                  className="flex-1 w-full px-4 py-3 text-base outline-none resize-none"
+                  style={{
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--radius-md)",
+                    color: "var(--text-primary)",
+                    minHeight: 180,
+                  }}
+                  placeholder="Masalan: Darslik 45-bet, 3-mashq. Barcha misollarni ishlang..."
+                  value={checkCondition}
+                  onChange={(e) => setCheckCondition(e.target.value)}
+                />
+                <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+                  Ixtiyoriy — bo'sh qoldirishingiz ham mumkin
+                </p>
+              </div>
+              <button
+                onClick={() => goToCamera(checkStudent)}
+                className="w-full flex items-center justify-center gap-2 py-4 text-base font-bold rounded-2xl transition-all active:scale-[0.98]"
+                style={{ background: "var(--cta)", color: "#fff", boxShadow: "0 4px 16px rgba(104,117,245,0.35)" }}>
+                <Camera size={20} /> Kamerani ochish
               </button>
             </div>
-
-            {checkStep === "subject" ? (
-              /* Fan tanlash */
-              <div className="overflow-y-auto max-h-72">
-                {checkLoading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="w-5 h-5 border-2 border-transparent rounded-full animate-spin" style={{ borderTopColor: "var(--accent)" }} />
-                  </div>
-                ) : checkSubjects.length === 0 ? (
-                  <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>Fan topilmadi</p>
-                ) : checkSubjects.map((s) => (
-                  <button key={s.id} onClick={() => { setCheckSelectedSubject(s); setCheckStep("condition"); }}
-                    className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:opacity-80"
-                    style={{ borderBottom: "1px solid var(--border)" }}>
-                    <span className="text-xl">{s.icon || "📖"}</span>
-                    <span className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{s.name}</span>
-                    <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
-                  </button>
-                ))}
-                {/* Fan tanlamasdan to'g'ri kameraga */}
-                <button onClick={() => { setCheckSelectedSubject(null); goToCamera(checkStudent); }}
-                  className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:opacity-80">
-                  <span className="text-xl">📷</span>
-                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>Fansiz tekshirish</span>
-                  <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
-                </button>
-              </div>
-            ) : (
-              /* Masala sharti */
-              <div className="px-5 py-4 space-y-3">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium"
-                  style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
-                  <BookOpen size={14} />
-                  {checkSelectedSubject?.icon} {checkSelectedSubject?.name}
-                </div>
-                <div>
-                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>
-                    Masala sharti (ixtiyoriy)
-                  </label>
-                  <textarea
-                    autoFocus
-                    rows={4}
-                    className="w-full px-3 py-2.5 text-sm outline-none resize-none"
-                    style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
-                    placeholder="Masalan: 1-mashq a va b variantlarni ishlang..."
-                    value={checkCondition}
-                    onChange={(e) => setCheckCondition(e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setCheckStep("subject")} className="px-4 py-2.5 text-sm"
-                    style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                    Orqaga
-                  </button>
-                  <button onClick={() => goToCamera(checkStudent)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold"
-                    style={{ borderRadius: "var(--radius-sm)", background: "var(--cta)", color: "#fff" }}>
-                    <Camera size={15} /> Kamera
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
 
