@@ -1391,31 +1391,33 @@ function HomePageInner() {
                           {nameError && <p className="text-[11px] font-semibold" style={{ color: "var(--error)" }}>{nameError}</p>}
                         </div>
                       ) : (
-                        <Link href={`/class/${cls.id}`} className="flex flex-col items-center gap-2.5 w-full">
-                          <div
-                            className="w-12 h-12 flex items-center justify-center text-xl"
-                            style={{ background: "var(--accent-light)", borderRadius: "var(--radius-sm)", boxShadow: "inset -1px -1px 3px rgba(0,0,0,0.05), inset 1px 1px 3px rgba(255,255,255,0.5)" }}
-                          >
-                            {cls.icon || "🏫"}
-                          </div>
-                          <span className="text-sm font-bold text-center" style={{ color: "var(--text-primary)" }}>
-                            {cls.name} sinfi
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-semibold px-2 py-0.5" style={{ color: "var(--accent)", background: "var(--accent-light)", borderRadius: 6 }}>
-                              {cls.studentCount} o&apos;quvchi
+                        <>
+                          <Link href={`/class/${cls.id}`} className="flex flex-col items-center gap-2.5 w-full">
+                            <div
+                              className="w-12 h-12 flex items-center justify-center text-xl"
+                              style={{ background: "var(--accent-light)", borderRadius: "var(--radius-sm)", boxShadow: "inset -1px -1px 3px rgba(0,0,0,0.05), inset 1px 1px 3px rgba(255,255,255,0.5)" }}
+                            >
+                              {cls.icon || "🏫"}
+                            </div>
+                            <span className="text-sm font-bold text-center" style={{ color: "var(--text-primary)" }}>
+                              {cls.name} sinfi
                             </span>
-                          </div>
-                          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{cls.createdAt?.slice(0, 10)}</span>
-                        </Link>
-                        <Link
-                          href={`/class/${cls.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold transition-all hover:opacity-80 mt-1"
-                          style={{ background: "var(--cta)", color: "#fff", borderRadius: "var(--radius-sm)" }}
-                        >
-                          <Camera size={12} /> Tekshirish
-                        </Link>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-semibold px-2 py-0.5" style={{ color: "var(--accent)", background: "var(--accent-light)", borderRadius: 6 }}>
+                                {cls.studentCount} o&apos;quvchi
+                              </span>
+                            </div>
+                            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{cls.createdAt?.slice(0, 10)}</span>
+                          </Link>
+                          <Link
+                            href={`/class/${cls.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold transition-all hover:opacity-80 mt-1"
+                            style={{ background: "var(--cta)", color: "#fff", borderRadius: "var(--radius-sm)" }}
+                          >
+                            <Camera size={12} /> Tekshirish
+                          </Link>
+                        </>
                       )}
                     </div>
                   ))}
