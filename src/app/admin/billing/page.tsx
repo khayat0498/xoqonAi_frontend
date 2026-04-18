@@ -1,10 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getToken } from "@/lib/auth";
-import { DollarSign, User, Coins } from "lucide-react";
+import { DollarSign, Coins, Search, X } from "lucide-react";
+import { useDebounce } from "@/lib/hooks/useDebounce"; // Assuming a debounce hook exists
 
 const API = process.env.NEXT_PUBLIC_API_URL;
+
+// A new component for user search
+function UserSearch({ onSelectUser }: { onSelectUser: (user: { id: string; name: string; email: string }) => void }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const debouncedQuery = useDebounce(query, 300);
+
+  useEffect(() => {
+    if (debouncedQuery.length < 2) {
+      setResults([]);
+      return;
+    }
+    setLoading(true);
+    fetch(`${API}/api/users/search?q=${debouncedQuery}`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    })
+      .then(res => res.json())
+      .then(data => setResults(data))
+      .finally(() => setLoading(false));
+  }, [debouncedQuery]);
+
+  const handleSelect = (user: any) => {
+    onSelectUser(user);
+    setQuery("");
+    setResults([]);
+  };
+
+  return (
+    <div className="relative">
+      <Input
+        type="text"
+        placeholder="Ism yoki email bo'yicha qidirish..."
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+      />
+      {results.length > 0 && (
+        <div className="absolute top-full left-0 right-0 mt-1 p-2 rounded-lg z-10" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          {results.map(user => (
+            <div
+              key={user.id}
+              onClick={() => handleSelect(user)}
+              className="p-2 text-sm hover:bg-[var(--bg-primary)] rounded-md cursor-pointer"
+            >
+              <p className="font-medium" style={{ color: "var(--text-primary)" }}>{user.name}</p>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>{user.email}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function Section({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) {
   return (
@@ -59,8 +114,9 @@ export default function AdminBillingPage() {
   const [pricingStatus, setPricingStatus] = useState("");
 
   // Top-up state
-  const [userId, setUserId] = useState("");
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [amountUzs, setAmountUzs] = useState("");
+  const [bonusPercent, setBonusPercent] = useState("");
   const [note, setNote] = useState("");
   const [topupStatus, setTopupStatus] = useState("");
 
@@ -90,20 +146,27 @@ export default function AdminBillingPage() {
 
   const handleTopUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedUser) return;
     setTopupStatus("loading");
     try {
       const res = await fetch(`${API}/api/balance/topup`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ userId, amountUzs: Number(amountUzs), note }),
+        body: JSON.stringify({ 
+          userId: selectedUser.id,
+          amountUzs: Number(amountUzs),
+          bonusPercent: Number(bonusPercent) || 0,
+          note 
+        }),
       });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || "Server error");
       }
       setTopupStatus(`${amountUzs} so'm muvaffaqiyatli o'tkazildi!`);
-      setUserId("");
+      setSelectedUser(null);
       setAmountUzs("");
+      setBonusPercent("");
       setNote("");
       setTimeout(() => setTopupStatus(""), 4000);
     } catch (err: any) {
@@ -142,15 +205,29 @@ export default function AdminBillingPage() {
       <Section title="Foydalanuvchi balansini to'ldirish" icon={<Coins size={16} />}>
         <form onSubmit={handleTopUp} className="flex flex-col gap-4">
           <div>
-            <Label>Foydalanuvchi ID</Label>
-            <Input type="text" placeholder="UUID..." value={userId} onChange={e => setUserId(e.target.value)} required />
+            <Label>Foydalanuvchi</Label>
+            {!selectedUser ? (
+              <UserSearch onSelectUser={setSelectedUser} />
+            ) : (
+              <div className="flex items-center justify-between p-2" style={{ background: "var(--bg-primary)", borderRadius: "var(--radius-sm)" }}>
+                <div>
+                  <p className="text-sm font-medium">{selectedUser.name}</p>
+                  <p className="text-xs text-slate-500">{selectedUser.email}</p>
+                </div>
+                <button onClick={() => setSelectedUser(null)}><X size={16} /></button>
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <Label>Miqdor (so'mda)</Label>
               <Input type="number" placeholder="50000" value={amountUzs} onChange={e => setAmountUzs(e.target.value)} required />
             </div>
             <div>
+              <Label>Bonus (%)</Label>
+              <Input type="number" placeholder="0" value={bonusPercent} onChange={e => setBonusPercent(e.target.value)} />
+            </div>
+            <div className="sm:col-span-1">
               <Label>Izoh (ixtiyoriy)</Label>
               <Input type="text" placeholder="Bonus, to'lov..." value={note} onChange={e => setNote(e.target.value)} />
             </div>
@@ -159,7 +236,7 @@ export default function AdminBillingPage() {
             <p className="text-xs h-4" style={{ color: topupStatus.startsWith("Xato") ? "var(--error)" : "var(--success)" }}>
               {topupStatus === "loading" ? "O'tkazilmoqda..." : topupStatus}
             </p>
-            <Button type="submit" disabled={!userId || !amountUzs || topupStatus === "loading"}>To'ldirish</Button>
+            <Button type="submit" disabled={!selectedUser || !amountUzs || topupStatus === "loading"}>To'ldirish</Button>
           </div>
         </form>
       </Section>
