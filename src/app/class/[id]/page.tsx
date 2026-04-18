@@ -20,16 +20,6 @@ type ClassInfo = { id: string; name: string; icon: string | null; studentCount: 
 
 const avatarColors = ["#1a5c6b","#6366F1","#e8732a","#2a9d6a","#3B82F6","#8B5CF6","#EC4899","#d4a017"];
 
-const SUBJECTS = [
-  { name: "Matematika", icon: "📐" },
-  { name: "Ona tili", icon: "📖" },
-  { name: "Fizika", icon: "🔬" },
-  { name: "Ingliz tili", icon: "🌍" },
-  { name: "Kimyo", icon: "⚗️" },
-  { name: "Biologiya", icon: "🌱" },
-  { name: "Tarix", icon: "📜" },
-  { name: "Rus tili", icon: "🇷🇺" },
-];
 
 export default function ClassPage() {
   const { id } = useParams<{ id: string }>();
@@ -54,26 +44,31 @@ export default function ClassPage() {
   const [deleteId, setDeleteId]     = useState<string | null>(null);
 
   const [sendStudent, setSendStudent] = useState<ClassStudent | null>(null);
+  const [sendSubjects, setSendSubjects] = useState<SubjectItem[]>([]);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
 
-  // Fan + masala sharti modal (uy ishi tekshirish)
+  // Class-level session (fan + masala sharti)
   type SubjectItem = { id: string; name: string; icon: string | null };
-  const [checkStudent, setCheckStudent] = useState<ClassStudent | null>(null);
-  const [checkSubjects, setCheckSubjects] = useState<SubjectItem[]>([]);
-  const [checkLoading, setCheckLoading] = useState(false);
-  const [checkSelectedSubject, setCheckSelectedSubject] = useState<SubjectItem | null>(null);
-  const [checkCondition, setCheckCondition] = useState("");
-  const [checkStep, setCheckStep] = useState<"subject" | "condition">("subject");
+  const [sessionSubject, setSessionSubject] = useState<SubjectItem | null>(null);
+  const [sessionCondition, setSessionCondition] = useState("");
+  const [showSessionSetup, setShowSessionSetup] = useState(false);
+  const [sessionStep, setSessionStep] = useState<"subject" | "condition">("subject");
+  const [sessionSubjects, setSessionSubjects] = useState<SubjectItem[]>([]);
+  const [pendingStudentForCamera, setPendingStudentForCamera] = useState<ClassStudent | null>(null);
+  // Temp state while setting up session
+  const [setupSubject, setSetupSubject] = useState<SubjectItem | null>(null);
+  const [setupCondition, setSetupCondition] = useState("");
 
   const { lastEvent } = useUserWS();
 
   useEffect(() => {
     async function load() {
-      const [classRes, studentsRes, subsRes] = await Promise.all([
+      const [classRes, studentsRes, subsRes, subjectsRes] = await Promise.all([
         fetch(`${API}/api/classes/${id}`, { headers: authHeaders() }),
         fetch(`${API}/api/students`, { headers: authHeaders() }),
         fetch(`${API}/api/submissions?limit=200`, { headers: authHeaders() }),
+        fetch(`${API}/api/subjects`, { headers: authHeaders() }),
       ]);
       if (classRes.ok) {
         const data = await classRes.json();
@@ -93,6 +88,11 @@ export default function ClassPage() {
           }
         }
         setPendingCounts(counts);
+      }
+      if (subjectsRes.ok) {
+        const data = await subjectsRes.json();
+        setSessionSubjects(data);
+        setSendSubjects(data);
       }
     }
     load();
@@ -191,29 +191,51 @@ export default function ClassPage() {
     s.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const openCheckModal = async (student: ClassStudent) => {
+  const openCameraForStudent = (student: ClassStudent) => {
     setActiveStudent(null);
-    setCheckStudent(student);
-    setCheckStep("subject");
-    setCheckSelectedSubject(null);
-    setCheckCondition("");
-    setCheckLoading(true);
-    const res = await fetch(`${API}/api/subjects`, { headers: authHeaders() });
-    if (res.ok) setCheckSubjects(await res.json());
-    setCheckLoading(false);
+    if (!sessionSubject) {
+      // Need to set session first
+      setPendingStudentForCamera(student);
+      setSetupSubject(null);
+      setSetupCondition("");
+      setSessionStep("subject");
+      setShowSessionSetup(true);
+      return;
+    }
+    goDirectToCamera(student, sessionSubject, sessionCondition);
   };
 
-  const goToCamera = (student: ClassStudent) => {
+  const goDirectToCamera = (student: ClassStudent, subject: SubjectItem | null, condition: string) => {
     const params = new URLSearchParams({
       studentId: student.id,
       studentName: student.name,
       camera: "1",
     });
     if (cls?.id) params.set("classId", cls.id);
-    if (checkSelectedSubject) params.set("subject", checkSelectedSubject.name);
-    if (checkCondition.trim()) params.set("condition", checkCondition.trim());
-    setCheckStudent(null);
+    if (subject) params.set("subject", subject.name);
+    if (condition.trim()) params.set("condition", condition.trim());
     window.location.href = `/home?${params.toString()}`;
+  };
+
+  const openSessionSetup = () => {
+    setSetupSubject(sessionSubject);
+    setSetupCondition(sessionCondition);
+    setSessionStep(sessionSubject ? "condition" : "subject");
+    setPendingStudentForCamera(null);
+    setShowSessionSetup(true);
+  };
+
+  const finishSessionSetup = (overrideSubject?: SubjectItem | null, overrideCondition?: string) => {
+    const subject = overrideSubject !== undefined ? overrideSubject : setupSubject;
+    const condition = overrideCondition !== undefined ? overrideCondition : setupCondition;
+    setSessionSubject(subject);
+    setSessionCondition(condition);
+    setShowSessionSetup(false);
+    if (pendingStudentForCamera) {
+      const student = pendingStudentForCamera;
+      setPendingStudentForCamera(null);
+      goDirectToCamera(student, subject, condition);
+    }
   };
 
   const classStudentIds = studentList.map((s) => s.id);
@@ -257,6 +279,35 @@ export default function ClassPage() {
               placeholder="Qidirish..." className="flex-1 bg-transparent outline-none text-sm"
               style={{ color:"var(--text-primary)" }} />
           </div>
+        </div>
+
+        {/* Session bar */}
+        <div className="px-5 pb-3 shrink-0">
+          {sessionSubject ? (
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl"
+              style={{ background: "var(--accent-light)", border: "1px solid var(--accent)" }}>
+              <span className="text-xl">{sessionSubject.icon || "📖"}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>{sessionSubject.name}</p>
+                {sessionCondition && (
+                  <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-secondary)" }}>{sessionCondition}</p>
+                )}
+              </div>
+              <button onClick={openSessionSetup}
+                className="text-xs px-3 py-1.5 rounded-xl font-medium shrink-0"
+                style={{ background: "var(--accent)", color: "#fff" }}>
+                O&apos;zgartirish
+              </button>
+            </div>
+          ) : (
+            <button onClick={openSessionSetup}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left transition-all hover:opacity-80"
+              style={{ border: "1px dashed var(--border)", borderRadius: "var(--radius-md)", color: "var(--text-muted)" }}>
+              <Camera size={16} />
+              <span className="text-sm flex-1">Fan va masala shartini tanlang</span>
+              <ChevronRight size={14} />
+            </button>
+          )}
         </div>
 
         {/* Mobile: column headers */}
@@ -397,7 +448,7 @@ export default function ClassPage() {
                           )}
                         </button>
                         <button
-                          onClick={() => void openCheckModal(student)}
+                          onClick={() => openCameraForStudent(student)}
                           className="flex-1 h-8 flex items-center justify-center hover:opacity-80" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff" }} title="Tekshirish">
                           <Camera size={14} />
                         </button>
@@ -457,7 +508,7 @@ export default function ClassPage() {
             </div>
             <div className="p-4 flex flex-col gap-2">
               <button
-                onClick={() => void openCheckModal(activeStudent)}
+                onClick={() => openCameraForStudent(activeStudent)}
                 className="flex items-center gap-3 px-4 py-3.5 font-medium text-sm" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff" }}>
                 <Camera size={18} /> Uy ishini tekshirish
               </button>
@@ -629,61 +680,57 @@ export default function ClassPage() {
         </div>
       )}
 
-      {/* ── Fan + masala sharti — FULL SCREEN ── */}
-      {checkStudent && (
+      {/* ── Sessiya sozlash — FULL SCREEN ── */}
+      {showSessionSetup && (
         <div className="fixed inset-0 z-50 flex flex-col animate-fade-in" style={{ background: "var(--bg-primary)" }}>
 
           {/* Header */}
-          <div className="px-5 pt-safe-top pb-4 flex items-center gap-3 shrink-0"
+          <div className="px-5 pb-4 flex items-center gap-3 shrink-0"
             style={{ background: "linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 100%)", paddingTop: "max(env(safe-area-inset-top), 16px)" }}>
             <button
-              onClick={checkStep === "condition" ? () => setCheckStep("subject") : () => setCheckStudent(null)}
+              onClick={sessionStep === "condition" ? () => setSessionStep("subject") : () => { setShowSessionSetup(false); setPendingStudentForCamera(null); }}
               className="w-9 h-9 flex items-center justify-center rounded-xl"
               style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
               <ArrowLeft size={18} />
             </button>
             <div className="flex-1">
               <p className="text-base font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>
-                {checkStep === "subject" ? "Fan tanlang" : "Masala sharti"}
+                {sessionStep === "subject" ? "Fan tanlang" : "Masala sharti"}
               </p>
               <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
-                {checkStep === "condition" && checkSelectedSubject
-                  ? `${checkSelectedSubject.icon ?? "📖"} ${checkSelectedSubject.name} · `
+                {sessionStep === "condition" && setupSubject
+                  ? `${setupSubject.icon ?? "📖"} ${setupSubject.name} · `
                   : ""}
-                {checkStudent.name}
+                {cls?.name} sinfi
               </p>
             </div>
-            <button onClick={() => setCheckStudent(null)} className="w-9 h-9 flex items-center justify-center rounded-xl"
+            <button onClick={() => { setShowSessionSetup(false); setPendingStudentForCamera(null); }}
+              className="w-9 h-9 flex items-center justify-center rounded-xl"
               style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
               <X size={18} />
             </button>
           </div>
 
-          {checkStep === "subject" ? (
+          {sessionStep === "subject" ? (
             /* ── Fan tanlash ── */
             <div className="flex-1 overflow-y-auto">
-              {checkLoading ? (
-                <div className="flex justify-center py-16">
-                  <div className="w-6 h-6 border-2 border-transparent rounded-full animate-spin" style={{ borderTopColor: "var(--accent)" }} />
-                </div>
-              ) : (
-                <div className="p-4 space-y-2">
-                  {checkSubjects.map((s) => (
+              <div className="p-4 space-y-2">
+                  {sessionSubjects.map((s) => (
                     <button key={s.id}
-                      onClick={() => { setCheckSelectedSubject(s); setCheckStep("condition"); }}
+                      onClick={() => { setSetupSubject(s); setSetupCondition(""); setSessionStep("condition"); }}
                       className="w-full flex items-center gap-4 px-5 py-4 text-left transition-all hover:opacity-80 active:scale-[0.98]"
-                      style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay-sm)" }}>
+                      style={{ background: "var(--bg-card)", border: `1px solid ${setupSubject?.id === s.id ? "var(--accent)" : "var(--border)"}`, borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay-sm)" }}>
                       <span className="text-3xl">{s.icon || "📖"}</span>
                       <span className="flex-1 text-base font-semibold" style={{ color: "var(--text-primary)" }}>{s.name}</span>
                       <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
                     </button>
                   ))}
-                  {checkSubjects.length === 0 && (
+                  {sessionSubjects.length === 0 && (
                     <p className="text-center py-16 text-sm" style={{ color: "var(--text-muted)" }}>Fan topilmadi</p>
                   )}
                   {/* Fansiz tekshirish */}
                   <button
-                    onClick={() => { setCheckSelectedSubject(null); goToCamera(checkStudent); }}
+                    onClick={() => finishSessionSetup(null, "")}
                     className="w-full flex items-center gap-4 px-5 py-4 text-left transition-all hover:opacity-80"
                     style={{ background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: "var(--radius-md)" }}>
                     <span className="text-3xl">📷</span>
@@ -691,7 +738,6 @@ export default function ClassPage() {
                     <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
                   </button>
                 </div>
-              )}
             </div>
           ) : (
             /* ── Masala sharti ── */
@@ -700,7 +746,7 @@ export default function ClassPage() {
                 style={{ background: "var(--accent-light)" }}>
                 <BookOpen size={18} style={{ color: "var(--accent)" }} />
                 <span className="text-sm font-bold" style={{ color: "var(--accent)" }}>
-                  {checkSelectedSubject?.icon} {checkSelectedSubject?.name}
+                  {setupSubject?.icon} {setupSubject?.name}
                 </span>
               </div>
               <div className="flex-1 flex flex-col">
@@ -718,18 +764,18 @@ export default function ClassPage() {
                     minHeight: 180,
                   }}
                   placeholder="Masalan: Darslik 45-bet, 3-mashq. Barcha misollarni ishlang..."
-                  value={checkCondition}
-                  onChange={(e) => setCheckCondition(e.target.value)}
+                  value={setupCondition}
+                  onChange={(e) => setSetupCondition(e.target.value)}
                 />
                 <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
-                  Ixtiyoriy — bo'sh qoldirishingiz ham mumkin
+                  Ixtiyoriy — bo&apos;sh qoldirishingiz ham mumkin
                 </p>
               </div>
               <button
-                onClick={() => goToCamera(checkStudent)}
+                onClick={finishSessionSetup}
                 className="w-full flex items-center justify-center gap-2 py-4 text-base font-bold rounded-2xl transition-all active:scale-[0.98]"
                 style={{ background: "var(--cta)", color: "#fff", boxShadow: "0 4px 16px rgba(104,117,245,0.35)" }}>
-                <Camera size={20} /> Kamerani ochish
+                <Camera size={20} /> Saqlash va davom etish
               </button>
             </div>
           )}
@@ -757,7 +803,7 @@ export default function ClassPage() {
             </div>
             <div className="p-3 flex flex-col gap-1.5 max-h-72 overflow-y-auto">
               <p className="text-xs px-1 mb-0.5" style={{ color: "var(--text-muted)" }}>Mavzuni tanlang:</p>
-              {SUBJECTS.map((sub) => {
+              {sendSubjects.map((sub) => {
                 const active = selectedSubject === sub.name;
                 return (
                   <button key={sub.name} onClick={() => setSelectedSubject(sub.name)}
