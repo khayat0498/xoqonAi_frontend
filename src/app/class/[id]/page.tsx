@@ -773,7 +773,7 @@ export default function ClassPage() {
                 </p>
               </div>
               <button
-                onClick={finishSessionSetup}
+                onClick={() => finishSessionSetup()}
                 className="w-full flex items-center justify-center gap-2 py-4 text-base font-bold rounded-2xl transition-all active:scale-[0.98]"
                 style={{ background: "var(--cta)", color: "#fff", boxShadow: "0 4px 16px rgba(104,117,245,0.35)" }}>
                 <Camera size={20} /> Saqlash va davom etish
