@@ -27,6 +27,7 @@ const studentLinks = [
 const teacherLinks = [
   { href: "/home",           label: "Bosh sahifa", icon: Home },
   { href: "/home?tab=jildlar", label: "Jildlar",   icon: FolderOpen },
+  { href: "/history",        label: "Tarixlar",    icon: History },
   { href: "/schedule",       label: "Jadval",      icon: CalendarDays },
   { href: "/dashboard/stats",label: "Statistika",  icon: BarChart3 },
 ];

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, Download, Send, RotateCcw, Check } from "lucide-react";
+import { ArrowLeft, MessageCircle, Download, Send, RotateCcw, Check, X, ZoomIn } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -34,6 +34,7 @@ export default function SubmissionPage() {
   const [grade, setGrade] = useState("");
   const [gradeSaved, setGradeSaved] = useState(false);
   const [sending, setSending] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const gradeInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -139,17 +140,48 @@ export default function SubmissionPage() {
         </button>
       </div>
 
+      {/* Fullscreen rasm */}
+      {fullscreen && submission.imageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.92)" }}
+          onClick={() => setFullscreen(false)}
+        >
+          <button
+            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center z-10"
+            style={{ background: "rgba(255,255,255,0.15)", borderRadius: "50%", color: "#fff" }}
+            onClick={() => setFullscreen(false)}
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={`${API}${submission.imageUrl}`}
+            alt="Submission fullscreen"
+            className="max-w-full max-h-full object-contain"
+            style={{ touchAction: "pinch-zoom" }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 pb-8">
         <div className="max-w-xl mx-auto flex flex-col gap-3">
 
           {/* Rasm */}
           <div
-            className="card-3d aspect-[4/3] flex items-center justify-center overflow-hidden"
+            className="card-3d aspect-[4/3] flex items-center justify-center overflow-hidden relative group cursor-zoom-in"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-card)" }}
+            onClick={() => submission.imageUrl && setFullscreen(true)}
           >
             {submission.imageUrl ? (
-              <img src={`${API}${submission.imageUrl}`} alt="Submission" className="w-full h-full object-contain" />
+              <>
+                <img src={`${API}${submission.imageUrl}`} alt="Submission" className="w-full h-full object-contain" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ background: "rgba(0,0,0,0.15)" }}>
+                  <ZoomIn size={28} color="#fff" />
+                </div>
+              </>
             ) : (
               <div className="text-center" style={{ color: "var(--text-muted)" }}>
                 <span className="text-4xl">📄</span>

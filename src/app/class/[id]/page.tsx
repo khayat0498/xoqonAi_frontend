@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Camera, FileText, Search, Plus, X,
-  MoreVertical, Pencil, Trash2, Check, UserPlus, Send,
+  MoreVertical, Pencil, Trash2, Check, UserPlus, Send, Timer,
 } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useUserWS } from "@/lib/user-ws";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
@@ -54,12 +55,16 @@ export default function ClassPage() {
 
   const [sendStudent, setSendStudent] = useState<ClassStudent | null>(null);
   const [selectedSubject, setSelectedSubject] = useState("");
+  const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
+
+  const { lastEvent } = useUserWS();
 
   useEffect(() => {
     async function load() {
-      const [classRes, studentsRes] = await Promise.all([
+      const [classRes, studentsRes, subsRes] = await Promise.all([
         fetch(`${API}/api/classes/${id}`, { headers: authHeaders() }),
         fetch(`${API}/api/students`, { headers: authHeaders() }),
+        fetch(`${API}/api/submissions?limit=200`, { headers: authHeaders() }),
       ]);
       if (classRes.ok) {
         const data = await classRes.json();
@@ -70,9 +75,39 @@ export default function ClassPage() {
         const data = await studentsRes.json();
         setAllStudents(data.students ?? []);
       }
+      if (subsRes.ok) {
+        const data = await subsRes.json();
+        const counts: Record<string, number> = {};
+        for (const sub of data.data ?? []) {
+          if ((sub.status === "pending" || sub.status === "processing") && sub.studentId) {
+            counts[sub.studentId] = (counts[sub.studentId] ?? 0) + 1;
+          }
+        }
+        setPendingCounts(counts);
+      }
     }
     load();
   }, [id]);
+
+  useEffect(() => {
+    if (!lastEvent) return;
+    if (lastEvent.type === "submission_processing") {
+      const { studentId } = lastEvent.data;
+      if (studentId) {
+        setPendingCounts((prev) => ({ ...prev, [studentId]: (prev[studentId] ?? 0) + 1 }));
+      }
+    } else if (lastEvent.type === "submission_done") {
+      const { studentId } = lastEvent.data;
+      if (studentId) {
+        setPendingCounts((prev) => {
+          const next = { ...prev };
+          next[studentId] = Math.max(0, (next[studentId] ?? 0) - 1);
+          if (next[studentId] === 0) delete next[studentId];
+          return next;
+        });
+      }
+    }
+  }, [lastEvent]);
 
   /* ── Mavjud o'quvchini sinfga qo'shish ── */
   const addExisting = async (studentId: string) => {
@@ -222,7 +257,16 @@ export default function ClassPage() {
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                         style={{ background: color }}>{initials}</div>
                       <div>
-                        <p className="text-sm font-medium" style={{ color:"var(--text-primary)" }}>{student.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-medium" style={{ color:"var(--text-primary)" }}>{student.name}</p>
+                          {pendingCounts[student.id] ? (
+                            <span className="flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full"
+                              style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
+                              <Timer size={10} className="animate-pulse" />
+                              {pendingCounts[student.id]}
+                            </span>
+                          ) : null}
+                        </div>
                         <p className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color:"var(--text-muted)" }}>
                           {student.telegramId ? (
                             <Send size={10} style={{ color: "#229ED9", flexShrink: 0 }} />
@@ -277,7 +321,16 @@ export default function ClassPage() {
                   ) : (
                     <>
                       <Link href={`/student/${student.id}`} className="flex flex-col items-center text-center gap-2.5 p-5 pb-3 hover:opacity-80 transition-all">
-                        <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold" style={{ background: color }}>{initials}</div>
+                        <div className="relative">
+                          <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold" style={{ background: color }}>{initials}</div>
+                          {pendingCounts[student.id] ? (
+                            <span className="absolute -top-1 -right-1 flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-bold rounded-full"
+                              style={{ background: "var(--accent)", color: "#fff", minWidth: 20, justifyContent: "center" }}>
+                              <Timer size={9} className="animate-pulse" />
+                              {pendingCounts[student.id]}
+                            </span>
+                          ) : null}
+                        </div>
                         <div>
                           <p className="text-sm font-semibold" style={{ color:"var(--text-primary)" }}>{student.name}</p>
                           <p className="text-xs mt-0.5 flex items-center justify-center gap-1.5" style={{ color:"var(--text-muted)" }}>

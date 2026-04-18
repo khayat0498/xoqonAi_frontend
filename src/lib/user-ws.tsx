@@ -9,7 +9,9 @@ export type UserWSEvent =
   | { type: "plan_updated"; data: { planKey: string; period: string; endsAt: string } }
   | { type: "usage_updated"; data: { used: number; limit: number; allowed: boolean } }
   | { type: "plans_updated" }
-  | { type: "submission_done"; data: { id: string; grade: string | null; score: number | null; subject: string | null; failed?: boolean } }
+  | { type: "submission_done"; data: { id: string; grade: string | null; score: number | null; subject: string | null; failed?: boolean; studentId: string | null; classId: string | null } }
+  | { type: "submission_processing"; data: { id: string; studentId: string | null; classId: string | null } }
+  | { type: "balance_updated"; data: { balanceUzs: number; costUzs: number } }
   | { type: "connected" };
 
 type UserWSContextType = {
