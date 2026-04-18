@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Search, Ban, ShieldCheck, Trash2, Crown, User,
-  CheckCircle2, XCircle, ChevronLeft, ChevronRight, RefreshCw,
+  CheckCircle2, XCircle, ChevronLeft, ChevronRight, RefreshCw, CreditCard,
 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 import { useUser } from "@/lib/user-context";
@@ -39,6 +39,29 @@ export default function AdminUsersPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<UserItem | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [planExpandedId, setPlanExpandedId] = useState<string | null>(null);
+  const [grantingPlan, setGrantingPlan] = useState<string | null>(null);
+
+  const PLAN_OPTIONS = [
+    { key: "free",        label: "Free",        color: "var(--text-muted)",  bg: "var(--bg-primary)" },
+    { key: "pro",         label: "Pro",         color: "var(--accent)",      bg: "var(--accent-light)" },
+    { key: "premium",     label: "Premium",     color: "var(--warning)",     bg: "var(--warning-bg)" },
+    { key: "pay_per_use", label: "Pay per use", color: "#7C3AED",            bg: "#EDE9FE" },
+  ];
+
+  const handleGrantPlan = async (userId: string, planKey: string) => {
+    setGrantingPlan(planKey);
+    try {
+      await fetch(`${API}/api/billing/admin/grant`, {
+        method: "POST",
+        headers: h(),
+        body: JSON.stringify({ userId, planKey }),
+      });
+      setPlanExpandedId(null);
+    } finally {
+      setGrantingPlan(null);
+    }
+  };
 
   const load = useCallback(async (page = 1, q = search) => {
     setLoading(true);
@@ -243,12 +266,22 @@ export default function AdminUsersPage() {
 
                       {/* Role change toggle */}
                       <button
-                        onClick={() => setExpandedId(expanded ? null : user.id)}
+                        onClick={() => { setExpandedId(expanded ? null : user.id); setPlanExpandedId(null); }}
                         title="Role o'zgartirish"
                         className="w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:scale-105"
                         style={{ background: "#F5F3FF", color: "#8B5CF6" }}
                       >
                         <Crown size={14} />
+                      </button>
+
+                      {/* Plan berish */}
+                      <button
+                        onClick={() => { setPlanExpandedId(planExpandedId === user.id ? null : user.id); setExpandedId(null); }}
+                        title="Plan berish"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:scale-105"
+                        style={{ background: "#EDE9FE", color: "#7C3AED" }}
+                      >
+                        <CreditCard size={14} />
                       </button>
 
                       {/* Delete */}
@@ -289,6 +322,23 @@ export default function AdminUsersPage() {
                         </button>
                       );
                     })}
+                  </div>
+                )}
+
+                {/* Plan selector */}
+                {planExpandedId === user.id && !isMe && (
+                  <div className="px-3 pb-3 flex flex-wrap gap-2">
+                    {PLAN_OPTIONS.map((p) => (
+                      <button
+                        key={p.key}
+                        onClick={() => handleGrantPlan(user.id, p.key)}
+                        disabled={!!grantingPlan}
+                        className="flex-1 py-2 text-xs font-bold rounded-lg transition-all"
+                        style={{ background: p.bg, color: p.color, border: `1px solid ${p.color}`, minWidth: 80 }}
+                      >
+                        {grantingPlan === p.key ? "..." : p.label}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
