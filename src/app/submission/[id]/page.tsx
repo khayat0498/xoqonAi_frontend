@@ -35,6 +35,7 @@ export default function SubmissionPage() {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
+  const [planKey, setPlanKey] = useState("free");
   const [grade, setGrade] = useState("");
   const [gradeSaved, setGradeSaved] = useState(false);
   const [sending, setSending] = useState(false);
@@ -50,13 +51,14 @@ export default function SubmissionPage() {
   useEffect(() => {
     const token = getToken();
     if (!token) return;
-    fetch(`${API}/api/submissions/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => { setSubmission(data); setGrade(data.analysis?.grade ?? ""); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch(`${API}/api/submissions/${id}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+      fetch(`${API}/api/billing/my-plan`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : { planKey: "free" }),
+    ]).then(([data, plan]) => {
+      setSubmission(data);
+      setGrade(data.analysis?.grade ?? "");
+      setPlanKey(plan.planKey ?? "free");
+    }).catch(() => {}).finally(() => setLoading(false));
   }, [id]);
 
   // Rasmlar ro'yxati: filePaths bo'lsa ulardan, yo'q bo'lsa imageUrl dan
@@ -366,13 +368,15 @@ export default function SubmissionPage() {
             </div>
           )}
 
-          {/* Chat tugmasi */}
-          <Link href={`/chat/${submission.id}`}
-            className="flex items-center justify-center gap-2 py-3.5 font-medium text-sm transition-all hover:opacity-80"
-            style={{ background: "var(--accent)", color: "#fff", borderRadius: "var(--radius-sm)" }}>
-            <MessageCircle size={16} />
-            Batafsil tushuntirish — Chat
-          </Link>
+          {/* Chat tugmasi — faqat premium / pay_per_use */}
+          {(planKey === "premium" || planKey === "pay_per_use") && (
+            <Link href={`/chat/${submission.id}`}
+              className="flex items-center justify-center gap-2 py-3.5 font-medium text-sm transition-all hover:opacity-80"
+              style={{ background: "var(--accent)", color: "#fff", borderRadius: "var(--radius-sm)" }}>
+              <MessageCircle size={16} />
+              Batafsil tushuntirish — Chat
+            </Link>
+          )}
 
           {/* Telegram tugmasi */}
           <button onClick={sendToStudent} disabled={sending || !grade.trim() || !analysis}

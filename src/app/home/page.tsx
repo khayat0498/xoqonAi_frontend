@@ -490,7 +490,7 @@ function HomePageInner() {
             {/* Desktop: ism + plan badge yonma-yon */}
             <div className="hidden md:flex items-center gap-2">
               <h1
-                className="text-3xl font-bold"
+                className="text-3xl font-bold max-w-[70%] truncate"
                 style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.025em" }}
               >
                 {user?.name?.split(" ")[0] ?? ""}
@@ -508,7 +508,7 @@ function HomePageInner() {
             </div>
             {/* Mobile: faqat ism */}
             <h1
-              className="md:hidden text-3xl font-bold"
+              className="md:hidden text-3xl font-bold max-w-[70%] truncate"
               style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.025em" }}
             >
               {user?.name?.split(" ")[0] ?? ""}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Plus, BookOpen, X, ChevronRight, Pencil, Trash2, MoreVertical } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronRight, Pencil, Trash2, MoreVertical, X } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -15,17 +15,12 @@ type FolderInfo = { id: string; name: string; icon: string | null };
 type Subject = { id: string; name: string; icon: string | null; prompt: string; assignmentCount: number; createdAt: string };
 
 const SUBJECT_ICONS = ["📖","📐","🔬","⚗️","🌍","💻","🎨","🏃","🎵","📝","🔢","🧪","📚","🌱","⚽"];
-
 export default function FolderPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [folder, setFolder] = useState<FolderInfo | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newIcon, setNewIcon] = useState("📖");
-  const [saving, setSaving] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -45,24 +40,6 @@ export default function FolderPage() {
   }
 
   useEffect(() => { load(); }, [id]);
-
-  async function createSubject() {
-    if (!newName.trim()) return;
-    setSaving(true);
-    const res = await fetch(`${API}/api/subjects`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({ name: newName.trim(), icon: newIcon, folderId: id }),
-    });
-    if (res.ok) {
-      const sub = await res.json();
-      setSubjects(prev => [...prev, { ...sub, assignmentCount: 0 }]);
-      setCreating(false);
-      setNewName("");
-      setNewIcon("📖");
-    }
-    setSaving(false);
-  }
 
   async function saveEdit(subjectId: string) {
     const res = await fetch(`${API}/api/subjects/${subjectId}`, {
@@ -112,11 +89,6 @@ export default function FolderPage() {
           </h1>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>{subjects.length} ta fan</p>
         </div>
-        <button onClick={() => setCreating(true)}
-          className="flex items-center gap-1.5 text-sm px-3 py-2 font-bold text-white"
-          style={{ background: "var(--cta)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}>
-          <Plus size={15} /> Fan
-        </button>
       </div>
 
       {/* Content */}
@@ -125,9 +97,6 @@ export default function FolderPage() {
           <div className="flex flex-col items-center justify-center h-full gap-3 opacity-60">
             <BookOpen size={48} style={{ color: "var(--text-muted)" }} />
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>Hali fan yo'q</p>
-            <button onClick={() => setCreating(true)} className="text-sm font-medium" style={{ color: "var(--accent)" }}>
-              + Fan qo'shish
-            </button>
           </div>
         ) : (
           <div className="max-w-2xl mx-auto flex flex-col gap-2">
@@ -208,45 +177,6 @@ export default function FolderPage() {
         )}
       </div>
 
-      {/* Fan yaratish modal */}
-      {creating && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
-          onClick={e => { if (e.target === e.currentTarget) setCreating(false); }}>
-          <div className="w-full max-w-sm animate-fade-in"
-            style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)", overflow: "hidden" }}>
-            <div className="px-5 py-4 flex items-center justify-between"
-              style={{ borderBottom: "1px solid var(--border)" }}>
-              <span className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Yangi fan</span>
-              <button onClick={() => setCreating(false)} className="w-8 h-8 flex items-center justify-center"
-                style={{ color: "var(--text-muted)", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
-                <X size={16} />
-              </button>
-            </div>
-            <div className="px-5 py-4 flex flex-col gap-4">
-              <div className="flex gap-2 flex-wrap">
-                {SUBJECT_ICONS.map(ic => (
-                  <button key={ic} onClick={() => setNewIcon(ic)}
-                    className="text-xl w-9 h-9 flex items-center justify-center"
-                    style={{ borderRadius: "var(--radius-sm)", background: newIcon === ic ? "var(--accent-light)" : "transparent", border: newIcon === ic ? "2px solid var(--accent)" : "2px solid transparent" }}>
-                    {ic}
-                  </button>
-                ))}
-              </div>
-              <input autoFocus value={newName} onChange={e => setNewName(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") createSubject(); }}
-                placeholder="Fan nomi (Matematika, Kimyo...)"
-                className="clay-input w-full px-4 py-3 text-sm outline-none"
-                style={{ color: "var(--text-primary)" }} />
-              <button onClick={createSubject} disabled={saving || !newName.trim()}
-                className="w-full py-3 text-sm font-bold text-white"
-                style={{ background: "var(--cta)", borderRadius: "var(--radius-sm)", opacity: saving || !newName.trim() ? 0.6 : 1 }}>
-                {saving ? "Saqlanmoqda..." : "Yaratish"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
