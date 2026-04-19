@@ -12,6 +12,7 @@ export type UserWSEvent =
   | { type: "submission_done"; data: { id: string; grade: string | null; score: number | null; subject: string | null; failed?: boolean; studentId: string | null; classId: string | null } }
   | { type: "submission_processing"; data: { id: string; studentId: string | null; classId: string | null } }
   | { type: "balance_updated"; data: { balanceUzs: number; costUzs: number } }
+  | { type: "cache_created"; data: { tokenCount: number; cacheCreateCostUzs: number; cacheStorageCostUzs: number; totalOverheadUzs: number } }
   | { type: "connected" };
 
 type UserWSContextType = {

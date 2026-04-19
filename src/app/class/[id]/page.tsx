@@ -59,6 +59,8 @@ export default function ClassPage() {
   // Temp state while setting up session
   const [setupSubject, setSetupSubject] = useState<SubjectItem | null>(null);
   const [setupCondition, setSetupCondition] = useState("");
+  // Kesh narxi (birinchi o'quvchi tekshirilganda ko'rinadi)
+  const [cacheInfo, setCacheInfo] = useState<{ tokenCount: number; totalOverheadUzs: number; cacheStorageCostUzs: number } | null>(null);
 
   const { lastEvent } = useUserWS();
 
@@ -106,6 +108,12 @@ export default function ClassPage() {
       if (studentId) {
         setPendingCounts((prev) => ({ ...prev, [studentId]: (prev[studentId] ?? 0) + 1 }));
       }
+    } else if (lastEvent.type === "cache_created") {
+      setCacheInfo({
+        tokenCount: lastEvent.data.tokenCount,
+        totalOverheadUzs: lastEvent.data.totalOverheadUzs,
+        cacheStorageCostUzs: lastEvent.data.cacheStorageCostUzs,
+      });
     } else if (lastEvent.type === "submission_done") {
       const { studentId } = lastEvent.data;
       if (studentId) {
@@ -232,6 +240,7 @@ export default function ClassPage() {
     setSessionSubject(subject);
     setSessionCondition(condition);
     setShowSessionSetup(false);
+    setCacheInfo(null); // yangi session — eski kesh ma'lumotini tozala
     if (pendingStudentForCamera) {
       const student = pendingStudentForCamera;
       setPendingStudentForCamera(null);
@@ -285,20 +294,35 @@ export default function ClassPage() {
         {/* Session bar */}
         <div className="px-5 pb-3 shrink-0">
           {sessionSubject ? (
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl"
+            <div className="rounded-2xl overflow-hidden"
               style={{ background: "var(--accent-light)", border: "1px solid var(--accent)" }}>
-              <span className="text-xl">{sessionSubject.icon || "📖"}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>{sessionSubject.name}</p>
-                {sessionCondition && (
-                  <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-secondary)" }}>{sessionCondition}</p>
-                )}
+              <div className="flex items-center gap-3 px-4 py-2.5">
+                <span className="text-xl">{sessionSubject.icon || "📖"}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: "var(--accent)" }}>{sessionSubject.name}</p>
+                  {sessionCondition && (
+                    <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-secondary)" }}>{sessionCondition}</p>
+                  )}
+                </div>
+                <button onClick={openSessionSetup}
+                  className="text-xs px-3 py-1.5 rounded-xl font-medium shrink-0"
+                  style={{ background: "var(--accent)", color: "#fff" }}>
+                  O&apos;zgartirish
+                </button>
               </div>
-              <button onClick={openSessionSetup}
-                className="text-xs px-3 py-1.5 rounded-xl font-medium shrink-0"
-                style={{ background: "var(--accent)", color: "#fff" }}>
-                O&apos;zgartirish
-              </button>
+              {cacheInfo && (
+                <div className="px-4 py-2 flex items-center gap-2 text-[11px]"
+                  style={{ borderTop: "1px solid var(--accent)40", color: "var(--accent)" }}>
+                  <span>⚡</span>
+                  <span className="font-semibold">Kesh faol</span>
+                  <span style={{ color: "var(--text-secondary)" }}>·</span>
+                  <span style={{ color: "var(--text-secondary)" }}>{cacheInfo.tokenCount.toLocaleString()} token</span>
+                  <span style={{ color: "var(--text-secondary)" }}>·</span>
+                  <span style={{ color: "var(--text-secondary)" }}>
+                    Yaratish+saqlash: <strong style={{ color: "var(--accent)" }}>{cacheInfo.totalOverheadUzs.toLocaleString()} so&apos;m</strong> / soat
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
             <button onClick={openSessionSetup}
