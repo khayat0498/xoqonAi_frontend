@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { getToken } from "@/lib/auth";
 import {
   Package, Plus, Trash2, Edit3, Save, X, Tag,
-  ToggleLeft, ToggleRight, ChevronUp, Gift, Settings, FileText
+  ToggleLeft, ToggleRight, ChevronUp, Gift, Settings, FileText, BookOpen, Link2
 } from "lucide-react";
 import { useAdminWS } from "@/lib/admin-ws";
 
@@ -442,7 +442,7 @@ export default function AdminPlansPage() {
   const [loading, setLoading] = useState(true);
   const [promoModal, setPromoModal] = useState<{ open: boolean; promo: Promotion | null }>({ open: false, promo: null });
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"plans" | "promos" | "settings" | "prompts">("plans");
+  const [tab, setTab] = useState<"plans" | "promos" | "settings" | "prompts" | "subjects">("plans");
   const [sysSettings, setSysSettings] = useState<Record<string, string>>({});
   const [promptsList, setPromptsList] = useState<Array<{ id: string; key: string; name: string; description: string | null; content: string; language: string }>>([]);
   const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
@@ -452,25 +452,36 @@ export default function AdminPlansPage() {
   const [newPrompt, setNewPrompt] = useState({ key: "", name: "", description: "", content: "", language: "uz" });
   const [newPromptSaving, setNewPromptSaving] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
+  // ─── Subjects state ───
+  type GlobalSubject = { id: string; name: string; icon: string; promptKey: string | null; createdAt: string };
+  const [subjectsList, setSubjectsList] = useState<GlobalSubject[]>([]);
+  const [newSubjectModal, setNewSubjectModal] = useState(false);
+  const [newSubject, setNewSubject] = useState({ name: "", icon: "📖", promptKey: "" });
+  const [newSubjectSaving, setNewSubjectSaving] = useState(false);
+  const [editingSubject, setEditingSubject] = useState<GlobalSubject | null>(null);
+  const [deletingSubjectId, setDeletingSubjectId] = useState<string | null>(null);
   const { lastEvent } = useAdminWS();
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [configsRes, promosRes, settingsRes, promptsRes] = await Promise.all([
+      const [configsRes, promosRes, settingsRes, promptsRes, subjectsRes] = await Promise.all([
         apiFetch("/api/plans/admin/configs"),
         apiFetch("/api/plans/admin/promotions"),
         apiFetch("/api/plans/admin/settings"),
         apiFetch("/api/admin/prompts"),
+        apiFetch("/api/admin/subjects"),
       ]);
       const configs = await configsRes.json();
       const promosData = await promosRes.json();
       const settingsData = await settingsRes.json();
       const promptsData = await promptsRes.json();
+      const subjectsData = await subjectsRes.json();
       setPlans(Array.isArray(configs) ? configs : []);
       setPromos(Array.isArray(promosData) ? promosData : []);
       setSysSettings(settingsData ?? {});
       setPromptsList(Array.isArray(promptsData) ? promptsData : []);
+      setSubjectsList(Array.isArray(subjectsData) ? subjectsData : []);
     } finally {
       setLoading(false);
     }
@@ -509,6 +520,7 @@ export default function AdminPlansPage() {
           { key: "plans" as const, label: "Tariflar", icon: Package },
           { key: "promos" as const, label: "Aksiyalar", icon: Tag },
           { key: "prompts" as const, label: "Promptlar", icon: FileText },
+          { key: "subjects" as const, label: "Fanlar", icon: BookOpen },
           { key: "settings" as const, label: "Sozlamalar", icon: Settings },
         ].map(({ key, label, icon: Icon }) => (
           <button
@@ -655,6 +667,61 @@ export default function AdminPlansPage() {
               </div>
             );
           })}
+        </div>
+      ) : tab === "subjects" ? (
+        /* ── Subjects tab ── */
+        <div className="space-y-3">
+          <button
+            onClick={() => { setNewSubject({ name: "", icon: "📖", promptKey: "" }); setNewSubjectModal(true); }}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-dashed border-2 transition-all hover:opacity-80"
+            style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--accent)08" }}
+          >
+            <Plus size={15} />
+            Yangi fan yaratish
+          </button>
+          {subjectsList.length === 0 && (
+            <p className="text-center py-8 text-sm" style={{ color: "var(--text-muted)" }}>Hech qanday global fan topilmadi</p>
+          )}
+          {subjectsList.map(subj => (
+            <div
+              key={subj.id}
+              className="rounded-2xl overflow-hidden"
+              style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
+            >
+              <div className="px-4 py-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: "var(--bg-primary)" }}>
+                  {subj.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>{subj.name}</p>
+                  {subj.promptKey ? (
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Link2 size={10} style={{ color: "var(--accent)" }} />
+                      <span className="text-[10px] font-mono" style={{ color: "var(--accent)" }}>{subj.promptKey}</span>
+                    </div>
+                  ) : (
+                    <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>Prompt bog'lanmagan (avtomatik qidiriladi)</p>
+                  )}
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button
+                    onClick={() => setEditingSubject(subj)}
+                    className="p-1.5 rounded-lg transition-all hover:opacity-80"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}
+                  >
+                    <Edit3 size={13} />
+                  </button>
+                  <button
+                    onClick={() => setDeletingSubjectId(subj.id)}
+                    className="p-1.5 rounded-lg transition-all hover:opacity-80"
+                    style={{ background: "rgba(248,113,113,0.1)", color: "#f87171" }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : tab === "settings" ? (
         /* ── Settings tab ── */
@@ -839,6 +906,185 @@ export default function AdminPlansPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* New Subject modal */}
+      {newSubjectModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
+              <BookOpen size={16} style={{ color: "var(--accent)" }} />
+              <p className="font-bold text-sm flex-1" style={{ color: "var(--text-primary)" }}>Yangi global fan</p>
+              <button onClick={() => setNewSubjectModal(false)} style={{ color: "var(--text-muted)" }}><X size={16} /></button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Fan nomi *</label>
+                  <input
+                    className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                    placeholder="Kimyo"
+                    value={newSubject.name}
+                    onChange={e => setNewSubject(p => ({ ...p, name: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Emoji</label>
+                  <input
+                    className="w-full rounded-xl px-3 py-2 text-sm outline-none text-center"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                    placeholder="📖"
+                    value={newSubject.icon}
+                    onChange={e => setNewSubject(p => ({ ...p, icon: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Prompt kalit (promptKey)</label>
+                <select
+                  className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                  style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                  value={newSubject.promptKey}
+                  onChange={e => setNewSubject(p => ({ ...p, promptKey: e.target.value }))}
+                >
+                  <option value="">— Avtomatik (fan nomi bo'yicha) —</option>
+                  {promptsList.map(p => (
+                    <option key={p.key} value={p.key}>{p.name} ({p.key})</option>
+                  ))}
+                </select>
+                <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
+                  Bo'sh qoldirilsa "kimyo" → "kimyo_analysis" avtomatik qidiriladi
+                </p>
+              </div>
+            </div>
+            <div className="px-5 py-4 flex gap-2" style={{ borderTop: "1px solid var(--border)" }}>
+              <button onClick={() => setNewSubjectModal(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}>
+                Bekor
+              </button>
+              <button
+                disabled={newSubjectSaving || !newSubject.name.trim()}
+                onClick={async () => {
+                  setNewSubjectSaving(true);
+                  try {
+                    const res = await apiFetch("/api/admin/subjects", {
+                      method: "POST",
+                      body: JSON.stringify({ name: newSubject.name, icon: newSubject.icon, promptKey: newSubject.promptKey || null }),
+                    });
+                    if (res.ok) {
+                      const created = await res.json();
+                      setSubjectsList(list => [...list, created]);
+                      setNewSubjectModal(false);
+                    }
+                  } finally {
+                    setNewSubjectSaving(false);
+                  }
+                }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
+                style={{ background: "var(--accent)", color: "#fff", opacity: newSubjectSaving || !newSubject.name.trim() ? 0.5 : 1 }}
+              >
+                {newSubjectSaving ? "..." : "Yaratish"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Subject modal */}
+      {editingSubject && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
+              <BookOpen size={16} style={{ color: "var(--accent)" }} />
+              <p className="font-bold text-sm flex-1" style={{ color: "var(--text-primary)" }}>Fanni tahrirlash</p>
+              <button onClick={() => setEditingSubject(null)} style={{ color: "var(--text-muted)" }}><X size={16} /></button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Fan nomi</label>
+                  <input
+                    className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                    value={editingSubject.name}
+                    onChange={e => setEditingSubject(p => p ? { ...p, name: e.target.value } : p)}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Emoji</label>
+                  <input
+                    className="w-full rounded-xl px-3 py-2 text-sm outline-none text-center"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                    value={editingSubject.icon}
+                    onChange={e => setEditingSubject(p => p ? { ...p, icon: e.target.value } : p)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Prompt kalit</label>
+                <select
+                  className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                  style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                  value={editingSubject.promptKey ?? ""}
+                  onChange={e => setEditingSubject(p => p ? { ...p, promptKey: e.target.value || null } : p)}
+                >
+                  <option value="">— Avtomatik —</option>
+                  {promptsList.map(p => (
+                    <option key={p.key} value={p.key}>{p.name} ({p.key})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="px-5 py-4 flex gap-2" style={{ borderTop: "1px solid var(--border)" }}>
+              <button onClick={() => setEditingSubject(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}>
+                Bekor
+              </button>
+              <button
+                onClick={async () => {
+                  const res = await apiFetch(`/api/admin/subjects/${editingSubject.id}`, {
+                    method: "PATCH",
+                    body: JSON.stringify({ name: editingSubject.name, icon: editingSubject.icon, promptKey: editingSubject.promptKey }),
+                  });
+                  if (res.ok) {
+                    const updated = await res.json();
+                    setSubjectsList(list => list.map(s => s.id === updated.id ? updated : s));
+                    setEditingSubject(null);
+                  }
+                }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold"
+                style={{ background: "var(--accent)", color: "#fff" }}
+              >
+                Saqlash
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Subject confirm */}
+      {deletingSubjectId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
+          <div className="w-full max-w-xs rounded-2xl p-5 text-center space-y-4" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <p className="font-bold" style={{ color: "var(--text-primary)" }}>Fanni o'chirish</p>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Bu amalni qaytarib bo'lmaydi</p>
+            <div className="flex gap-2">
+              <button onClick={() => setDeletingSubjectId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}>
+                Bekor
+              </button>
+              <button
+                onClick={async () => {
+                  await apiFetch(`/api/admin/subjects/${deletingSubjectId}`, { method: "DELETE" });
+                  setSubjectsList(list => list.filter(s => s.id !== deletingSubjectId));
+                  setDeletingSubjectId(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold"
+                style={{ background: "#f87171", color: "#fff" }}
+              >
+                O'chirish
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
