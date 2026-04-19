@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { getToken } from "@/lib/auth";
 import {
   Package, Plus, Trash2, Edit3, Save, X, Tag,
-  ToggleLeft, ToggleRight, ChevronUp, Gift, Settings
+  ToggleLeft, ToggleRight, ChevronUp, Gift, Settings, FileText
 } from "lucide-react";
 import { useAdminWS } from "@/lib/admin-ws";
 
@@ -442,25 +442,32 @@ export default function AdminPlansPage() {
   const [loading, setLoading] = useState(true);
   const [promoModal, setPromoModal] = useState<{ open: boolean; promo: Promotion | null }>({ open: false, promo: null });
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"plans" | "promos" | "settings">("plans");
+  const [tab, setTab] = useState<"plans" | "promos" | "settings" | "prompts">("plans");
   const [sysSettings, setSysSettings] = useState<Record<string, string>>({});
+  const [promptsList, setPromptsList] = useState<Array<{ id: string; key: string; name: string; description: string | null; content: string; language: string }>>([]);
+  const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
+  const [promptDrafts, setPromptDrafts] = useState<Record<string, string>>({});
+  const [promptSaving, setPromptSaving] = useState<string | null>(null);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const { lastEvent } = useAdminWS();
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [configsRes, promosRes, settingsRes] = await Promise.all([
+      const [configsRes, promosRes, settingsRes, promptsRes] = await Promise.all([
         apiFetch("/api/plans/admin/configs"),
         apiFetch("/api/plans/admin/promotions"),
         apiFetch("/api/plans/admin/settings"),
+        apiFetch("/api/prompts"),
       ]);
       const configs = await configsRes.json();
       const promosData = await promosRes.json();
       const settingsData = await settingsRes.json();
+      const promptsData = await promptsRes.json();
       setPlans(Array.isArray(configs) ? configs : []);
       setPromos(Array.isArray(promosData) ? promosData : []);
       setSysSettings(settingsData ?? {});
+      setPromptsList(Array.isArray(promptsData) ? promptsData : []);
     } finally {
       setLoading(false);
     }
@@ -498,6 +505,7 @@ export default function AdminPlansPage() {
         {[
           { key: "plans" as const, label: "Tariflar", icon: Package },
           { key: "promos" as const, label: "Aksiyalar", icon: Tag },
+          { key: "prompts" as const, label: "Promptlar", icon: FileText },
           { key: "settings" as const, label: "Sozlamalar", icon: Settings },
         ].map(({ key, label, icon: Icon }) => (
           <button
@@ -533,6 +541,106 @@ export default function AdminPlansPage() {
           {plans.map(plan => (
             <PlanCard key={plan.key} plan={plan} onSaved={load} />
           ))}
+        </div>
+      ) : tab === "prompts" ? (
+        /* ── Prompts tab ── */
+        <div className="space-y-3">
+          {promptsList.length === 0 && (
+            <p className="text-center py-12 text-sm" style={{ color: "var(--text-muted)" }}>Hech qanday prompt topilmadi</p>
+          )}
+          {promptsList.map(p => {
+            const isOpen = editingPrompt === p.id;
+            const draft = promptDrafts[p.id] ?? p.content;
+            return (
+              <div
+                key={p.id}
+                className="rounded-2xl overflow-hidden transition-all"
+                style={{ background: "var(--bg-card)", border: `1px solid ${isOpen ? "var(--accent)" : "var(--border)"}` }}
+              >
+                <div
+                  className="px-5 py-3 flex items-center gap-3 cursor-pointer"
+                  style={{ borderBottom: isOpen ? "1px solid var(--border)" : "none" }}
+                  onClick={() => {
+                    if (isOpen) {
+                      setEditingPrompt(null);
+                    } else {
+                      setEditingPrompt(p.id);
+                      setPromptDrafts(d => ({ ...d, [p.id]: p.content }));
+                    }
+                  }}
+                >
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "var(--accent)20" }}>
+                    <FileText size={14} style={{ color: "var(--accent)" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>{p.name}</p>
+                    <p className="text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>key: {p.key}</p>
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}>
+                    {p.content.length} belgi
+                  </span>
+                  <ChevronUp size={14} style={{ color: "var(--text-muted)", transform: isOpen ? "rotate(0deg)" : "rotate(180deg)", transition: "transform 0.2s" }} />
+                </div>
+                {isOpen && (
+                  <div className="px-5 py-4 space-y-3">
+                    {p.description && (
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{p.description}</p>
+                    )}
+                    <textarea
+                      className="w-full rounded-xl px-3 py-2.5 text-xs font-mono outline-none resize-y"
+                      style={{
+                        background: "var(--bg-primary)",
+                        color: "var(--text-primary)",
+                        border: "1px solid var(--border)",
+                        minHeight: "320px",
+                        lineHeight: "1.6",
+                      }}
+                      value={draft}
+                      onChange={e => setPromptDrafts(d => ({ ...d, [p.id]: e.target.value }))}
+                      spellCheck={false}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={async () => {
+                          setPromptSaving(p.id);
+                          try {
+                            await apiFetch(`/api/prompts/${p.id}`, {
+                              method: "PATCH",
+                              body: JSON.stringify({ content: draft }),
+                            });
+                            setPromptsList(list => list.map(item => item.id === p.id ? { ...item, content: draft } : item));
+                            setEditingPrompt(null);
+                          } finally {
+                            setPromptSaving(null);
+                          }
+                        }}
+                        disabled={promptSaving === p.id || draft === p.content}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
+                        style={{
+                          background: "var(--accent)",
+                          color: "#fff",
+                          opacity: promptSaving === p.id || draft === p.content ? 0.5 : 1,
+                        }}
+                      >
+                        <Save size={13} />
+                        {promptSaving === p.id ? "Saqlanmoqda..." : "Saqlash"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setPromptDrafts(d => ({ ...d, [p.id]: p.content }));
+                          setEditingPrompt(null);
+                        }}
+                        className="px-4 py-2.5 rounded-xl text-sm font-semibold"
+                        style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}
+                      >
+                        Bekor
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       ) : tab === "settings" ? (
         /* ── Settings tab ── */
