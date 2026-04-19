@@ -98,7 +98,17 @@ export default function ClassPage() {
         setSendSubjects(withGeneral);
       }
     }
-    load();
+    load().then(() => {
+      // Sessiyani localStorage dan tiklash
+      try {
+        const saved = localStorage.getItem(`class_session_${id}`);
+        if (saved) {
+          const { subject, condition } = JSON.parse(saved);
+          if (subject) setSessionSubject(subject);
+          if (condition) setSessionCondition(condition);
+        }
+      } catch {}
+    });
   }, [id]);
 
   useEffect(() => {
@@ -215,6 +225,10 @@ export default function ClassPage() {
   };
 
   const goDirectToCamera = (student: ClassStudent, subject: SubjectItem | null, condition: string) => {
+    // Sessiyani saqlash (camera qaytganda tiklash uchun)
+    try {
+      localStorage.setItem(`class_session_${id}`, JSON.stringify({ subject, condition }));
+    } catch {}
     const params = new URLSearchParams({
       studentId: student.id,
       studentName: student.name,
@@ -223,6 +237,7 @@ export default function ClassPage() {
     if (cls?.id) params.set("classId", cls.id);
     if (subject) params.set("subject", subject.name);
     if (condition.trim()) params.set("condition", condition.trim());
+    params.set("returnTo", `/class/${id}`);
     window.location.href = `/home?${params.toString()}`;
   };
 

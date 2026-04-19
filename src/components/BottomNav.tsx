@@ -7,7 +7,6 @@ import {
   FolderOpen,
   Settings,
   CalendarDays,
-  Clock,
 } from "lucide-react";
 import { useUser } from "@/lib/user-context";
 
@@ -22,7 +21,6 @@ const studentLinks: NavItem[] = [
 const teacherLinks: NavItem[] = [
   { href: "/home?tab=jildlar", label: "Jildlar",    icon: FolderOpen },
   { href: "/home",             label: "Bosh sahifa", icon: Home },
-  { href: "/history",          label: "Tarixlar",    icon: Clock },
   { href: "/schedule",         label: "Jadval",      icon: CalendarDays },
   { href: "/settings",         label: "Sozlamalar",  icon: Settings },
 ];

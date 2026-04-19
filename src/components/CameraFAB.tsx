@@ -63,6 +63,7 @@ export default function CameraFAB() {
   const urlClassId     = searchParams.get("classId");
   const urlSubject     = searchParams.get("subject");
   const urlCondition   = searchParams.get("condition");
+  const urlReturnTo    = searchParams.get("returnTo");
 
   // ── Step state ──
   const [step, setStep] = useState<"idle" | "folder" | "condition" | "cam" | "confirm">("idle");
@@ -110,7 +111,7 @@ export default function CameraFAB() {
     setPreviewIndex(null);
     setSelectedFolder(null); setFolderCondition("");
     document.body.classList.remove("modal-open");
-    if (urlCamera === "1") router.replace("/home");
+    if (urlCamera === "1") router.replace(urlReturnTo ?? "/home");
   }, [stopCamera, urlCamera, router]);
 
   // ── Step: folder ──
@@ -308,7 +309,7 @@ export default function CameraFAB() {
         return;
       }
       closeAll();
-      router.push("/home");
+      router.push(urlReturnTo ?? "/home");
     } finally {
       setSending(false);
     }

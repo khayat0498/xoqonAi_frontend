@@ -27,7 +27,6 @@ const studentLinks = [
 const teacherLinks = [
   { href: "/home",           label: "Bosh sahifa", icon: Home },
   { href: "/home?tab=jildlar", label: "Jildlar",   icon: FolderOpen },
-  { href: "/history",        label: "Tarixlar",    icon: History },
   { href: "/schedule",       label: "Jadval",      icon: CalendarDays },
   { href: "/dashboard/stats",label: "Statistika",  icon: BarChart3 },
 ];
@@ -202,6 +201,7 @@ export default function Sidebar() {
       )}
       <nav className="px-[10px] flex flex-col gap-1">
         {[
+          { href: "/history", label: "Usage", icon: History },
           { href: "/billing", label: "Billing", icon: CreditCard },
           { href: "/plans", label: "Tarif rejalar", icon: Layers },
           { href: "/contact", label: "Bog'lanish", icon: MessageSquare },

@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, User, Bell, Globe, Moon, Sun, Shield, LogOut, Trash2, Lock, ChevronRight, Pencil, CreditCard, Layers, MessageSquare, HelpCircle } from "lucide-react";
+import { ArrowLeft, User, Bell, Globe, Moon, Sun, Shield, LogOut, Trash2, Lock, ChevronRight, Pencil, CreditCard, Layers, MessageSquare, HelpCircle, History } from "lucide-react";
 import { removeToken, getToken } from "@/lib/auth";
 import { useUser } from "@/lib/user-context";
 import { useUserWS } from "@/lib/user-ws";
@@ -218,6 +218,7 @@ export default function SettingsPage() {
 
             {/* Billing & Support */}
             <Section title="Billing & Yordam">
+              <Row icon={History} label="Usage" sub="Tekshirishlar tarixi" onClick={() => router.push("/history")} />
               <Row icon={CreditCard} label="Billing" sub="Joriy reja va to'lov" onClick={() => router.push("/billing")} />
               <Row icon={Layers} label="Tarif rejalar" sub="Rejangizni o'zgartiring" onClick={() => router.push("/plans")} />
               <Row icon={MessageSquare} label="Bog'lanish" sub="Yordam markazi" onClick={() => router.push("/contact")} />
