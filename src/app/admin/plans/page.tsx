@@ -458,7 +458,7 @@ export default function AdminPlansPage() {
         apiFetch("/api/plans/admin/configs"),
         apiFetch("/api/plans/admin/promotions"),
         apiFetch("/api/plans/admin/settings"),
-        apiFetch("/api/prompts"),
+        apiFetch("/api/admin/prompts"),
       ]);
       const configs = await configsRes.json();
       const promosData = await promosRes.json();
@@ -604,7 +604,7 @@ export default function AdminPlansPage() {
                         onClick={async () => {
                           setPromptSaving(p.id);
                           try {
-                            await apiFetch(`/api/prompts/${p.id}`, {
+                            await apiFetch(`/api/admin/prompts/${p.id}`, {
                               method: "PATCH",
                               body: JSON.stringify({ content: draft }),
                             });
