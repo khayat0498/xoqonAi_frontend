@@ -534,11 +534,11 @@ export default function CameraFAB() {
                   Tahlilga yuborish · {capturedImages.length} ta rasm
                 </p>
                 <div className="flex flex-col gap-0.5 mt-0.5">
-                  {urlStudentName && <p className="text-xs" style={{ color: "var(--accent)" }}>{decodeURIComponent(urlStudentName)}</p>}
+                  {urlStudentName && <p className="text-xs" style={{ color: "var(--accent)" }}>{urlStudentName}</p>}
                   {selectedFolder?.subjectName && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{selectedFolder.subjectIcon} {selectedFolder.subjectName}</p>}
                   {urlSubject && !selectedFolder?.subjectName && <p className="text-xs" style={{ color: "var(--text-muted)" }}>📖 {urlSubject}</p>}
                   {folderCondition.trim() && <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>📝 {folderCondition}</p>}
-                  {urlCondition && !folderCondition.trim() && <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>📝 {decodeURIComponent(urlCondition)}</p>}
+                  {urlCondition && !folderCondition.trim() && <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>📝 {urlCondition}</p>}
                 </div>
               </div>
               <div className="flex gap-2">
