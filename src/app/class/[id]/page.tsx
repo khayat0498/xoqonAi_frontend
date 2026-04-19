@@ -397,10 +397,17 @@ export default function ClassPage() {
                         <button onClick={() => setEditingId(null)} className="w-8 h-8 flex items-center justify-center" style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-muted)" }}><X size={14} /></button>
                       </>
                     ) : (
-                      <button onClick={() => setActiveStudent(student)} className="w-8 h-8 flex items-center justify-center"
-                        style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-muted)" }}>
-                        <MoreVertical size={15} />
-                      </button>
+                      <>
+                        <button onClick={() => openCameraForStudent(student)}
+                          className="w-8 h-8 flex items-center justify-center"
+                          style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff" }}>
+                          <Camera size={14} />
+                        </button>
+                        <button onClick={() => setActiveStudent(student)} className="w-8 h-8 flex items-center justify-center"
+                          style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-muted)" }}>
+                          <MoreVertical size={15} />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
