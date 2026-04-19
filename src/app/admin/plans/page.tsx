@@ -448,6 +448,9 @@ export default function AdminPlansPage() {
   const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
   const [promptDrafts, setPromptDrafts] = useState<Record<string, string>>({});
   const [promptSaving, setPromptSaving] = useState<string | null>(null);
+  const [newPromptModal, setNewPromptModal] = useState(false);
+  const [newPrompt, setNewPrompt] = useState({ key: "", name: "", description: "", content: "", language: "uz" });
+  const [newPromptSaving, setNewPromptSaving] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const { lastEvent } = useAdminWS();
 
@@ -545,8 +548,19 @@ export default function AdminPlansPage() {
       ) : tab === "prompts" ? (
         /* ── Prompts tab ── */
         <div className="space-y-3">
+          <button
+            onClick={() => {
+              setNewPrompt({ key: "", name: "", description: "", content: "", language: "uz" });
+              setNewPromptModal(true);
+            }}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold border-dashed border-2 transition-all hover:opacity-80"
+            style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--accent)08" }}
+          >
+            <Plus size={15} />
+            Yangi prompt yaratish
+          </button>
           {promptsList.length === 0 && (
-            <p className="text-center py-12 text-sm" style={{ color: "var(--text-muted)" }}>Hech qanday prompt topilmadi</p>
+            <p className="text-center py-8 text-sm" style={{ color: "var(--text-muted)" }}>Hech qanday prompt topilmadi</p>
           )}
           {promptsList.map(p => {
             const isOpen = editingPrompt === p.id;
@@ -825,6 +839,92 @@ export default function AdminPlansPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* New Prompt modal */}
+      {newPromptModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
+          <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
+              <FileText size={16} style={{ color: "var(--accent)" }} />
+              <p className="font-bold text-sm flex-1" style={{ color: "var(--text-primary)" }}>Yangi prompt</p>
+              <button onClick={() => setNewPromptModal(false)} style={{ color: "var(--text-muted)" }}><X size={16} /></button>
+            </div>
+            <div className="px-5 py-4 space-y-3 max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Kalit (key) *</label>
+                  <input
+                    className="w-full rounded-xl px-3 py-2 text-xs font-mono outline-none"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                    placeholder="kimyo_analysis"
+                    value={newPrompt.key}
+                    onChange={e => setNewPrompt(p => ({ ...p, key: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Nomi *</label>
+                  <input
+                    className="w-full rounded-xl px-3 py-2 text-xs outline-none"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                    placeholder="Kimyo tahlili"
+                    value={newPrompt.name}
+                    onChange={e => setNewPrompt(p => ({ ...p, name: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Tavsif</label>
+                <input
+                  className="w-full rounded-xl px-3 py-2 text-xs outline-none"
+                  style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                  placeholder="Bu prompt nima uchun ishlatiladi..."
+                  value={newPrompt.description}
+                  onChange={e => setNewPrompt(p => ({ ...p, description: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>Kontent *</label>
+                <textarea
+                  className="w-full rounded-xl px-3 py-2.5 text-xs font-mono outline-none resize-y"
+                  style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)", minHeight: "280px", lineHeight: "1.6" }}
+                  placeholder="Prompt matnini yozing..."
+                  value={newPrompt.content}
+                  onChange={e => setNewPrompt(p => ({ ...p, content: e.target.value }))}
+                  spellCheck={false}
+                />
+              </div>
+            </div>
+            <div className="px-5 py-4 flex gap-2" style={{ borderTop: "1px solid var(--border)" }}>
+              <button onClick={() => setNewPromptModal(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}>
+                Bekor
+              </button>
+              <button
+                disabled={newPromptSaving || !newPrompt.key.trim() || !newPrompt.name.trim() || !newPrompt.content.trim()}
+                onClick={async () => {
+                  setNewPromptSaving(true);
+                  try {
+                    const res = await apiFetch("/api/admin/prompts", {
+                      method: "POST",
+                      body: JSON.stringify(newPrompt),
+                    });
+                    if (res.ok) {
+                      const created = await res.json();
+                      setPromptsList(list => [...list, created]);
+                      setNewPromptModal(false);
+                    }
+                  } finally {
+                    setNewPromptSaving(false);
+                  }
+                }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
+                style={{ background: "var(--accent)", color: "#fff", opacity: newPromptSaving || !newPrompt.key.trim() || !newPrompt.name.trim() || !newPrompt.content.trim() ? 0.5 : 1 }}
+              >
+                {newPromptSaving ? "Saqlanmoqda..." : "Yaratish"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
