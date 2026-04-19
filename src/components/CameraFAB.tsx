@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Camera, X, Send, RotateCcw, Loader2, Images, ChevronRight, BookOpen } from "lucide-react";
+import { Camera, X, Send, RotateCcw, Loader2, Images, ChevronRight, BookOpen, Check, Trash2 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -76,7 +76,8 @@ export default function CameraFAB() {
   // ── Camera ──
   const [detected, setDetected]   = useState(false);
   const [snapping, setSnapping]   = useState(false);
-  const [captured, setCaptured]   = useState<string | null>(null);
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null); // lightbox
   const [prompt, setPrompt]       = useState("");
   const [sending, setSending]     = useState(false);
   const [sendError, setSendError] = useState("");
@@ -105,7 +106,8 @@ export default function CameraFAB() {
   const closeAll = useCallback(() => {
     stopCamera();
     setStep("idle");
-    setCaptured(null); setPrompt(""); setSendError(""); setDetected(false);
+    setCapturedImages([]); setPrompt(""); setSendError(""); setDetected(false);
+    setPreviewIndex(null);
     setSelectedFolder(null); setFolderCondition("");
     document.body.classList.remove("modal-open");
     if (urlCamera === "1") router.replace("/home");
@@ -120,7 +122,6 @@ export default function CameraFAB() {
     setLoading(false);
   }
 
-  // ── Folder tanlanganda — condition stepiga o'tamiz ──
   function selectFolder(folder: Folder) {
     setSelectedFolder(folder);
     setFolderCondition("");
@@ -132,7 +133,7 @@ export default function CameraFAB() {
     document.body.classList.add("modal-open");
   }
 
-  // ── Camera ──
+  // ── Camera overlay ──
   function drawDefaultBorder() {
     const ov = overlayRef.current;
     if (!ov) return;
@@ -217,6 +218,7 @@ export default function CameraFAB() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, cvReady]);
 
+  // ── Rasmga olish — massivga qo'shadi, kamera ochiq qoladi ──
   async function captureAndCorrect() {
     const video = videoRef.current;
     if (!video || video.readyState < 2) return;
@@ -249,35 +251,46 @@ export default function CameraFAB() {
       } else {
         dataUrl = enhanceImage(fc).toDataURL("image/jpeg", 0.95);
       }
-      stopCamera();
-      setStep("confirm");
-      setCaptured(dataUrl);
+      // Rasmlar massiviga qo'shish — kamera yopilmaydi
+      setCapturedImages(prev => [...prev, dataUrl]);
     } finally {
       setSnapping(false);
     }
   }
 
   function pickFromGallery(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => { stopCamera(); setStep("confirm"); setCaptured(reader.result as string); };
-    reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => setCapturedImages(prev => [...prev, reader.result as string]);
+      reader.readAsDataURL(file);
+    });
     e.target.value = "";
   }
 
+  function goToConfirm() {
+    stopCamera();
+    setStep("confirm");
+  }
+
+  function removeImage(index: number) {
+    setCapturedImages(prev => prev.filter((_, i) => i !== index));
+    if (previewIndex === index) setPreviewIndex(null);
+  }
+
   async function sendToAI() {
-    if (!captured) return;
+    if (capturedImages.length === 0) return;
     setSending(true); setSendError("");
     try {
-      const blob = await (await fetch(captured)).blob();
-      const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
       const fd = new FormData();
-      fd.append("image", file);
-      // Subject: from folder's subject, else from URL (class flow)
+      for (const dataUrl of capturedImages) {
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
+        fd.append("images", file);
+      }
       if (selectedFolder?.subjectName) fd.append("subject", selectedFolder.subjectName);
       else if (urlSubject) fd.append("subject", urlSubject);
-      // Condition: from folder condition step, else from URL (class flow)
       if (folderCondition.trim()) fd.append("condition", folderCondition.trim());
       else if (urlCondition) fd.append("condition", urlCondition);
       if (urlStudentId) fd.append("studentId", urlStudentId);
@@ -403,6 +416,7 @@ export default function CameraFAB() {
       {/* ── Camera ── */}
       {camOpen && (
         <div className="fixed inset-0 z-[100] flex flex-col" style={{ background: "#000" }}>
+          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ background: "rgba(0,0,0,0.6)" }}>
             <div>
               <p className="text-sm font-semibold text-white">Hujjatni skanerlash</p>
@@ -414,36 +428,110 @@ export default function CameraFAB() {
               <X size={20} />
             </button>
           </div>
+
+          {/* Video */}
           <div className="flex-1 relative overflow-hidden">
             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+            <canvas ref={overlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
           </div>
-          <div className="flex items-center justify-center gap-8 py-6 shrink-0" style={{ background: "rgba(0,0,0,0.6)" }}>
+
+          {/* Thumbnail strip — olingan rasmlar */}
+          {capturedImages.length > 0 && (
+            <div className="shrink-0 px-3 py-2 flex gap-2 overflow-x-auto" style={{ background: "rgba(0,0,0,0.7)" }}>
+              {capturedImages.map((img, i) => (
+                <button key={i} onClick={() => setPreviewIndex(i)}
+                  className="relative shrink-0 w-14 h-14 rounded-lg overflow-hidden"
+                  style={{ border: "2px solid rgba(255,255,255,0.4)" }}>
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                  <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
+                    style={{ background: "var(--cta)", color: "#fff" }}>{i + 1}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Controls */}
+          <div className="flex items-center justify-between px-6 py-5 shrink-0" style={{ background: "rgba(0,0,0,0.6)" }}>
+            {/* Gallery */}
             <button onClick={() => galleryInputRef.current?.click()}
               className="w-12 h-12 rounded-2xl flex items-center justify-center"
               style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}>
               <Images size={22} />
             </button>
-            <input ref={galleryInputRef} type="file" accept="image/*" className="hidden" onChange={pickFromGallery} />
+            <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={pickFromGallery} />
+
+            {/* Capture */}
             <button onClick={captureAndCorrect} disabled={snapping}
               className="w-16 h-16 rounded-full flex items-center justify-center transition-all"
               style={{ background: "#22c55e", boxShadow: "0 0 24px rgba(34,197,94,0.5)",
                 border: "4px solid rgba(255,255,255,0.3)", transform: snapping ? "scale(0.9)" : "scale(1)" }}>
               {snapping ? <Loader2 size={24} color="#fff" className="animate-spin" /> : <Camera size={24} color="#fff" />}
             </button>
-            <div className="w-12 h-12" />
+
+            {/* Tayyor yoki bo'sh joy */}
+            {capturedImages.length > 0 ? (
+              <button onClick={goToConfirm}
+                className="w-12 h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5"
+                style={{ background: "var(--cta)", color: "#fff" }}>
+                <Check size={18} />
+                <span className="text-[9px] font-bold">{capturedImages.length}</span>
+              </button>
+            ) : (
+              <div className="w-12 h-12" />
+            )}
           </div>
         </div>
       )}
 
+      {/* ── Lightbox: to'liq ko'rish ── */}
+      {previewIndex !== null && capturedImages[previewIndex] && (
+        <div className="fixed inset-0 z-[200] flex flex-col" style={{ background: "rgba(0,0,0,0.95)" }}
+          onClick={() => setPreviewIndex(null)}>
+          <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={e => e.stopPropagation()}>
+            <p className="text-white text-sm font-semibold">{previewIndex + 1} / {capturedImages.length}</p>
+            <div className="flex gap-2">
+              <button onClick={() => { removeImage(previewIndex); setPreviewIndex(null); }}
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: "rgba(239,68,68,0.2)", color: "#ef4444" }}>
+                <Trash2 size={16} />
+              </button>
+              <button onClick={() => setPreviewIndex(null)}
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: "rgba(255,255,255,0.1)", color: "#fff" }}>
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
+            <img src={capturedImages[previewIndex]} alt="" className="max-w-full max-h-full object-contain rounded-xl" />
+          </div>
+          {/* Thumbnail navigation */}
+          {capturedImages.length > 1 && (
+            <div className="shrink-0 flex gap-2 px-4 py-3 overflow-x-auto justify-center" onClick={e => e.stopPropagation()}>
+              {capturedImages.map((img, i) => (
+                <button key={i} onClick={() => setPreviewIndex(i)}
+                  className="shrink-0 w-12 h-12 rounded-lg overflow-hidden"
+                  style={{ border: `2px solid ${i === previewIndex ? "var(--cta)" : "rgba(255,255,255,0.2)"}` }}>
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Confirm ── */}
-      {step === "confirm" && captured && (
+      {step === "confirm" && capturedImages.length > 0 && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
           style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}>
           <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl overflow-hidden"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            {/* Header */}
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
               <div>
-                <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>Tahlilga yuborish</p>
+                <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
+                  Tahlilga yuborish · {capturedImages.length} ta rasm
+                </p>
                 <div className="flex flex-col gap-0.5 mt-0.5">
                   {urlStudentName && <p className="text-xs" style={{ color: "var(--accent)" }}>{decodeURIComponent(urlStudentName)}</p>}
                   {selectedFolder?.subjectName && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{selectedFolder.subjectIcon} {selectedFolder.subjectName}</p>}
@@ -453,18 +541,34 @@ export default function CameraFAB() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => { setCaptured(null); setStep("cam"); }}
+                {/* Yana rasm olish */}
+                <button onClick={() => { setStep("cam"); document.body.classList.add("modal-open"); }}
                   className="p-1.5 rounded-lg" style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}>
-                  <RotateCcw size={15} />
+                  <Camera size={15} />
                 </button>
                 <button onClick={closeAll} className="p-1.5 rounded-lg" style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}>
                   <X size={15} />
                 </button>
               </div>
             </div>
-            <div className="mx-5 mt-4 rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-              <img src={captured} alt="Skan" className="w-full object-contain max-h-52" />
+
+            {/* Thumbnail grid */}
+            <div className="mx-5 mt-4 grid gap-2" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+              {capturedImages.map((img, i) => (
+                <div key={i} className="relative rounded-xl overflow-hidden aspect-[3/4]"
+                  style={{ border: "1px solid var(--border)" }}>
+                  <img src={img} alt="" className="w-full h-full object-cover cursor-pointer"
+                    onClick={() => setPreviewIndex(i)} />
+                  <button onClick={() => removeImage(i)}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(0,0,0,0.6)", color: "#fff" }}>
+                    <X size={10} />
+                  </button>
+                </div>
+              ))}
             </div>
+
+            {/* Subject input (agar kerak) */}
             {!selectedFolder?.subjectId && !urlSubject && (
               <div className="px-5 mt-3">
                 <label className="text-[11px] font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>
@@ -477,7 +581,9 @@ export default function CameraFAB() {
                   onKeyDown={e => e.key === "Enter" && !sending && sendToAI()} />
               </div>
             )}
+
             {sendError && <p className="text-xs px-5 mt-2" style={{ color: "var(--error)" }}>{sendError}</p>}
+
             <div className="px-5 py-4">
               <button onClick={sendToAI} disabled={sending}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all"
