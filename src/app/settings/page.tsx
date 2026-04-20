@@ -86,9 +86,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 const PLAN_META: Record<string, { label: string; color: string }> = {
-  free:    { label: "Free",    color: "var(--text-muted)" },
-  pro:     { label: "Pro",     color: "var(--accent)" },
-  premium: { label: "Premium", color: "var(--warning)" },
+  free:        { label: "Free",        color: "var(--text-muted)" },
+  mini:        { label: "Mini",        color: "#6366f1" },
+  pro:         { label: "Pro",         color: "var(--accent)" },
+  premium:     { label: "Premium",     color: "var(--warning)" },
+  pay_per_use: { label: "Pay per use", color: "#3dbd7d" },
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL;

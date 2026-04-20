@@ -30,6 +30,7 @@ const todayTasks: { id: string; cls: string; subject: string; icon: string; tota
 
 const PLAN_LABEL: Record<string, { label: string; color: string; bg: string }> = {
   free:         { label: "Free",        color: "var(--text-muted)",  bg: "var(--bg-primary)" },
+  mini:         { label: "Mini",        color: "#6366f1",            bg: "#ede9fe" },
   pro:          { label: "Pro",         color: "var(--accent)",      bg: "var(--accent-light)" },
   premium:      { label: "Premium",     color: "var(--warning)",     bg: "var(--warning-bg)" },
   pay_per_use:  { label: "Pay per use", color: "#7C3AED",            bg: "#EDE9FE" },
