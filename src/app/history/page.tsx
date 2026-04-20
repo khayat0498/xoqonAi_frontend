@@ -25,6 +25,8 @@ type SubmissionItem = {
   score: number | null;
   grade: string | null;
   costUzs: number | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
 };
 
 type CacheLog = {
@@ -243,6 +245,11 @@ export default function HistoryPage() {
                               <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>· {item.grade}</span>
                             )}
                           </div>
+                          {(item.inputTokens || item.outputTokens) ? (
+                            <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)", opacity: 0.7 }}>
+                              {(item.inputTokens ?? 0).toLocaleString()}in / {(item.outputTokens ?? 0).toLocaleString()}out
+                            </p>
+                          ) : null}
                         </div>
 
                         <div className="flex flex-col items-end gap-1 shrink-0">
