@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Folder, CheckCircle2, Clock, XCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Folder, CheckCircle2, Clock, XCircle, Loader2, Database } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -27,6 +27,18 @@ type SubmissionItem = {
   costUzs: number | null;
 };
 
+type CacheLog = {
+  id: string;
+  amountUzs: number;
+  inputTokens: number | null;
+  note: string | null;
+  createdAt: string;
+};
+
+type TimelineEntry =
+  | { kind: "submission"; data: SubmissionItem }
+  | { kind: "cache"; data: CacheLog };
+
 function formatDate(iso: string) {
   const d = new Date(iso);
   return d.toLocaleDateString("uz-UZ", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -45,6 +57,7 @@ function StatusIcon({ status }: { status: string }) {
 
 export default function HistoryPage() {
   const [items, setItems] = useState<SubmissionItem[]>([]);
+  const [cacheLogs, setCacheLogs] = useState<CacheLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -53,11 +66,20 @@ export default function HistoryPage() {
   const load = useCallback(async (p: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/submissions?page=${p}&limit=${limit}`, { headers: authHeaders() });
-      if (!res.ok) return;
-      const data = await res.json();
-      setItems(p === 1 ? data.data : (prev) => [...prev, ...data.data]);
-      setTotal(data.total);
+      const [subRes, balRes] = await Promise.all([
+        fetch(`${API}/api/submissions?page=${p}&limit=${limit}`, { headers: authHeaders() }),
+        p === 1 ? fetch(`${API}/api/balance/me`, { headers: authHeaders() }) : Promise.resolve(null),
+      ]);
+      if (subRes.ok) {
+        const data = await subRes.json();
+        setItems(p === 1 ? data.data : (prev) => [...prev, ...data.data]);
+        setTotal(data.total);
+      }
+      if (balRes?.ok) {
+        const balData = await balRes.json();
+        const caches = (balData.logs ?? []).filter((l: any) => l.type === "cache");
+        setCacheLogs(caches);
+      }
     } finally {
       setLoading(false);
     }
@@ -73,15 +95,21 @@ export default function HistoryPage() {
 
   const hasMore = items.length < total;
 
+  // Submissions + cache loglarni vaqt bo'yicha birlashtirish
+  const allEntries: TimelineEntry[] = [
+    ...items.map(d => ({ kind: "submission" as const, data: d })),
+    ...cacheLogs.map(d => ({ kind: "cache" as const, data: d })),
+  ].sort((a, b) => new Date(b.data.createdAt).getTime() - new Date(a.data.createdAt).getTime());
+
   // Kunlar bo'yicha guruhlash
-  const grouped: { date: string; items: SubmissionItem[] }[] = [];
-  for (const item of items) {
-    const date = formatDate(item.createdAt);
+  const grouped: { date: string; entries: TimelineEntry[] }[] = [];
+  for (const entry of allEntries) {
+    const date = formatDate(entry.data.createdAt);
     const last = grouped[grouped.length - 1];
     if (last && last.date === date) {
-      last.items.push(item);
+      last.entries.push(entry);
     } else {
-      grouped.push({ date, items: [item] });
+      grouped.push({ date, entries: [entry] });
     }
   }
 
@@ -123,98 +151,115 @@ export default function HistoryPage() {
             </div>
           ) : (
             <div className="px-4 pt-5 pb-8 flex flex-col gap-5">
-              {grouped.map(({ date, items: dayItems }) => (
+              {grouped.map(({ date, entries }) => (
                 <div key={date} className="flex flex-col gap-1.5">
-                  {/* Kun sarlavhasi */}
                   <p className="text-xs font-semibold px-1 pb-1" style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}>{date}</p>
 
-                  {dayItems.map((item) => (
-                    <Link
-                      key={item.id}
-                      href={`/submission/${item.id}`}
-                      className="flex items-center gap-3 px-4 py-3 transition-all hover:opacity-80 animate-slide-in"
-                      style={{
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "var(--radius-sm)",
-                        boxShadow: "var(--shadow-sm)",
-                      }}
-                    >
-                      {/* Rasm thumbnail */}
-                      <div
-                        className="w-11 h-11 shrink-0 overflow-hidden"
-                        style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border-light)" }}
+                  {entries.map((entry) => {
+                    if (entry.kind === "cache") {
+                      const log = entry.data;
+                      return (
+                        <div
+                          key={`cache-${log.id}`}
+                          className="flex items-center gap-3 px-4 py-2.5"
+                          style={{
+                            background: "var(--bg-primary)",
+                            border: "1px dashed var(--border)",
+                            borderRadius: "var(--radius-sm)",
+                          }}
+                        >
+                          <div className="w-11 h-11 shrink-0 flex items-center justify-center"
+                            style={{ borderRadius: "var(--radius-sm)", background: "rgba(99,102,241,0.08)" }}>
+                            <Database size={16} style={{ color: "#6366f1" }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Kesh yaratish</p>
+                            <p className="text-[11px] truncate mt-0.5" style={{ color: "var(--text-muted)" }}>
+                              {log.inputTokens ? `${log.inputTokens.toLocaleString()} token · ` : ""}{log.note ?? "Prompt keshi"}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className="text-xs font-semibold" style={{ color: "#6366f1" }}>
+                              -{Math.abs(log.amountUzs).toLocaleString()}uzs
+                            </span>
+                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>{formatTime(log.createdAt)}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const item = entry.data;
+                    return (
+                      <Link
+                        key={item.id}
+                        href={`/submission/${item.id}`}
+                        className="flex items-center gap-3 px-4 py-3 transition-all hover:opacity-80 animate-slide-in"
+                        style={{
+                          background: "var(--bg-card)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "var(--radius-sm)",
+                          boxShadow: "var(--shadow-sm)",
+                        }}
                       >
-                        {item.imageUrl ? (
-                          <img
-                            src={`${API}${item.imageUrl}`}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-lg">📄</div>
-                        )}
-                      </div>
-
-                      {/* Ma'lumot */}
-                      <div className="flex-1 min-w-0">
-                        {/* Birinchi qator: ism yoki papka */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {item.studentName ? (
-                            <>
-                              <span className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>
-                                {item.studentName}
-                              </span>
-                              {item.className && (
-                                <span className="text-xs px-1.5 py-0.5 rounded-full shrink-0" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
-                                  {item.className}
-                                </span>
-                              )}
-                            </>
+                        <div
+                          className="w-11 h-11 shrink-0 overflow-hidden"
+                          style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border-light)" }}
+                        >
+                          {item.imageUrl ? (
+                            <img src={`${API}${item.imageUrl}`} alt="" className="w-full h-full object-cover" />
                           ) : (
-                            <>
-                              <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                                {formatTime(item.createdAt)}
-                              </span>
-                              {item.folderName && (
-                                <span className="flex items-center gap-0.5 text-xs shrink-0" style={{ color: "var(--text-muted)" }}>
-                                  <Folder size={10} />
-                                  {item.folderName}
-                                </span>
-                              )}
-                            </>
+                            <div className="w-full h-full flex items-center justify-center text-lg">📄</div>
                           )}
                         </div>
 
-                        {/* Ikkinchi qator: fan + status */}
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <StatusIcon status={item.status} />
-                          <span className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
-                            {item.subject ?? "Fan ko'rsatilmagan"}
-                          </span>
-                          {item.grade && item.grade !== "-" && (
-                            <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>· {item.grade}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {item.studentName ? (
+                              <>
+                                <span className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{item.studentName}</span>
+                                {item.className && (
+                                  <span className="text-xs px-1.5 py-0.5 rounded-full shrink-0" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
+                                    {item.className}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{formatTime(item.createdAt)}</span>
+                                {item.folderName && (
+                                  <span className="flex items-center gap-0.5 text-xs shrink-0" style={{ color: "var(--text-muted)" }}>
+                                    <Folder size={10} />{item.folderName}
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <StatusIcon status={item.status} />
+                            <span className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
+                              {item.subject ?? "Fan ko'rsatilmagan"}
+                            </span>
+                            {item.grade && item.grade !== "-" && (
+                              <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>· {item.grade}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          {item.costUzs ? (
+                            <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
+                              {item.costUzs.toLocaleString()}uzs
+                            </span>
+                          ) : (
+                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>—</span>
+                          )}
+                          {item.studentName && (
+                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>{formatTime(item.createdAt)}</span>
                           )}
                         </div>
-                      </div>
-
-                      {/* O'ng: narx + vaqt */}
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        {item.costUzs ? (
-                          <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-                            {item.costUzs.toLocaleString()}uzs
-                          </span>
-                        ) : (
-                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>—</span>
-                        )}
-                        {item.studentName && (
-                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                            {formatTime(item.createdAt)}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
                 </div>
               ))}
 
