@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Camera, CheckCircle2, TrendingUp, Pencil, X, Clock, BarChart2 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
@@ -19,6 +19,8 @@ type Submission = { id: string; subject: string | null; status: string; score: n
 export default function StudentProfilePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const backUrl = searchParams.get("from") ?? "/home";
 
   const [student, setStudent] = useState<Student | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -73,7 +75,7 @@ export default function StudentProfilePage() {
   if (!student) return (
     <div className="flex flex-col items-center justify-center h-screen gap-4" style={{ background: "var(--bg-primary)" }}>
       <p style={{ color: "var(--text-muted)" }}>O'quvchi topilmadi</p>
-      <button onClick={() => router.back()} className="text-sm" style={{ color: "var(--accent)" }}>Orqaga</button>
+      <button onClick={() => router.push(backUrl)} className="text-sm" style={{ color: "var(--accent)" }}>Orqaga</button>
     </div>
   );
 
@@ -92,7 +94,7 @@ export default function StudentProfilePage() {
         style={{ background: "linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 60%, var(--accent-hover) 100%)", boxShadow: "var(--shadow-clay)", zIndex: 10 }}>
         <div style={{ position: "absolute", right: -20, top: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
         <div style={{ position: "absolute", right: 50, bottom: -20, width: 70, height: 70, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
-        <button onClick={() => router.back()}
+        <button onClick={() => router.push(backUrl)}
           className="w-8 h-8 rounded-xl flex items-center justify-center relative"
           style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
           <ArrowLeft size={16} />

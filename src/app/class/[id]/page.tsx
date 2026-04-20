@@ -423,7 +423,7 @@ export default function ClassPage() {
                       className="px-3 py-1.5 text-sm outline-none"
                       style={{ background:"var(--bg-primary)", border:"1px solid var(--accent)", color:"var(--text-primary)", borderRadius: "var(--radius-sm)" }} />
                   ) : (
-                    <Link href={`/student/${student.id}`} className="flex items-center gap-2.5 hover:opacity-70 transition-all">
+                    <Link href={`/student/${student.id}?from=/class/${id}`} className="flex items-center gap-2.5 hover:opacity-70 transition-all">
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                         style={{ background: color }}>{initials}</div>
                       <div>
@@ -497,7 +497,7 @@ export default function ClassPage() {
                     </div>
                   ) : (
                     <>
-                      <Link href={`/student/${student.id}`} className="flex flex-col items-center text-center gap-2.5 p-5 pb-3 hover:opacity-80 transition-all">
+                      <Link href={`/student/${student.id}?from=/class/${id}`} className="flex flex-col items-center text-center gap-2.5 p-5 pb-3 hover:opacity-80 transition-all">
                         <div className="relative">
                           <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold" style={{ background: color }}>{initials}</div>
                           {pendingCounts[student.id] ? (
