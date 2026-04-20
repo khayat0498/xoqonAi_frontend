@@ -8,6 +8,14 @@ import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
+function scoreToGrade(score: number): string {
+  if (score >= 86) return "5";
+  if (score >= 71) return "4";
+  if (score >= 56) return "3";
+  if (score >= 41) return "2";
+  return "1";
+}
+
 type Question = { text: string; options: string[] };
 
 type Analysis = {
@@ -56,7 +64,8 @@ export default function SubmissionPage() {
       fetch(`${API}/api/billing/my-plan`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : { planKey: "free" }),
     ]).then(([data, plan]) => {
       setSubmission(data);
-      setGrade(data.analysis?.grade ?? "");
+      const aiGrade = data.analysis?.grade || (data.analysis?.score != null ? scoreToGrade(data.analysis.score) : "");
+      setGrade(aiGrade);
       setPlanKey(plan.planKey ?? "free");
     }).catch(() => {}).finally(() => setLoading(false));
   }, [id]);

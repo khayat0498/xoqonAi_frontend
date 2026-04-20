@@ -103,6 +103,19 @@ export default function SettingsPage() {
   const [lang, setLang] = useState<"uz" | "ru" | "en">("uz");
   const [planKey, setPlanKey] = useState("free");
 
+  // Profile edit modal
+  const [profileModal, setProfileModal] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState("");
+
+  // Password change modal
+  const [passwordModal, setPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+
   useEffect(() => {
     const token = getToken();
     if (!token) return;
@@ -143,6 +156,57 @@ export default function SettingsPage() {
     }
     removeToken();
     router.replace("/auth/login");
+  };
+
+  const openProfileModal = () => {
+    setEditName(user?.name ?? "");
+    setProfileError("");
+    setProfileModal(true);
+  };
+
+  const saveProfile = async () => {
+    if (!editName.trim()) return;
+    setProfileSaving(true);
+    setProfileError("");
+    try {
+      const res = await fetch(`${API}/api/users/me`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ name: editName.trim() }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setProfileError(d.error ?? "Xatolik yuz berdi");
+        return;
+      }
+      // Refresh user context by reloading the page data
+      window.location.reload();
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const savePassword = async () => {
+    if (!currentPassword || !newPassword) return;
+    setPasswordSaving(true);
+    setPasswordError("");
+    try {
+      const res = await fetch(`${API}/api/users/me/password`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPasswordError(d.error ?? "Xatolik yuz berdi");
+        return;
+      }
+      setPasswordModal(false);
+      setCurrentPassword("");
+      setNewPassword("");
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,8 +291,8 @@ export default function SettingsPage() {
 
             {/* Asosiy */}
             <Section title="Asosiy">
-              <Row icon={User} label="Profil ma'lumotlari" sub="Ism, rasm, bio" />
-              <Row icon={Lock} label="Parol o'zgartirish" last />
+              <Row icon={User} label="Profil ma'lumotlari" sub="Ism, rasm, bio" onClick={openProfileModal} />
+              <Row icon={Lock} label="Parol o'zgartirish" last onClick={() => { setPasswordError(""); setCurrentPassword(""); setNewPassword(""); setPasswordModal(true); }} />
             </Section>
 
             {/* Ko'rinish */}
@@ -286,6 +350,109 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Profile edit modal */}
+      {profileModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.72)" }} onClick={() => setProfileModal(false)}>
+          <div
+            className="w-full max-w-lg p-5 pb-10 flex flex-col gap-4"
+            style={{ background: "var(--bg-card)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
+            <div className="flex items-center justify-between">
+              <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Profil ma'lumotlari</p>
+              <button onClick={() => setProfileModal(false)} className="w-7 h-7 flex items-center justify-center rounded-full" style={{ background: "var(--bg-primary)", color: "var(--text-muted)", fontSize: 16 }}>×</button>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Ism</label>
+              <input
+                autoFocus
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Ismingiz"
+                className="w-full px-3 py-2.5 text-sm font-medium outline-none"
+                style={{
+                  background: "var(--bg-primary)",
+                  border: "1.5px solid var(--border)",
+                  borderRadius: "var(--radius-sm)",
+                  color: "var(--text-primary)",
+                }}
+              />
+            </div>
+            {profileError && <p className="text-xs font-medium" style={{ color: "var(--error)" }}>{profileError}</p>}
+            <button
+              onClick={saveProfile}
+              disabled={profileSaving || !editName.trim()}
+              className="w-full py-3 text-sm font-bold rounded-xl transition-all"
+              style={{ background: "var(--accent)", color: "#fff", opacity: profileSaving || !editName.trim() ? 0.6 : 1 }}
+            >
+              {profileSaving ? "Saqlanmoqda..." : "Saqlash"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Password change modal */}
+      {passwordModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.72)" }} onClick={() => setPasswordModal(false)}>
+          <div
+            className="w-full max-w-lg p-5 pb-10 flex flex-col gap-4"
+            style={{ background: "var(--bg-card)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
+            <div className="flex items-center justify-between">
+              <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Parol o'zgartirish</p>
+              <button onClick={() => setPasswordModal(false)} className="w-7 h-7 flex items-center justify-center rounded-full" style={{ background: "var(--bg-primary)", color: "var(--text-muted)", fontSize: 16 }}>×</button>
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Joriy parol</label>
+                <input
+                  autoFocus
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2.5 text-sm font-medium outline-none"
+                  style={{
+                    background: "var(--bg-primary)",
+                    border: "1.5px solid var(--border)",
+                    borderRadius: "var(--radius-sm)",
+                    color: "var(--text-primary)",
+                  }}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Yangi parol</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Min 8 ta belgi, katta/kichik harf, raqam"
+                  className="w-full px-3 py-2.5 text-sm font-medium outline-none"
+                  style={{
+                    background: "var(--bg-primary)",
+                    border: "1.5px solid var(--border)",
+                    borderRadius: "var(--radius-sm)",
+                    color: "var(--text-primary)",
+                  }}
+                />
+              </div>
+            </div>
+            {passwordError && <p className="text-xs font-medium" style={{ color: "var(--error)" }}>{passwordError}</p>}
+            <button
+              onClick={savePassword}
+              disabled={passwordSaving || !currentPassword || !newPassword}
+              className="w-full py-3 text-sm font-bold rounded-xl transition-all"
+              style={{ background: "var(--accent)", color: "#fff", opacity: passwordSaving || !currentPassword || !newPassword ? 0.6 : 1 }}
+            >
+              {passwordSaving ? "Saqlanmoqda..." : "O'zgartirish"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
