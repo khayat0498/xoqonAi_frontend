@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Camera, FileText, Search, Plus, X,
-  MoreVertical, Pencil, Trash2, Check, UserPlus, Send, Timer, BookOpen, ChevronRight,
+  MoreVertical, Pencil, Trash2, Check, UserPlus, Send, Timer, BookOpen, ChevronRight, Settings, BarChart2,
 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 import { useUserWS } from "@/lib/user-ws";
@@ -16,7 +16,7 @@ function authHeaders() {
 }
 
 type ClassStudent = { id: string; name: string; telegramId: string | null; createdAt: string };
-type ClassInfo = { id: string; name: string; icon: string | null; studentCount: number };
+type ClassInfo = { id: string; name: string; icon: string | null; studentCount: number; telegramGroupId: string | null };
 
 const avatarColors = ["#1a5c6b","#6366F1","#e8732a","#2a9d6a","#3B82F6","#8B5CF6","#EC4899","#d4a017"];
 
@@ -47,6 +47,12 @@ export default function ClassPage() {
   const [sendSubjects, setSendSubjects] = useState<SubjectItem[]>([]);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
+
+  // Class settings modal
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsName, setSettingsName] = useState("");
+  const [settingsTgGroup, setSettingsTgGroup] = useState("");
+  const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Class-level session (fan + masala sharti)
   type SubjectItem = { id: string; name: string; icon: string | null };
@@ -206,6 +212,28 @@ export default function ClassPage() {
     setEditingId(null);
   };
 
+  const openSettings = () => {
+    setSettingsName(cls?.name ?? "");
+    setSettingsTgGroup(cls?.telegramGroupId ?? "");
+    setShowSettings(true);
+  };
+
+  const saveSettings = async () => {
+    if (!settingsName.trim()) return;
+    setSettingsSaving(true);
+    const res = await fetch(`${API}/api/classes/${id}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ name: settingsName.trim(), telegramGroupId: settingsTgGroup.trim() || null }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setCls((prev) => prev ? { ...prev, name: updated.name, telegramGroupId: updated.telegramGroupId } : prev);
+      setShowSettings(false);
+    }
+    setSettingsSaving(false);
+  };
+
   const filtered = studentList.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -283,8 +311,25 @@ export default function ClassPage() {
         </button>
         <div className="flex-1 relative">
           <h1 className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{cls?.name} sinfi</h1>
-          <p className="text-xs" style={{ color:"rgba(255,255,255,0.7)" }}>{studentList.length} o&apos;quvchi</p>
+          <p className="text-xs flex items-center gap-1.5" style={{ color:"rgba(255,255,255,0.7)" }}>
+            {studentList.length} o&apos;quvchi
+            {cls?.telegramGroupId && (
+              <span className="flex items-center gap-0.5" style={{ color: "#5af" }}>
+                · <Send size={9} /> Guruh biriktirilgan
+              </span>
+            )}
+          </p>
         </div>
+        <button onClick={() => router.push(`/class/${id}/stats`)}
+          className="w-9 h-9 flex items-center justify-center rounded-xl relative"
+          style={{ background:"rgba(255,255,255,0.18)", color:"#fff" }}>
+          <BarChart2 size={16} />
+        </button>
+        <button onClick={openSettings}
+          className="w-9 h-9 flex items-center justify-center rounded-xl relative"
+          style={{ background:"rgba(255,255,255,0.18)", color:"#fff" }}>
+          <Settings size={16} />
+        </button>
         <button onClick={() => { setShowAdd(true); setAddSearch(""); setShowCreate(false); setNewName(""); }}
           className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl font-medium relative"
           style={{ background:"rgba(255,255,255,0.18)", color:"#fff" }}>
@@ -826,6 +871,57 @@ export default function ClassPage() {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Sinf sozlamalari modal ── */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.72)" }} onClick={() => setShowSettings(false)}>
+          <div
+            className="w-full max-w-lg p-5 pb-10 flex flex-col gap-4"
+            style={{ background: "var(--bg-card)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
+            <div className="flex items-center justify-between">
+              <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Sinf sozlamalari</p>
+              <button onClick={() => setShowSettings(false)} className="w-7 h-7 flex items-center justify-center rounded-full" style={{ background: "var(--bg-primary)", color: "var(--text-muted)", fontSize: 16 }}>×</button>
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Sinf nomi</label>
+                <input
+                  autoFocus
+                  value={settingsName}
+                  onChange={(e) => setSettingsName(e.target.value)}
+                  placeholder="Masalan: 10-A"
+                  className="w-full px-3 py-2.5 text-sm font-medium outline-none"
+                  style={{ background: "var(--bg-primary)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Telegram guruh ID</label>
+                <input
+                  value={settingsTgGroup}
+                  onChange={(e) => setSettingsTgGroup(e.target.value)}
+                  placeholder="-100xxxxxxxxxx"
+                  className="w-full px-3 py-2.5 text-sm font-medium outline-none"
+                  style={{ background: "var(--bg-primary)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "monospace" }}
+                />
+                <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                  Guruh ID ni olish uchun @userinfobot ga guruhni forward qiling. Odatda -100 bilan boshlanadi.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={saveSettings}
+              disabled={settingsSaving || !settingsName.trim()}
+              className="w-full py-3 text-sm font-bold rounded-xl transition-all"
+              style={{ background: "var(--accent)", color: "#fff", opacity: settingsSaving || !settingsName.trim() ? 0.6 : 1 }}
+            >
+              {settingsSaving ? "Saqlanmoqda..." : "Saqlash"}
+            </button>
+          </div>
         </div>
       )}
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Camera, CheckCircle2, TrendingUp, Pencil, X, Clock } from "lucide-react";
+import { ArrowLeft, Camera, CheckCircle2, TrendingUp, Pencil, X, Clock, BarChart2 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -105,6 +105,12 @@ export default function StudentProfilePage() {
           className="w-8 h-8 rounded-xl flex items-center justify-center relative"
           style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
           <Pencil size={15} />
+        </button>
+        <button
+          onClick={() => router.push(`/student/${student.id}/stats`)}
+          className="w-8 h-8 rounded-xl flex items-center justify-center relative"
+          style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
+          <BarChart2 size={15} />
         </button>
         <button
           onClick={() => router.push(`/home?camera=1&studentId=${student.id}&studentName=${encodeURIComponent(student.name)}`)}
