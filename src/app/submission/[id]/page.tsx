@@ -75,7 +75,7 @@ export default function SubmissionPage() {
     if (sub.filePaths && sub.filePaths.length > 0) {
       return sub.filePaths.map(fp => `${API}/${fp.replace(/\\/g, "/")}`);
     }
-    return sub.imageUrl ? [`${API}${sub.imageUrl}`] : [];
+    return sub.imageUrl ? [sub.imageUrl.startsWith("http") ? sub.imageUrl : `${API}${sub.imageUrl}`] : [];
   }
 
   async function saveGrade(value: string) {

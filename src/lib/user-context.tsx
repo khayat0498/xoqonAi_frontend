@@ -61,9 +61,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (!token) return;
 
     const form = new FormData();
-    form.append("file", file);
+    form.append("avatar", file);
 
-    const res = await fetch(`${API}/api/upload/avatar`, {
+    const res = await fetch(`${API}/api/users/me/avatar`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: form,

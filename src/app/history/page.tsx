@@ -206,7 +206,7 @@ export default function HistoryPage() {
                           style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border-light)" }}
                         >
                           {item.imageUrl ? (
-                            <img src={`${API}${item.imageUrl}`} alt="" className="w-full h-full object-cover" />
+                            <img src={item.imageUrl.startsWith("http") ? item.imageUrl : `${API}${item.imageUrl}`} alt="" className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-lg">📄</div>
                           )}
