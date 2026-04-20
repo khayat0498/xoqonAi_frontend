@@ -305,7 +305,7 @@ export default function ClassPage() {
         style={{ background: "linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 60%, var(--accent-hover) 100%)", boxShadow: "6px 6px 14px rgba(53,120,136,0.25), inset -2px -2px 6px rgba(0,0,0,0.08), inset 2px 2px 6px rgba(255,255,255,0.12)", zIndex: 10 }}>
         <div style={{ position:"absolute", right:-20, top:-30, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.07)" }} />
         <div style={{ position:"absolute", right:50, bottom:-20, width:70, height:70, borderRadius:"50%", background:"rgba(255,255,255,0.05)" }} />
-        <button onClick={() => router.back()} className="w-8 h-8 rounded-xl flex items-center justify-center relative"
+        <button onClick={() => router.push("/home")} className="w-8 h-8 rounded-xl flex items-center justify-center relative"
           style={{ background:"rgba(255,255,255,0.18)", color:"#fff" }}>
           <ArrowLeft size={16} />
         </button>

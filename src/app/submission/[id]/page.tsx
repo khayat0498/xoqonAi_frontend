@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MessageCircle, Download, Send, RotateCcw, Check, X, ZoomIn, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { getToken } from "@/lib/auth";
@@ -40,6 +40,8 @@ type Submission = {
 
 export default function SubmissionPage() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const backUrl = searchParams.get("from") ?? "/home";
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
@@ -149,7 +151,7 @@ export default function SubmissionPage() {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-3" style={{ background: "var(--bg-primary)" }}>
         <p style={{ color: "var(--text-muted)" }}>Topilmadi</p>
-        <Link href="/home" className="text-sm font-medium" style={{ color: "var(--accent)" }}>Bosh sahifaga</Link>
+        <Link href={backUrl} className="text-sm font-medium" style={{ color: "var(--accent)" }}>Orqaga</Link>
       </div>
     );
   }
@@ -164,7 +166,7 @@ export default function SubmissionPage() {
       {/* Header */}
       <div className="px-5 py-4 border-b flex items-center gap-3 shrink-0"
         style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}>
-        <Link href="/home" className="w-8 h-8 flex items-center justify-center"
+        <Link href={backUrl} className="w-8 h-8 flex items-center justify-center"
           style={{ background: "var(--bg-primary)", color: "var(--text-secondary)", borderRadius: "var(--radius-sm)" }}>
           <ArrowLeft size={16} />
         </Link>
