@@ -64,7 +64,10 @@ export default function SubmissionPage() {
       fetch(`${API}/api/billing/my-plan`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : { planKey: "free" }),
     ]).then(([data, plan]) => {
       setSubmission(data);
-      const aiGrade = data.analysis?.grade || (data.analysis?.score != null ? scoreToGrade(data.analysis.score) : "");
+      const savedGrade = data.analysis?.grade;
+      const aiGrade = (savedGrade && savedGrade !== "-")
+        ? savedGrade
+        : (data.analysis?.score != null ? scoreToGrade(data.analysis.score) : "");
       setGrade(aiGrade);
       setPlanKey(plan.planKey ?? "free");
     }).catch(() => {}).finally(() => setLoading(false));
@@ -73,7 +76,7 @@ export default function SubmissionPage() {
   // Rasmlar ro'yxati: filePaths bo'lsa ulardan, yo'q bo'lsa imageUrl dan
   function getImageUrls(sub: Submission): string[] {
     if (sub.filePaths && sub.filePaths.length > 0) {
-      return sub.filePaths.map(fp => `${API}/${fp.replace(/\\/g, "/")}`);
+      return sub.filePaths.map(fp => fp.startsWith("http") ? fp : `${API}/${fp.replace(/\\/g, "/")}`);
     }
     return sub.imageUrl ? [sub.imageUrl.startsWith("http") ? sub.imageUrl : `${API}${sub.imageUrl}`] : [];
   }
