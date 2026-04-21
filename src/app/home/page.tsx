@@ -88,6 +88,7 @@ function HomePageInner() {
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [creatingFolder, setCreatingFolder] = useState(false);
+  const [savingFolder, setSavingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderIcon, setNewFolderIcon] = useState("📁");
   const [subjectList, setSubjectList] = useState<SubjectItem[]>([]);
@@ -107,6 +108,7 @@ function HomePageInner() {
   const [classStudents, setClassStudents] = useState<Student[]>([]);
   const [menuOpenFile, setMenuOpenFile] = useState<string | null>(null);
   const [creatingClass, setCreatingClass] = useState(false);
+  const [savingClass, setSavingClass] = useState(false);
   const [newClassName, setNewClassName] = useState("");
   const [planAlert, setPlanAlert] = useState<string | null>(null);
   const [deleteStudentId, setDeleteStudentId] = useState<string | null>(null);
@@ -1206,8 +1208,10 @@ function HomePageInner() {
                     value={newClassName}
                     onChange={(e) => { setNewClassName(e.target.value); setNameError(""); }}
                     onKeyDown={async (e) => {
-                      if (e.key === "Enter" && newClassName.trim()) {
+                      if (e.key === "Enter" && newClassName.trim() && !savingClass) {
+                        setSavingClass(true);
                         const ok = await handleCreateClass(newClassName.trim());
+                        setSavingClass(false);
                         if (!ok) { setNameError("Bu nom band!"); return; }
                         setCreatingClass(false);
                       }
@@ -1218,16 +1222,19 @@ function HomePageInner() {
                     style={{ color: "var(--text-primary)" }}
                   />
                   <button
+                    disabled={savingClass || !newClassName.trim()}
                     onClick={async () => {
-                      if (!newClassName.trim()) return;
+                      if (!newClassName.trim() || savingClass) return;
+                      setSavingClass(true);
                       const ok = await handleCreateClass(newClassName.trim());
+                      setSavingClass(false);
                       if (!ok) { setNameError("Bu nom band!"); return; }
                       setCreatingClass(false);
                     }}
                     className="px-3 py-2 text-xs font-bold text-white"
-                    style={{ background: "var(--cta)", borderRadius: 8, boxShadow: "var(--shadow-clay-sm)" }}
+                    style={{ background: "var(--cta)", borderRadius: 8, boxShadow: "var(--shadow-clay-sm)", opacity: savingClass ? 0.6 : 1 }}
                   >
-                    Yaratish
+                    {savingClass ? "..." : "Yaratish"}
                   </button>
                   <button onClick={() => setCreatingClass(false)} style={{ color: "var(--text-muted)" }}>
                     <X size={16} />

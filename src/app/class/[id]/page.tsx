@@ -37,6 +37,7 @@ export default function ClassPage() {
   const [newName, setNewName]       = useState("");
   const [newTgId, setNewTgId]       = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [savingStudent, setSavingStudent] = useState(false);
 
   // Edit / Delete
   const [editingId, setEditingId]   = useState<string | null>(null);
@@ -159,7 +160,8 @@ export default function ClassPage() {
   /* ── Yangi o'quvchi yaratib sinfga qo'shish ── */
   const createAndAdd = async () => {
     const name = newName.trim();
-    if (!name) return;
+    if (!name || savingStudent) return;
+    setSavingStudent(true);
     const telegramId = newTgId.trim() || null;
 
     const createRes = await fetch(`${API}/api/students`, {
@@ -181,6 +183,7 @@ export default function ClassPage() {
     setNewName("");
     setNewTgId("");
     setShowCreate(false);
+    setSavingStudent(false);
   };
 
   /* ── Sinfdan chiqarish ── */
@@ -732,7 +735,7 @@ export default function ClassPage() {
                     className="w-full px-3 py-2 text-sm outline-none"
                     style={{ background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-primary)", borderRadius: "var(--radius-sm)" }} />
                   <div className="flex gap-2">
-                    <button onClick={() => void createAndAdd()} className="flex-1 py-2 text-sm font-medium" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff" }}>Qo&apos;shish</button>
+                    <button onClick={() => void createAndAdd()} disabled={savingStudent || !newName.trim()} className="flex-1 py-2 text-sm font-medium" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff", opacity: savingStudent ? 0.6 : 1 }}>{savingStudent ? "..." : "Qo'shish"}</button>
                     <button onClick={() => { setShowCreate(false); setNewName(""); setNewTgId(""); }} className="w-9 h-9 flex items-center justify-center" style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-muted)" }}><X size={14} /></button>
                   </div>
                 </div>
