@@ -364,11 +364,18 @@ export default function ClassPage() {
                     <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-secondary)" }}>{sessionCondition}</p>
                   )}
                 </div>
-                <button onClick={openSessionSetup}
-                  className="text-xs px-3 py-1.5 rounded-xl font-medium shrink-0"
-                  style={{ background: "var(--accent)", color: "#fff" }}>
-                  O&apos;zgartirish
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button onClick={openSessionSetup}
+                    className="text-xs px-3 py-1.5 rounded-xl font-medium"
+                    style={{ background: "var(--accent)", color: "#fff" }}>
+                    O&apos;zgartirish
+                  </button>
+                  <button onClick={() => { setSessionSubject(null); setSessionCondition(""); localStorage.removeItem(`class_session_${id}`); }}
+                    className="text-xs px-3 py-1.5 rounded-xl font-medium"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
+                    Yangi
+                  </button>
+                </div>
               </div>
               {cacheInfo && (
                 <div className="px-4 py-2 flex items-center gap-2 text-[11px]"
