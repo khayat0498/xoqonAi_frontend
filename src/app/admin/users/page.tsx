@@ -22,6 +22,9 @@ type UserItem = {
   createdAt: string;
   planKey?: string | null;
   balanceUzs?: number | null;
+  totalInputTokens?: number;
+  totalOutputTokens?: number;
+  totalSpentUzs?: number;
 };
 
 type Pagination = { page: number; limit: number; total: number; totalPages: number };
@@ -279,9 +282,16 @@ export default function AdminUsersPage() {
                         : <XCircle size={11} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
                       }
                     </div>
-                    <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
-                      {new Date(user.createdAt).toLocaleDateString("uz-UZ")}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                        {new Date(user.createdAt).toLocaleDateString("uz-UZ")}
+                      </span>
+                      {((user.totalInputTokens ?? 0) > 0 || (user.totalOutputTokens ?? 0) > 0) && (
+                        <span className="text-[11px] font-medium" style={{ color: "var(--accent)" }}>
+                          {(user.totalInputTokens ?? 0).toLocaleString()}in / {(user.totalOutputTokens ?? 0).toLocaleString()}out · {(user.totalSpentUzs ?? 0).toLocaleString()} so'm
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Actions */}
