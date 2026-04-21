@@ -27,6 +27,8 @@ type SubmissionItem = {
   costUzs: number | null;
   inputTokens: number | null;
   outputTokens: number | null;
+  thinkingTokens: number | null;
+  thinkingCostUzs: number | null;
 };
 
 type CacheLog = {
@@ -247,16 +249,23 @@ export default function HistoryPage() {
                           </div>
                           {(item.inputTokens || item.outputTokens) ? (
                             <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)", opacity: 0.7 }}>
-                              {(item.inputTokens ?? 0).toLocaleString()}in / {(item.outputTokens ?? 0).toLocaleString()}out
+                              {(item.inputTokens ?? 0).toLocaleString()}in / {(item.outputTokens ?? 0).toLocaleString()}out{item.thinkingTokens ? ` / ${item.thinkingTokens.toLocaleString()}think` : ""}
                             </p>
                           ) : null}
                         </div>
 
                         <div className="flex flex-col items-end gap-1 shrink-0">
                           {item.costUzs ? (
-                            <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-                              {item.costUzs.toLocaleString()}uzs
-                            </span>
+                            <>
+                              <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
+                                {item.costUzs.toLocaleString()}uzs
+                              </span>
+                              {item.thinkingCostUzs ? (
+                                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                                  {item.thinkingCostUzs.toLocaleString()}uzs think
+                                </span>
+                              ) : null}
+                            </>
                           ) : (
                             <span className="text-xs" style={{ color: "var(--text-muted)" }}>—</span>
                           )}
