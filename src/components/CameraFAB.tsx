@@ -72,6 +72,7 @@ export default function CameraFAB() {
   const [folders, setFolders]       = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [folderCondition, setFolderCondition] = useState("");
+  const [conditionError, setConditionError] = useState(false);
   const [loading, setLoading]       = useState(false);
 
   // ── Camera ──
@@ -126,10 +127,16 @@ export default function CameraFAB() {
   function selectFolder(folder: Folder) {
     setSelectedFolder(folder);
     setFolderCondition("");
+    setConditionError(false);
     setStep("condition");
   }
 
   function openCamera() {
+    if (!folderCondition.trim() && !urlCondition) {
+      setConditionError(true);
+      return;
+    }
+    setConditionError(false);
     setStep("cam");
     document.body.classList.add("modal-open");
   }
@@ -396,12 +403,22 @@ export default function CameraFAB() {
               <textarea
                 autoFocus
                 value={folderCondition}
-                onChange={e => setFolderCondition(e.target.value)}
-                placeholder="Masalan: Darslik 45-bet, 3-mashq... (ixtiyoriy)"
+                onChange={e => { setFolderCondition(e.target.value); if (e.target.value.trim()) setConditionError(false); }}
+                placeholder="Masala shartini kiriting (majburiy)"
                 rows={4}
                 className="w-full px-3 py-2.5 text-sm outline-none resize-none"
-                style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
+                style={{
+                  background: "var(--bg-primary)",
+                  border: `1px solid ${conditionError ? "var(--error)" : "var(--border)"}`,
+                  borderRadius: "var(--radius-sm)",
+                  color: "var(--text-primary)"
+                }}
               />
+              {conditionError && (
+                <p className="text-xs mt-1" style={{ color: "var(--error)" }}>
+                  Masala shartini kiriting — tizim ishlashi uchun majburiy
+                </p>
+              )}
             </div>
             <div className="px-5 pb-5">
               <button onClick={openCamera}
