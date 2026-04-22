@@ -47,6 +47,8 @@ export default function ClassPage() {
   const [sendStudent, setSendStudent] = useState<ClassStudent | null>(null);
   const [sendSubjects, setSendSubjects] = useState<SubjectItem[]>([]);
   const [selectedSubject, setSelectedSubject] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<"ok" | "error" | null>(null);
   const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
 
   // Class settings modal
@@ -981,16 +983,46 @@ export default function ClassPage() {
                 Bekor
               </button>
               <button
-                onClick={() => { setSendStudent(null); setSelectedSubject(""); }}
-                disabled={!selectedSubject}
+                disabled={!selectedSubject || sending}
+                onClick={async () => {
+                  if (!sendStudent || !selectedSubject) return;
+                  setSending(true);
+                  setSendResult(null);
+                  try {
+                    const res = await fetch("/api/telegram/send-latest", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      credentials: "include",
+                      body: JSON.stringify({ studentId: sendStudent.id, subject: selectedSubject }),
+                    });
+                    if (res.ok) {
+                      setSendResult("ok");
+                      setTimeout(() => { setSendStudent(null); setSelectedSubject(""); setSendResult(null); }, 1500);
+                    } else {
+                      setSendResult("error");
+                    }
+                  } catch {
+                    setSendResult("error");
+                  } finally {
+                    setSending(false);
+                  }
+                }}
                 className="flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-2"
                 style={{
                   borderRadius: "var(--radius-sm)",
-                  background: selectedSubject ? "#229ED9" : "var(--border)",
+                  background: sendResult === "ok" ? "#22c55e" : sendResult === "error" ? "#ef4444" : selectedSubject ? "#229ED9" : "var(--border)",
                   color: "#fff",
-                  cursor: selectedSubject ? "pointer" : "not-allowed",
+                  cursor: selectedSubject && !sending ? "pointer" : "not-allowed",
                 }}>
-                <Send size={14} /> Yuborish
+                {sending ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : sendResult === "ok" ? (
+                  "✓ Yuborildi"
+                ) : sendResult === "error" ? (
+                  "Xatolik"
+                ) : (
+                  <><Send size={14} /> Yuborish</>
+                )}
               </button>
             </div>
           </div>

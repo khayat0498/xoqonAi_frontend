@@ -49,6 +49,7 @@ export default function SubmissionPage() {
   const [grade, setGrade] = useState("");
   const [gradeSaved, setGradeSaved] = useState(false);
   const [sending, setSending] = useState(false);
+  const [tgResult, setTgResult] = useState<"ok" | "error" | null>(null);
   const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
@@ -100,8 +101,21 @@ export default function SubmissionPage() {
   async function sendToStudent() {
     if (!grade.trim()) return;
     setSending(true);
+    setTgResult(null);
     await saveGrade(grade);
-    setSending(false);
+    const token = getToken();
+    try {
+      const res = await fetch(`${API}/api/telegram/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ submissionId: id }),
+      });
+      setTgResult(res.ok ? "ok" : "error");
+    } catch {
+      setTgResult("error");
+    } finally {
+      setSending(false);
+    }
   }
 
   async function retry() {
@@ -393,12 +407,26 @@ export default function SubmissionPage() {
           )}
 
           {/* Telegram tugmasi */}
-          <button onClick={sendToStudent} disabled={sending || !grade.trim() || !analysis}
-            className="flex items-center justify-center gap-2 py-3.5 font-medium text-sm transition-all hover:opacity-80"
-            style={{ background: "#229ED9", color: "#fff", borderRadius: "var(--radius-sm)", opacity: (sending || !grade.trim() || !analysis) ? 0.6 : 1 }}>
-            <Send size={16} />
-            {sending ? "Yuborilmoqda..." : `${grade.trim() || "—"} baho bilan yuborish`}
-          </button>
+          {submission.student?.telegramId && (
+            <button onClick={sendToStudent} disabled={sending || !grade.trim() || !analysis}
+              className="flex items-center justify-center gap-2 py-3.5 font-medium text-sm transition-all hover:opacity-80"
+              style={{
+                background: tgResult === "ok" ? "#22c55e" : tgResult === "error" ? "#ef4444" : "#229ED9",
+                color: "#fff",
+                borderRadius: "var(--radius-sm)",
+                opacity: (sending || !grade.trim() || !analysis) ? 0.6 : 1,
+              }}>
+              {sending ? (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : tgResult === "ok" ? (
+                <><Check size={16} /> Yuborildi!</>
+              ) : tgResult === "error" ? (
+                <><X size={16} /> Xatolik</>
+              ) : (
+                <><Send size={16} /> {grade.trim() || "—"} baho bilan yuborish</>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>
