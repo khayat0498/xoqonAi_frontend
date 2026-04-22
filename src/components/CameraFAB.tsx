@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Camera, X, Send, RotateCcw, Loader2, Images, ChevronRight, BookOpen, Check, Trash2 } from "lucide-react";
+import { Camera, X, Send, Loader2, Images, ChevronRight, BookOpen, Check, Trash2, Plus, FolderOpen } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -50,7 +50,8 @@ function enhanceImage(canvas: HTMLCanvasElement): HTMLCanvasElement {
   return out;
 }
 
-type Folder = { id: string; name: string; icon?: string | null; subjectId?: string | null; subjectName?: string | null; subjectIcon?: string | null };
+type Subject = { id: string; name: string; icon: string | null };
+type Folder  = { id: string; name: string; icon?: string | null; subjectId?: string | null; subjectName?: string | null; subjectIcon?: string | null };
 
 export default function CameraFAB() {
   const router = useRouter();
@@ -66,35 +67,44 @@ export default function CameraFAB() {
   const urlReturnTo    = searchParams.get("returnTo");
 
   // ── Step state ──
-  const [step, setStep] = useState<"idle" | "folder" | "condition" | "cam" | "confirm">("idle");
+  const [step, setStep] = useState<"idle" | "subject" | "folder" | "condition" | "cam" | "confirm">("idle");
 
   // ── Data ──
-  const [folders, setFolders]       = useState<Folder[]>([]);
-  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+  const [subjects, setSubjects]           = useState<Subject[]>([]);
+  const [folders, setFolders]             = useState<Folder[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [selectedFolder, setSelectedFolder]   = useState<Folder | null>(null);
   const [folderCondition, setFolderCondition] = useState("");
-  const [conditionError, setConditionError] = useState(false);
-  const [loading, setLoading]       = useState(false);
+  const [conditionError, setConditionError]   = useState(false);
+  const [loading, setLoading]             = useState(false);
+
+  // ── Folder creation ──
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName]   = useState("");
+  const [savingFolder, setSavingFolder]     = useState(false);
 
   // ── Camera ──
-  const [detected, setDetected]   = useState(false);
-  const [snapping, setSnapping]   = useState(false);
+  const [detected, setDetected]     = useState(false);
+  const [snapping, setSnapping]     = useState(false);
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null); // lightbox
-  const [prompt, setPrompt]       = useState("");
-  const [sending, setSending]     = useState(false);
-  const [sendError, setSendError] = useState("");
+  const [previewIndex, setPreviewIndex]     = useState<number | null>(null);
+  const [sending, setSending]       = useState(false);
+  const [sendError, setSendError]   = useState("");
 
-  const videoRef            = useRef<HTMLVideoElement>(null);
-  const overlayRef          = useRef<HTMLCanvasElement>(null);
-  const galleryInputRef     = useRef<HTMLInputElement>(null);
-  const contourRef          = useRef<any>(null);
-  const streamRef           = useRef<MediaStream | null>(null);
-  const intervalRef         = useRef<ReturnType<typeof setInterval> | null>(null);
-  const analysisCanvasRef   = useRef<HTMLCanvasElement | null>(null);
+  const videoRef          = useRef<HTMLVideoElement>(null);
+  const overlayRef        = useRef<HTMLCanvasElement>(null);
+  const galleryInputRef   = useRef<HTMLInputElement>(null);
+  const contourRef        = useRef<any>(null);
+  const streamRef         = useRef<MediaStream | null>(null);
+  const intervalRef       = useRef<ReturnType<typeof setInterval> | null>(null);
+  const analysisCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // URL camera=1
+  // URL camera=1 → to'g'ridan kameraga o't
   useEffect(() => {
-    if (urlCamera === "1" && step === "idle") { setStep("cam"); document.body.classList.add("modal-open"); }
+    if (urlCamera === "1" && step === "idle") {
+      setStep("cam");
+      document.body.classList.add("modal-open");
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlCamera]);
 
@@ -108,29 +118,72 @@ export default function CameraFAB() {
   const closeAll = useCallback(() => {
     stopCamera();
     setStep("idle");
-    setCapturedImages([]); setPrompt(""); setSendError(""); setDetected(false);
+    setSubjects([]); setFolders([]);
+    setSelectedSubject(null); setSelectedFolder(null);
+    setFolderCondition(""); setConditionError(false);
+    setCreatingFolder(false); setNewFolderName("");
+    setCapturedImages([]); setSendError(""); setDetected(false);
     setPreviewIndex(null);
-    setSelectedFolder(null); setFolderCondition("");
     document.body.classList.remove("modal-open");
     if (urlCamera === "1") router.replace(urlReturnTo ?? "/home");
-  }, [stopCamera, urlCamera, router]);
+  }, [stopCamera, urlCamera, router, urlReturnTo]);
 
-  // ── Step: folder ──
-  async function openFolderPicker() {
-    setStep("folder");
+  // ── STEP 1: Fan tanlash ──
+  async function openSubjectPicker() {
+    setStep("subject");
     setLoading(true);
-    const res = await fetch(`${API}/api/folders`, { headers: { Authorization: `Bearer ${getToken()}` } });
-    if (res.ok) { const d = await res.json(); setFolders(d.data ?? d ?? []); }
+    const [subsRes, foldersRes] = await Promise.all([
+      fetch(`${API}/api/subjects`, { headers: { Authorization: `Bearer ${getToken()}` } }),
+      fetch(`${API}/api/folders`,  { headers: { Authorization: `Bearer ${getToken()}` } }),
+    ]);
+    if (subsRes.ok) setSubjects(await subsRes.json());
+    if (foldersRes.ok) { const d = await foldersRes.json(); setFolders(d.data ?? d ?? []); }
     setLoading(false);
   }
 
+  function selectSubject(subject: Subject) {
+    setSelectedSubject(subject);
+    setSelectedFolder(null);
+    setCreatingFolder(false);
+    setNewFolderName("");
+    setStep("folder");
+  }
+
+  // ── STEP 2: Jild tanlash ──
   function selectFolder(folder: Folder) {
     setSelectedFolder(folder);
     setFolderCondition("");
     setConditionError(false);
+    setCreatingFolder(false);
     setStep("condition");
   }
 
+  async function saveNewFolder() {
+    if (!newFolderName.trim() || !selectedSubject) return;
+    setSavingFolder(true);
+    try {
+      const res = await fetch(`${API}/api/folders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ name: newFolderName.trim(), icon: "📁", subjectId: selectedSubject.id }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        const withSubject: Folder = {
+          ...created,
+          subjectId: selectedSubject.id,
+          subjectName: selectedSubject.name,
+          subjectIcon: selectedSubject.icon,
+        };
+        setFolders(prev => [...prev, withSubject]);
+        selectFolder(withSubject);
+      }
+    } finally {
+      setSavingFolder(false);
+    }
+  }
+
+  // ── STEP 3: Shart ──
   function openCamera() {
     if (!folderCondition.trim() && !urlCondition) {
       setConditionError(true);
@@ -149,16 +202,16 @@ export default function CameraFAB() {
     if (!ctx) return;
     ctx.clearRect(0, 0, ov.width, ov.height);
     const pad = 24;
-    const x = pad, y = pad, w = ov.width - pad*2, h = ov.height - pad*2;
+    const x = pad, y = pad, w = ov.width - pad * 2, h = ov.height - pad * 2;
     ctx.strokeStyle = "#22c55e"; ctx.lineWidth = 3;
     ctx.shadowColor = "#22c55e"; ctx.shadowBlur = 16;
     ctx.fillStyle = "rgba(34,197,94,0.05)";
     ctx.beginPath(); ctx.roundRect(x, y, w, h, 12); ctx.fill(); ctx.stroke();
     [[x,y],[x+w,y],[x+w,y+h],[x,y+h]].forEach(([px,py]) => {
       ctx.shadowBlur = 0; ctx.fillStyle = "#22c55e";
-      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#fff";
-      ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI * 2); ctx.fill();
     });
   }
 
@@ -226,7 +279,6 @@ export default function CameraFAB() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, cvReady]);
 
-  // ── Rasmga olish — massivga qo'shadi, kamera ochiq qoladi ──
   async function captureAndCorrect() {
     const video = videoRef.current;
     if (!video || video.readyState < 2) return;
@@ -259,7 +311,6 @@ export default function CameraFAB() {
       } else {
         dataUrl = enhanceImage(fc).toDataURL("image/jpeg", 0.95);
       }
-      // Rasmlar massiviga qo'shish — kamera yopilmaydi
       setCapturedImages(prev => [...prev, dataUrl]);
     } finally {
       setSnapping(false);
@@ -294,8 +345,7 @@ export default function CameraFAB() {
       const fd = new FormData();
       for (const dataUrl of capturedImages) {
         const blob = await (await fetch(dataUrl)).blob();
-        const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
-        fd.append("images", file);
+        fd.append("images", new File([blob], "scan.jpg", { type: "image/jpeg" }));
       }
       if (selectedFolder?.subjectName) fd.append("subject", selectedFolder.subjectName);
       else if (urlSubject) fd.append("subject", urlSubject);
@@ -323,12 +373,13 @@ export default function CameraFAB() {
   }
 
   const camOpen = step === "cam";
+  const subjectFolders = folders.filter(f => f.subjectId === selectedSubject?.id);
 
   return (
     <>
       {/* FAB */}
       <div className="fixed z-50 bottom-28 right-4 md:bottom-8 md:right-8">
-        <button onClick={openFolderPicker}
+        <button onClick={openSubjectPicker}
           className="w-14 h-14 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
           style={{ background: "var(--cta)", borderRadius: "var(--radius-md)", color: "#fff",
             boxShadow: "6px 6px 14px rgba(104,117,245,0.3), inset -2px -2px 4px rgba(0,0,0,0.1), inset 2px 2px 4px rgba(255,255,255,0.2)" }}>
@@ -336,36 +387,35 @@ export default function CameraFAB() {
         </button>
       </div>
 
-      {/* ── STEP 1: Folder tanlash ── */}
-      {step === "folder" && (
+      {/* ── STEP 1: Fan tanlash ── */}
+      {step === "subject" && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}
           onClick={e => e.target === e.currentTarget && closeAll()}>
           <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl overflow-hidden"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
-              <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>Jild tanlang</p>
+              <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
+                Fan tanlang
+              </p>
               <button onClick={closeAll} className="w-8 h-8 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
                 <X size={15} />
               </button>
             </div>
-            <div className="overflow-y-auto max-h-72">
+            <div className="overflow-y-auto max-h-80">
               {loading ? (
-                <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin" style={{ color: "var(--accent)" }} /></div>
-              ) : folders.length === 0 ? (
-                <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>Jild topilmadi</p>
-              ) : folders.map(f => (
-                <button key={f.id} onClick={() => selectFolder(f)}
+                <div className="flex justify-center py-8">
+                  <Loader2 size={20} className="animate-spin" style={{ color: "var(--accent)" }} />
+                </div>
+              ) : subjects.length === 0 ? (
+                <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>Fan topilmadi</p>
+              ) : subjects.map(s => (
+                <button key={s.id} onClick={() => selectSubject(s)}
                   className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-[var(--surface-hover)]"
                   style={{ borderBottom: "1px solid var(--border)" }}>
-                  <span className="text-xl">{f.icon || "📁"}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{f.name}</p>
-                    {f.subjectName && (
-                      <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>{f.subjectIcon} {f.subjectName}</p>
-                    )}
-                  </div>
+                  <span className="text-xl">{s.icon || "📖"}</span>
+                  <p className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{s.name}</p>
                   <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
                 </button>
               ))}
@@ -374,7 +424,93 @@ export default function CameraFAB() {
         </div>
       )}
 
-      {/* ── STEP 2: Masala sharti ── */}
+      {/* ── STEP 2: Jild tanlash ── */}
+      {step === "folder" && selectedSubject && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}
+          onClick={e => e.target === e.currentTarget && closeAll()}>
+          <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl overflow-hidden"
+            style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
+              <div>
+                <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
+                  Jild tanlang
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--accent)" }}>
+                  {selectedSubject.icon} {selectedSubject.name}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setStep("subject")}
+                  className="text-xs px-2.5 py-1.5 font-medium"
+                  style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                  ← Orqaga
+                </button>
+                <button onClick={closeAll} className="w-8 h-8 flex items-center justify-center"
+                  style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
+                  <X size={15} />
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto max-h-72">
+              {subjectFolders.length === 0 && !creatingFolder ? (
+                <div className="flex flex-col items-center gap-3 py-8 px-5">
+                  <FolderOpen size={32} style={{ color: "var(--text-muted)" }} />
+                  <p className="text-sm text-center" style={{ color: "var(--text-muted)" }}>
+                    Bu fan uchun jild yo'q
+                  </p>
+                </div>
+              ) : (
+                subjectFolders.map(f => (
+                  <button key={f.id} onClick={() => selectFolder(f)}
+                    className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-[var(--surface-hover)]"
+                    style={{ borderBottom: "1px solid var(--border)" }}>
+                    <span className="text-xl">{f.icon || "📁"}</span>
+                    <p className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{f.name}</p>
+                    <ChevronRight size={15} style={{ color: "var(--text-muted)" }} />
+                  </button>
+                ))
+              )}
+            </div>
+
+            {/* Yangi jild yaratish */}
+            <div className="px-5 py-4" style={{ borderTop: "1px solid var(--border)" }}>
+              {creatingFolder ? (
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    value={newFolderName}
+                    onChange={e => setNewFolderName(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") saveNewFolder(); if (e.key === "Escape") setCreatingFolder(false); }}
+                    placeholder="Jild nomi..."
+                    className="flex-1 px-3 py-2 text-sm outline-none"
+                    style={{ background: "var(--bg-primary)", border: "1px solid var(--accent)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
+                  />
+                  <button onClick={saveNewFolder} disabled={savingFolder || !newFolderName.trim()}
+                    className="w-10 h-9 flex items-center justify-center"
+                    style={{ background: "var(--cta)", borderRadius: "var(--radius-sm)", opacity: savingFolder || !newFolderName.trim() ? 0.5 : 1 }}>
+                    {savingFolder ? <Loader2 size={14} color="#fff" className="animate-spin" /> : <Check size={14} color="#fff" />}
+                  </button>
+                  <button onClick={() => setCreatingFolder(false)}
+                    className="w-9 h-9 flex items-center justify-center"
+                    style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-muted)" }}>
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => { setCreatingFolder(true); setNewFolderName(""); }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all"
+                  style={{ border: "1px dashed var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-muted)" }}>
+                  <Plus size={15} /> Yangi jild yaratish
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 3: Masala sharti ── */}
       {step === "condition" && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}
@@ -383,22 +519,26 @@ export default function CameraFAB() {
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
               <div>
-                <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>Masala sharti</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{selectedFolder?.icon} {selectedFolder?.name}</p>
+                <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
+                  Masala sharti
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  {selectedFolder?.icon || "📁"} {selectedFolder?.name}
+                  {selectedSubject && ` · ${selectedSubject.icon || "📖"} ${selectedSubject.name}`}
+                </p>
               </div>
-              <button onClick={closeAll} className="w-8 h-8 flex items-center justify-center"
-                style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
-                <X size={15} />
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => setStep("folder")}
+                  className="text-xs px-2.5 py-1.5 font-medium"
+                  style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+                  ← Orqaga
+                </button>
+                <button onClick={closeAll} className="w-8 h-8 flex items-center justify-center"
+                  style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
+                  <X size={15} />
+                </button>
+              </div>
             </div>
-            {selectedFolder?.subjectName && (
-              <div className="mx-5 mt-4 flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "var(--accent-light)" }}>
-                <BookOpen size={14} style={{ color: "var(--accent)" }} />
-                <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>
-                  {selectedFolder.subjectIcon} {selectedFolder.subjectName}
-                </span>
-              </div>
-            )}
             <div className="px-5 pt-4 pb-2">
               <textarea
                 autoFocus
@@ -411,7 +551,7 @@ export default function CameraFAB() {
                   background: "var(--bg-primary)",
                   border: `1px solid ${conditionError ? "var(--error)" : "var(--border)"}`,
                   borderRadius: "var(--radius-sm)",
-                  color: "var(--text-primary)"
+                  color: "var(--text-primary)",
                 }}
               />
               {conditionError && (
@@ -434,12 +574,14 @@ export default function CameraFAB() {
       {/* ── Camera ── */}
       {camOpen && (
         <div className="fixed inset-0 z-[100] flex flex-col" style={{ background: "#000" }}>
-          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ background: "rgba(0,0,0,0.6)" }}>
             <div>
               <p className="text-sm font-semibold text-white">Hujjatni skanerlash</p>
-              {selectedFolder && (
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{selectedFolder.icon} {selectedFolder.name}</p>
+              {selectedSubject && (
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  {selectedSubject.icon} {selectedSubject.name}
+                  {selectedFolder && ` · ${selectedFolder.icon || "📁"} ${selectedFolder.name}`}
+                </p>
               )}
             </div>
             <button onClick={closeAll} className="p-2" style={{ color: "rgba(255,255,255,0.7)" }}>
@@ -447,13 +589,11 @@ export default function CameraFAB() {
             </button>
           </div>
 
-          {/* Video */}
           <div className="flex-1 relative overflow-hidden">
             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
             <canvas ref={overlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
           </div>
 
-          {/* Thumbnail strip — olingan rasmlar */}
           {capturedImages.length > 0 && (
             <div className="shrink-0 px-3 py-2 flex gap-2 overflow-x-auto" style={{ background: "rgba(0,0,0,0.7)" }}>
               {capturedImages.map((img, i) => (
@@ -468,9 +608,7 @@ export default function CameraFAB() {
             </div>
           )}
 
-          {/* Controls */}
           <div className="flex items-center justify-between px-6 py-5 shrink-0" style={{ background: "rgba(0,0,0,0.6)" }}>
-            {/* Gallery */}
             <button onClick={() => galleryInputRef.current?.click()}
               className="w-12 h-12 rounded-2xl flex items-center justify-center"
               style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}>
@@ -478,7 +616,6 @@ export default function CameraFAB() {
             </button>
             <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={pickFromGallery} />
 
-            {/* Capture */}
             <button onClick={captureAndCorrect} disabled={snapping}
               className="w-16 h-16 rounded-full flex items-center justify-center transition-all"
               style={{ background: "#22c55e", boxShadow: "0 0 24px rgba(34,197,94,0.5)",
@@ -486,7 +623,6 @@ export default function CameraFAB() {
               {snapping ? <Loader2 size={24} color="#fff" className="animate-spin" /> : <Camera size={24} color="#fff" />}
             </button>
 
-            {/* Tayyor yoki bo'sh joy */}
             {capturedImages.length > 0 ? (
               <button onClick={goToConfirm}
                 className="w-12 h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5"
@@ -501,7 +637,7 @@ export default function CameraFAB() {
         </div>
       )}
 
-      {/* ── Lightbox: to'liq ko'rish ── */}
+      {/* ── Lightbox ── */}
       {previewIndex !== null && capturedImages[previewIndex] && (
         <div className="fixed inset-0 z-[200] flex flex-col" style={{ background: "rgba(0,0,0,0.95)" }}
           onClick={() => setPreviewIndex(null)}>
@@ -523,7 +659,6 @@ export default function CameraFAB() {
           <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
             <img src={capturedImages[previewIndex]} alt="" className="max-w-full max-h-full object-contain rounded-xl" />
           </div>
-          {/* Thumbnail navigation */}
           {capturedImages.length > 1 && (
             <div className="shrink-0 flex gap-2 px-4 py-3 overflow-x-auto justify-center" onClick={e => e.stopPropagation()}>
               {capturedImages.map((img, i) => (
@@ -544,7 +679,6 @@ export default function CameraFAB() {
           style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}>
           <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl overflow-hidden"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-            {/* Header */}
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
               <div>
                 <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
@@ -552,14 +686,12 @@ export default function CameraFAB() {
                 </p>
                 <div className="flex flex-col gap-0.5 mt-0.5">
                   {urlStudentName && <p className="text-xs" style={{ color: "var(--accent)" }}>{urlStudentName}</p>}
-                  {selectedFolder?.subjectName && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{selectedFolder.subjectIcon} {selectedFolder.subjectName}</p>}
-                  {urlSubject && !selectedFolder?.subjectName && <p className="text-xs" style={{ color: "var(--text-muted)" }}>📖 {urlSubject}</p>}
+                  {selectedSubject && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{selectedSubject.icon} {selectedSubject.name}</p>}
+                  {selectedFolder && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{selectedFolder.icon || "📁"} {selectedFolder.name}</p>}
                   {folderCondition.trim() && <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>📝 {folderCondition}</p>}
-                  {urlCondition && !folderCondition.trim() && <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>📝 {urlCondition}</p>}
                 </div>
               </div>
               <div className="flex gap-2">
-                {/* Yana rasm olish */}
                 <button onClick={() => { setStep("cam"); document.body.classList.add("modal-open"); }}
                   className="p-1.5 rounded-lg" style={{ background: "var(--bg-primary)", color: "var(--text-muted)" }}>
                   <Camera size={15} />
@@ -570,7 +702,6 @@ export default function CameraFAB() {
               </div>
             </div>
 
-            {/* Thumbnail grid */}
             <div className="mx-5 mt-4 grid gap-2" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
               {capturedImages.map((img, i) => (
                 <div key={i} className="relative rounded-xl overflow-hidden aspect-[3/4]"
@@ -585,20 +716,6 @@ export default function CameraFAB() {
                 </div>
               ))}
             </div>
-
-            {/* Subject input (agar kerak) */}
-            {!selectedFolder?.subjectId && !urlSubject && (
-              <div className="px-5 mt-3">
-                <label className="text-[11px] font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>
-                  Fan / ko&apos;rsatma (ixtiyoriy)
-                </label>
-                <input className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-                  style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
-                  placeholder="Masalan: 7-sinf matematika..."
-                  value={prompt} onChange={e => setPrompt(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && !sending && sendToAI()} />
-              </div>
-            )}
 
             {sendError && <p className="text-xs px-5 mt-2" style={{ color: "var(--error)" }}>{sendError}</p>}
 
