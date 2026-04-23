@@ -340,6 +340,11 @@ export default function CameraFAB() {
 
   async function sendToAI() {
     if (capturedImages.length === 0) return;
+    const effectiveCondition = folderCondition.trim() || urlCondition || "";
+    if (!effectiveCondition) {
+      setSendError("Masala sharti kiritilmagan — orqaga qaytib shartni kiriting");
+      return;
+    }
     setSending(true); setSendError("");
     try {
       const fd = new FormData();
@@ -540,11 +545,16 @@ export default function CameraFAB() {
               </div>
             </div>
             <div className="px-5 pt-4 pb-2">
+              {urlCondition && !folderCondition && (
+                <div className="mb-2 px-3 py-2 rounded-lg text-xs" style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid var(--accent)" }}>
+                  ✓ Sessiyadan: {urlCondition.length > 80 ? urlCondition.slice(0, 80) + "…" : urlCondition}
+                </div>
+              )}
               <textarea
                 autoFocus
                 value={folderCondition}
                 onChange={e => { setFolderCondition(e.target.value); if (e.target.value.trim()) setConditionError(false); }}
-                placeholder="Masala shartini kiriting (majburiy)"
+                placeholder={urlCondition ? "O'zgartirish uchun yozing (ixtiyoriy)" : "Masala shartini kiriting (majburiy)"}
                 rows={4}
                 className="w-full px-3 py-2.5 text-sm outline-none resize-none"
                 style={{
