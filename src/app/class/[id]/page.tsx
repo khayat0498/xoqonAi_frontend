@@ -854,15 +854,15 @@ export default function ClassPage() {
                 </span>
               </div>
               <div className="flex-1 flex flex-col">
-                <label className="text-sm font-semibold mb-2" style={{ color: "var(--text-secondary)" }}>
-                  Masala sharti
+                <label className="text-sm font-semibold mb-2 flex items-center gap-1" style={{ color: "var(--text-secondary)" }}>
+                  Masala sharti <span style={{ color: "#ef4444" }}>*</span>
                 </label>
                 <textarea
                   autoFocus
                   className="flex-1 w-full px-4 py-3 text-base outline-none resize-none"
                   style={{
                     background: "var(--bg-card)",
-                    border: "1px solid var(--border)",
+                    border: `1px solid ${setupCondition.trim() ? "var(--border)" : "#ef4444"}`,
                     borderRadius: "var(--radius-md)",
                     color: "var(--text-primary)",
                     minHeight: 180,
@@ -871,14 +871,20 @@ export default function ClassPage() {
                   value={setupCondition}
                   onChange={(e) => setSetupCondition(e.target.value)}
                 />
-                <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
-                  Ixtiyoriy — bo&apos;sh qoldirishingiz ham mumkin
+                <p className="text-xs mt-2" style={{ color: setupCondition.trim() ? "var(--text-muted)" : "#ef4444" }}>
+                  {setupCondition.trim() ? "AI masala shartiga asoslanib baholaydi" : "Majburiy — masala sharti bo'lmasa tizim ishlamaydi"}
                 </p>
               </div>
               <button
+                disabled={!setupCondition.trim()}
                 onClick={() => finishSessionSetup()}
                 className="w-full flex items-center justify-center gap-2 py-4 text-base font-bold rounded-2xl transition-all active:scale-[0.98]"
-                style={{ background: "var(--cta)", color: "#fff", boxShadow: "0 4px 16px rgba(104,117,245,0.35)" }}>
+                style={{
+                  background: setupCondition.trim() ? "var(--cta)" : "var(--border)",
+                  color: "#fff",
+                  boxShadow: setupCondition.trim() ? "0 4px 16px rgba(104,117,245,0.35)" : "none",
+                  cursor: setupCondition.trim() ? "pointer" : "not-allowed",
+                }}>
                 <Camera size={20} /> Saqlash va davom etish
               </button>
             </div>
