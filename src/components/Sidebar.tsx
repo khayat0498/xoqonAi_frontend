@@ -113,7 +113,7 @@ export default function Sidebar() {
       >
         {collapsed
           ? <Image src="/icon.png" alt="eduplain" width={32} height={32} style={{ objectFit: "contain" }} />
-          : <Image src="/logo.png" alt="eduplain" width={120} height={40} style={{ objectFit: "contain" }} />
+          : <Image src="/logo.png" alt="eduplain" width={160} height={54} style={{ objectFit: "contain" }} />
         }
       </div>
 
