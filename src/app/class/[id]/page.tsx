@@ -245,12 +245,12 @@ export default function ClassPage() {
 
   const openCameraForStudent = (student: ClassStudent) => {
     setActiveStudent(null);
-    if (!sessionSubject) {
+    if (!sessionSubject || !sessionCondition.trim()) {
       // Need to set session first
       setPendingStudentForCamera(student);
-      setSetupSubject(null);
-      setSetupCondition("");
-      setSessionStep("subject");
+      setSetupSubject(sessionSubject);
+      setSetupCondition(sessionCondition);
+      setSessionStep(sessionSubject ? "condition" : "subject");
       setShowSessionSetup(true);
       return;
     }
