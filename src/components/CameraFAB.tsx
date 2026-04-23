@@ -63,7 +63,11 @@ export default function CameraFAB() {
   const urlCamera      = searchParams.get("camera");
   const urlClassId     = searchParams.get("classId");
   const urlSubject     = searchParams.get("subject");
-  const urlCondition   = searchParams.get("condition");
+  const urlCondition   = searchParams.get("condition") || (() => {
+    const classId = searchParams.get("classId");
+    if (!classId) return null;
+    try { return JSON.parse(localStorage.getItem(`class_session_${classId}`) || "{}").condition || null; } catch { return null; }
+  })();
   const urlReturnTo    = searchParams.get("returnTo");
 
   // ── Step state ──

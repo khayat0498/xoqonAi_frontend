@@ -288,7 +288,15 @@ export default function ClassPage() {
     setSessionSubject(subject);
     setSessionCondition(condition);
     setShowSessionSetup(false);
-    setCacheInfo(null); // yangi session — eski kesh ma'lumotini tozala
+    setCacheInfo(null);
+
+    // DB ga saqlash + keshni o'chirish
+    fetch(`${API}/api/classes/${id}/session`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ subject: subject?.name ?? null, condition: condition.trim() }),
+    }).catch(() => {});
+
     if (pendingStudentForCamera) {
       const student = pendingStudentForCamera;
       setPendingStudentForCamera(null);
@@ -375,7 +383,10 @@ export default function ClassPage() {
                     style={{ background: "var(--accent)", color: "#fff" }}>
                     O&apos;zgartirish
                   </button>
-                  <button onClick={() => { setSessionSubject(null); setSessionCondition(""); localStorage.removeItem(`class_session_${id}`); }}
+                  <button onClick={() => {
+                    setSessionSubject(null); setSessionCondition(""); localStorage.removeItem(`class_session_${id}`);
+                    fetch(`${API}/api/classes/${id}/session`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ subject: null, condition: "" }) }).catch(() => {});
+                  }}
                     className="text-xs px-3 py-1.5 rounded-xl font-medium"
                     style={{ background: "var(--bg-primary)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
                     Yangi
