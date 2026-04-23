@@ -118,13 +118,13 @@ export default function Sidebar() {
             boxShadow: "var(--shadow-clay-sm)",
           }}
         >
-          <Image src="/logo.png" alt="Xoqon AI" width={20} height={20} />
+          <Image src="/icon.png" alt="Xoqon AI" width={20} height={20} />
         </div>
         {!collapsed && (
           <div className="flex flex-col">
             <span
               className="font-bold text-[1.1rem] tracking-tight leading-tight"
-              style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
+              style={{ fontFamily: "var(--font-display)", color: "#387C8D" }}
             >
               Xoqon AI
             </span>

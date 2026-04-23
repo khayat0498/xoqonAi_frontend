@@ -41,8 +41,8 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/home" className="flex items-center gap-3 shrink-0">
           <Image src="/logo.png" alt="Xoqon AI" width={32} height={32} className="rounded-lg" />
-          <span className="font-bold text-lg tracking-tight" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-            Xoqon <span style={{ color: "var(--accent)" }}>AI</span>
+          <span className="font-bold text-lg tracking-tight" style={{ color: "#387C8D", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
+            Xoqon <span style={{ color: "#387C8D" }}>AI</span>
           </span>
         </Link>
 
