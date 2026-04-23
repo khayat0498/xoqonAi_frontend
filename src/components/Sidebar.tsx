@@ -111,31 +111,10 @@ export default function Sidebar() {
           borderBottom: "1px solid var(--sidebar-border)",
         }}
       >
-        <div
-          className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0"
-          style={{
-            background: "var(--cta)",
-            boxShadow: "var(--shadow-clay-sm)",
-          }}
-        >
-          <Image src="/icon.png" alt="Xoqon AI" width={20} height={20} />
-        </div>
-        {!collapsed && (
-          <div className="flex flex-col">
-            <span
-              className="font-bold text-[1.1rem] tracking-tight leading-tight"
-              style={{ fontFamily: "var(--font-display)", color: "#387C8D" }}
-            >
-              Xoqon AI
-            </span>
-            <span
-              className="text-[0.65rem] uppercase tracking-[0.08em] font-semibold mt-px"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Smart Grading
-            </span>
-          </div>
-        )}
+        {collapsed
+          ? <Image src="/icon.png" alt="eduplain" width={32} height={32} style={{ objectFit: "contain" }} />
+          : <Image src="/logo.png" alt="eduplain" width={120} height={40} style={{ objectFit: "contain" }} />
+        }
       </div>
 
       {/* Section Label */}

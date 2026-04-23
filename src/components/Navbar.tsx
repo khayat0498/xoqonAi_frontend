@@ -39,11 +39,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
 
         {/* Logo */}
-        <Link href="/home" className="flex items-center gap-3 shrink-0">
-          <Image src="/logo.png" alt="Xoqon AI" width={32} height={32} className="rounded-lg" />
-          <span className="font-bold text-lg tracking-tight" style={{ color: "#387C8D", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-            Xoqon <span style={{ color: "#387C8D" }}>AI</span>
-          </span>
+        <Link href="/home" className="flex items-center shrink-0">
+          <Image src="/logo.png" alt="eduplain" width={140} height={48} style={{ objectFit: "contain" }} />
         </Link>
 
         {/* Nav links */}
