@@ -6,21 +6,22 @@ import { ArrowLeft, CreditCard, Receipt, Crown, Gem, Zap, Wifi } from "lucide-re
 import { useEffect, useState } from "react";
 import { getToken } from "@/lib/auth";
 import { useUserWS } from "@/lib/user-ws";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
   return { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` };
 }
 
-const PLAN_META: Record<string, { name: string; price: string; icon: React.ElementType; color: string; bg: string }> = {
-  free:    { name: "Free",    price: "Bepul",            icon: Zap,   color: "var(--text-muted)", bg: "var(--bg-primary)" },
-  pro:     { name: "Pro",     price: "19 000 so'm / oy", icon: Crown, color: "var(--accent)",     bg: "var(--accent-light)" },
-  premium: { name: "Premium", price: "49 000 so'm / oy", icon: Gem,   color: "var(--warning)",    bg: "var(--warning-bg)" },
-};
-
 export default function BillingPage() {
   const router = useRouter();
   const { lastEvent, connected } = useUserWS();
+  const { t } = useT();
+  const PLAN_META: Record<string, { name: string; price: string; icon: React.ElementType; color: string; bg: string }> = {
+    free:    { name: "Free",    price: t("billing.freeText"),               icon: Zap,   color: "var(--text-muted)", bg: "var(--bg-primary)" },
+    pro:     { name: "Pro",     price: `19 000 ${t("billing.perMonthShort")}`, icon: Crown, color: "var(--accent)",     bg: "var(--accent-light)" },
+    premium: { name: "Premium", price: `49 000 ${t("billing.perMonthShort")}`, icon: Gem,   color: "var(--warning)",    bg: "var(--warning-bg)" },
+  };
   const [used, setUsed] = useState(0);
   const [limit, setLimit] = useState(60);
   const [planKey, setPlanKey] = useState("free");
@@ -77,11 +78,11 @@ export default function BillingPage() {
         >
           <ArrowLeft size={18} />
         </button>
-        <h1 className="text-lg font-bold text-white flex-1" style={{ fontFamily: "var(--font-display)" }}>Billing</h1>
+        <h1 className="text-lg font-bold text-white flex-1" style={{ fontFamily: "var(--font-display)" }}>{t("billing.title")}</h1>
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.15)" }}>
           <Wifi size={11} color={connected ? "#4ade80" : "rgba(255,255,255,0.4)"} />
           <span className="text-[10px] font-semibold" style={{ color: connected ? "#4ade80" : "rgba(255,255,255,0.4)" }}>
-            {connected ? "Live" : "Offline"}
+            {connected ? t("billing.live") : t("billing.offline")}
           </span>
         </div>
       </div>
@@ -97,7 +98,7 @@ export default function BillingPage() {
             >
               <span className="text-lg">🎉</span>
               <p className="text-sm font-semibold" style={{ color: "var(--success)" }}>
-                Rejangiz <strong>{plan.name}</strong> ga yangilandi!
+                {t("billing.planUpdated").replace("{plan}", plan.name)}
               </p>
             </div>
           )}
@@ -114,7 +115,7 @@ export default function BillingPage() {
           >
             <div className="flex items-center justify-between mb-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Joriy reja</p>
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{t("billing.currentPlan")}</p>
                 <h2 className="text-2xl font-bold mt-1" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
                   {loading ? "..." : plan.name}
                 </h2>
@@ -132,7 +133,7 @@ export default function BillingPage() {
             <div className="p-4 rounded-xl mb-4" style={{ background: "var(--bg-primary)" }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-                  Bu oy foydalanish
+                  {t("billing.thisMonthUsage")}
                 </span>
                 <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
                   {loading ? "..." : isUnlimited ? `${used} / ∞` : `${used} / ${limit}`}
@@ -150,12 +151,12 @@ export default function BillingPage() {
                     />
                   </div>
                   <p className="text-xs mt-1.5 text-right" style={{ color: pct >= 90 ? "var(--error)" : "var(--text-muted)" }}>
-                    {limit - used} ta qoldi ({100 - pct}%)
+                    {limit - used} {t("billing.remaining")} ({100 - pct}%)
                   </p>
                 </>
               )}
               {isUnlimited && (
-                <p className="text-xs mt-1" style={{ color: "var(--success)" }}>Cheksiz foydalanish ✓</p>
+                <p className="text-xs mt-1" style={{ color: "var(--success)" }}>{t("billing.unlimited")} ✓</p>
               )}
             </div>
 
@@ -164,7 +165,7 @@ export default function BillingPage() {
               className="w-full py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
               style={{ borderRadius: "var(--radius-sm)", background: plan.color, color: "#fff", boxShadow: "var(--shadow-clay-sm)", display: "flex" }}
             >
-              Rejani yangilash →
+              {t("billing.updatePlan")} →
             </Link>
           </div>
 
@@ -176,15 +177,15 @@ export default function BillingPage() {
             <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: "1px solid var(--border)" }}>
               <CreditCard size={17} style={{ color: "var(--text-muted)" }} />
               <div className="flex-1">
-                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>To&apos;lov usuli</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Hali qo&apos;shilmagan</p>
+                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{t("billing.paymentMethod")}</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{t("billing.paymentMethodEmpty")}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 px-4 py-3.5">
               <Receipt size={17} style={{ color: "var(--text-muted)" }} />
               <div className="flex-1">
-                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>To&apos;lov tarixi</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>To&apos;lovlar yo&apos;q</p>
+                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{t("billing.paymentHistory")}</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{t("billing.noPayments")}</p>
               </div>
             </div>
           </div>

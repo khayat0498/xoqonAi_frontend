@@ -3,64 +3,18 @@
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { useT } from "@/lib/i18n-context";
 
-const faqs = [
-  // Umumiy
-  {
-    q: "Xoqon AI nima?",
-    a: "Xoqon AI — o'qituvchilar uchun sun'iy intellektga asoslangan avtomatik baholash tizimi. O'quvchilarning yozma ishlarini rasmga olib, AI yordamida tahlil qilish mumkin.",
-  },
-  {
-    q: "Qanday qilib rasm tekshiraman?",
-    a: "Ekranning pastki qismidagi kamera (📷) tugmasini bosing, papkani tanlang va o'quvchining ishini rasmga oling. AI bir necha soniya ichida tahlil va baho beradi.",
-  },
-  {
-    q: "Qaysi fanlar qo'llab-quvvatlanadi?",
-    a: "Hozirda Matematika, Ona tili, Fizika, Kimyo, Biologiya, Ingliz tili, Tarix va Rus tili fanlari qo'llab-quvvatlanadi. Yangi fanlar qo'shilmoqda.",
-  },
-  {
-    q: "Mobil qurilmada ishlaydi mi?",
-    a: "Ha, Xoqon AI to'liq mobil qurilmalarga moslashgan. Istalgan brauzer orqali foydalanishingiz mumkin.",
-  },
-  // Tarif va to'lov
-  {
-    q: "Bepul rejada nima bor?",
-    a: "Bepul rejada hozirda x2 bonus bilan oyiga 60 ta rasmgacha tekshirish, 1 ta sinf va sinfga 10 tagacha o'quvchi qo'shish mumkin. Ko'proq kerak bo'lsa Pro yoki Premium rejaga o'ting.",
-  },
-  {
-    q: "x2 Bonus nima?",
-    a: "Hozirda barcha tarif rejalarda x2 bonus amal qilmoqda. Bu degani rasm limiti ikki baravar ko'p — masalan Free rejada 30 o'rniga 60 ta, Pro da 200 o'rniga 400 ta rasm tekshirish mumkin.",
-  },
-  {
-    q: "Yillik to'lovda qancha tejash mumkin?",
-    a: "Yillik to'lov tanlasangiz 10 oylik narx to'laysiz — ya'ni 2 oy bepul! Bu 17% gacha tejash imkonini beradi.",
-  },
-  {
-    q: "Tarif rejani qanday o'zgartiraman?",
-    a: "Sozlamalar > Billing > Tarif rejalar bo'limiga o'ting va o'zingizga mos rejani tanlang. Yoki Sidebar dagi 'Tarif rejalar' havolasini bosing.",
-  },
-  // Texnik
-  {
-    q: "Telegram bot qanday ishlaydi?",
-    a: "Pro va undan yuqori rejalarda Telegram bot orqali o'quvchilar bevosita botga rasm yuborishi va natijani olishi mumkin. Free rejada Telegram integratsiyasi mavjud emas.",
-  },
-  {
-    q: "AI qanchalik aniq baholaydi?",
-    a: "AI tahlil 85-95% aniqlikda ishlaydi. Har bir tahlildan keyin o'qituvchi natijani ko'rib chiqishi va kerak bo'lsa tuzatishi mumkin.",
-  },
-  {
-    q: "Ma'lumotlarim xavfsizmi?",
-    a: "Ha, barcha ma'lumotlar shifrlangan holda saqlanadi. To'lov tizimi Click/Payme orqali amalga oshiriladi — karta ma'lumotlaringiz bizga uzatilmaydi.",
-  },
-  {
-    q: "Qo'llab-quvvatlash bilan qanday bog'lanaman?",
-    a: "Bog'lanish sahifasidagi forma orqali yoki support@xoqon.ai emailiga yozishingiz mumkin. Telegram: @xoqon_support",
-  },
-];
+const FAQ_COUNT = 12;
 
 export default function FaqPage() {
   const router = useRouter();
+  const { t } = useT();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const faqs = Array.from({ length: FAQ_COUNT }, (_, i) => ({
+    q: t(`faq.items.${i}.q`),
+    a: t(`faq.items.${i}.a`),
+  }));
 
   return (
     <div className="flex flex-col h-screen" style={{ background: "var(--bg-primary)" }}>
@@ -81,7 +35,7 @@ export default function FaqPage() {
           <ArrowLeft size={18} />
         </button>
         <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>
-          Ko&apos;p so&apos;raladigan savollar
+          {t("faq.title")}
         </h1>
       </div>
 

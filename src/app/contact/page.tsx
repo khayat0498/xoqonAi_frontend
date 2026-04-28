@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Send, MessageSquare, Mail, Phone, MapPin } from "lucide-react";
 import { useState } from "react";
+import { useT } from "@/lib/i18n-context";
 
 export default function ContactPage() {
   const router = useRouter();
+  const { t } = useT();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -29,7 +31,7 @@ export default function ContactPage() {
           <ArrowLeft size={18} />
         </button>
         <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>
-          Bog&apos;lanish
+          {t("contact.title")}
         </h1>
       </div>
 
@@ -44,17 +46,17 @@ export default function ContactPage() {
             <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
               <div className="flex items-center gap-3 mb-1">
                 <MessageSquare size={18} style={{ color: "var(--accent)" }} />
-                <h2 className="text-base font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>Biz bilan bog&apos;laning</h2>
+                <h2 className="text-base font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>{t("contact.headline")}</h2>
               </div>
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                Savolingiz bormi? Biz yordam berishga tayyormiz!
+                {t("contact.sub")}
               </p>
             </div>
             <div className="flex flex-col">
               {[
-                { icon: Mail, label: "Email", value: "support@xoqon.ai" },
-                { icon: Phone, label: "Telefon", value: "+998 90 123 45 67" },
-                { icon: MapPin, label: "Manzil", value: "Toshkent, O'zbekiston" },
+                { icon: Mail, label: t("contact.email"), value: t("contact.emailValue") },
+                { icon: Phone, label: t("contact.phone"), value: t("contact.phoneValue") },
+                { icon: MapPin, label: t("contact.address"), value: t("contact.addressValue") },
               ].map(({ icon: Icon, label, value }, i, arr) => (
                 <div
                   key={label}
@@ -76,11 +78,11 @@ export default function ContactPage() {
             className="p-5"
             style={{ background: "var(--bg-card)", backdropFilter: "blur(4px)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)" }}
           >
-            <h3 className="text-sm font-bold mb-4" style={{ color: "var(--text-primary)" }}>Xabar yuborish</h3>
+            <h3 className="text-sm font-bold mb-4" style={{ color: "var(--text-primary)" }}>{t("contact.sendMessage")}</h3>
             <div className="flex flex-col gap-3">
               <input
                 type="text"
-                placeholder="Ismingiz"
+                placeholder={t("contact.yourName")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-3 text-sm outline-none transition-all"
@@ -107,7 +109,7 @@ export default function ContactPage() {
                 }}
               />
               <textarea
-                placeholder="Xabaringiz..."
+                placeholder={t("contact.yourMessage")}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={4}
@@ -125,7 +127,7 @@ export default function ContactPage() {
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--cta)", color: "#fff", boxShadow: "var(--shadow-clay-sm)" }}
               >
                 <Send size={15} />
-                Yuborish
+                {t("contact.send")}
               </button>
             </div>
           </div>
