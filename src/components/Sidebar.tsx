@@ -2,7 +2,6 @@
 
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import {
@@ -111,10 +110,25 @@ export default function Sidebar() {
           borderBottom: "1px solid var(--sidebar-border)",
         }}
       >
-        {collapsed
-          ? <Image src="/icon.png" alt="eduplain" width={32} height={32} style={{ objectFit: "contain" }} />
-          : <Image src="/logo.png" alt="eduplain" width={160} height={54} style={{ objectFit: "contain", width: "100%", height: "auto" }} />
-        }
+        <div className="flex items-center gap-2" style={{ fontFamily: "'Merienda', cursive" }}>
+          <span
+            className="flex items-center justify-center font-bold"
+            style={{
+              width: collapsed ? 36 : 42,
+              height: collapsed ? 36 : 42,
+              borderRadius: "9999px",
+              background: "#387C8D",
+              color: "#fff",
+              fontSize: collapsed ? "0.95rem" : "1.1rem",
+              flexShrink: 0,
+            }}
+          >
+            SI
+          </span>
+          {!collapsed && (
+            <span style={{ color: "#387C8D", fontSize: "1.6rem", fontWeight: 600 }}>baho</span>
+          )}
+        </div>
       </div>
 
       {/* Section Label */}

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { Moon, Sun, CalendarDays, BarChart3, Home, FolderOpen, Settings } from "lucide-react";
@@ -39,8 +38,21 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
 
         {/* Logo */}
-        <Link href="/home" className="flex items-center shrink-0">
-          <Image src="/logo.png" alt="eduplain" width={140} height={48} style={{ objectFit: "contain" }} />
+        <Link href="/home" className="flex items-center gap-2 shrink-0" style={{ fontFamily: "'Merienda', cursive" }}>
+          <span
+            className="flex items-center justify-center font-bold"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "9999px",
+              background: "#387C8D",
+              color: "#fff",
+              fontSize: "1rem",
+            }}
+          >
+            SI
+          </span>
+          <span style={{ color: "#387C8D", fontSize: "1.5rem", fontWeight: 600 }}>baho</span>
         </Link>
 
         {/* Nav links */}
