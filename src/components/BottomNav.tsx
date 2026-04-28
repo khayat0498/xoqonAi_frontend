@@ -9,26 +9,28 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { useUser } from "@/lib/user-context";
+import { useT } from "@/lib/i18n-context";
 
-type NavItem = { href: string; icon: React.ElementType; label: string };
+type NavItem = { href: string; icon: React.ElementType; labelKey: string };
 
 const studentLinks: NavItem[] = [
-  { href: "/home?tab=jildlar", label: "Jildlar",    icon: FolderOpen },
-  { href: "/home",             label: "Bosh sahifa", icon: Home },
-  { href: "/settings",         label: "Sozlamalar",  icon: Settings },
+  { href: "/home?tab=jildlar", labelKey: "nav.folders", icon: FolderOpen },
+  { href: "/home",             labelKey: "nav.home",    icon: Home },
+  { href: "/settings",         labelKey: "nav.settings",icon: Settings },
 ];
 
 const teacherLinks: NavItem[] = [
-  { href: "/home?tab=jildlar", label: "Jildlar",    icon: FolderOpen },
-  { href: "/home",             label: "Bosh sahifa", icon: Home },
-  { href: "/schedule",         label: "Jadval",      icon: CalendarDays },
-  { href: "/settings",         label: "Sozlamalar",  icon: Settings },
+  { href: "/home?tab=jildlar", labelKey: "nav.folders",  icon: FolderOpen },
+  { href: "/home",             labelKey: "nav.home",     icon: Home },
+  { href: "/schedule",         labelKey: "nav.schedule", icon: CalendarDays },
+  { href: "/settings",         labelKey: "nav.settings", icon: Settings },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useUser();
+  const { t } = useT();
   const links = user?.role === "student" ? studentLinks : teacherLinks;
   const currentTab = searchParams.get("tab");
 
@@ -45,7 +47,7 @@ export default function BottomNav() {
           boxShadow: "var(--shadow-clay)",
         }}
       >
-        {links.map(({ href, label, icon: Icon }) => {
+        {links.map(({ href, labelKey, icon: Icon }) => {
           const hasQuery = href.includes("?");
           let isActive: boolean;
 
@@ -78,7 +80,7 @@ export default function BottomNav() {
               >
                 <Icon size={20} />
               </div>
-              <span className="text-[10px] font-semibold">{label}</span>
+              <span className="text-[10px] font-semibold">{t(labelKey)}</span>
             </Link>
           );
         })}

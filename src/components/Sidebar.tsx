@@ -13,21 +13,22 @@ import {
 import { useUser } from "@/lib/user-context";
 import { useTheme } from "@/lib/theme-context";
 import { useUserWS } from "@/lib/user-ws";
+import { useT } from "@/lib/i18n-context";
 import { getToken } from "@/lib/auth";
 
 const studentLinks = [
-  { href: "/home",               label: "Bosh sahifa", icon: Home },
-  { href: "/home?tab=jildlar",   label: "Jildlar",     icon: FolderOpen },
-  { href: "/dashboard/errors",   label: "Xato banki",  icon: AlertCircle },
-  { href: "/dashboard/bookmarks",label: "Bookmarks",   icon: Bookmark },
-  { href: "/dashboard/history",  label: "Tarix",       icon: History },
+  { href: "/home",               labelKey: "nav.home",       icon: Home },
+  { href: "/home?tab=jildlar",   labelKey: "nav.folders",    icon: FolderOpen },
+  { href: "/dashboard/errors",   labelKey: "nav.errorBank",  icon: AlertCircle },
+  { href: "/dashboard/bookmarks",labelKey: "nav.bookmarks",  icon: Bookmark },
+  { href: "/dashboard/history",  labelKey: "nav.history",    icon: History },
 ];
 
 const teacherLinks = [
-  { href: "/home",           label: "Bosh sahifa", icon: Home },
-  { href: "/home?tab=jildlar", label: "Jildlar",   icon: FolderOpen },
-  { href: "/schedule",       label: "Jadval",      icon: CalendarDays },
-  { href: "/dashboard/stats",label: "Statistika",  icon: BarChart3 },
+  { href: "/home",             labelKey: "nav.home",     icon: Home },
+  { href: "/home?tab=jildlar", labelKey: "nav.folders",  icon: FolderOpen },
+  { href: "/schedule",         labelKey: "nav.schedule", icon: CalendarDays },
+  { href: "/dashboard/stats",  labelKey: "nav.stats",    icon: BarChart3 },
 ];
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -38,6 +39,7 @@ export default function Sidebar() {
   const currentTab = searchParams.get("tab");
   const [collapsed, setCollapsed] = useState(false);
   const { dark, toggleDark } = useTheme();
+  const { t } = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const { user, loading, uploadAvatar } = useUser();
   const { lastEvent } = useUserWS();
@@ -137,13 +139,13 @@ export default function Sidebar() {
           className="text-[0.62rem] uppercase tracking-[0.1em] font-bold"
           style={{ color: "var(--text-muted)", padding: "18px 24px 6px" }}
         >
-          Asosiy
+          {t("nav.main")}
         </div>
       )}
 
       {/* Nav links */}
       <nav className="flex-1 px-[10px] py-2 flex flex-col gap-1">
-        {links.map(({ href, label, icon: Icon }) => {
+        {links.map(({ href, labelKey, icon: Icon }) => {
           const hasQuery = href.includes("?");
           let active: boolean;
           if (hasQuery) {
@@ -176,7 +178,7 @@ export default function Sidebar() {
               )}
               <Icon size={19} className="shrink-0" style={{ opacity: active ? 1 : 0.6 }} />
               {!collapsed && (
-                <span className="text-[0.87rem] font-medium">{label}</span>
+                <span className="text-[0.87rem] font-medium">{t(labelKey)}</span>
               )}
             </Link>
           );
@@ -189,17 +191,17 @@ export default function Sidebar() {
           className="text-[0.62rem] uppercase tracking-[0.1em] font-bold"
           style={{ color: "var(--text-muted)", padding: "12px 24px 6px" }}
         >
-          Boshqa
+          {t("nav.other")}
         </div>
       )}
       <nav className="px-[10px] flex flex-col gap-1">
         {[
-          { href: "/history", label: "Usage", icon: History },
-          { href: "/billing", label: "Billing", icon: CreditCard },
-          { href: "/plans", label: "Tarif rejalar", icon: Layers },
-          { href: "/contact", label: "Bog'lanish", icon: MessageSquare },
-          { href: "/faq", label: "Ko'p so'raladigan savollar", icon: HelpCircle },
-        ].map(({ href, label, icon: Icon }) => (
+          { href: "/history", labelKey: "nav.usage", icon: History },
+          { href: "/billing", labelKey: "nav.billing", icon: CreditCard },
+          { href: "/plans", labelKey: "nav.plans", icon: Layers },
+          { href: "/contact", labelKey: "nav.contact", icon: MessageSquare },
+          { href: "/faq", labelKey: "nav.faq", icon: HelpCircle },
+        ].map(({ href, labelKey, icon: Icon }) => (
           <Link
             key={href}
             href={href}
@@ -214,7 +216,7 @@ export default function Sidebar() {
             }}
           >
             <Icon size={19} className="shrink-0" style={{ opacity: pathname === href ? 1 : 0.6 }} />
-            {!collapsed && <span className="text-[0.87rem] font-medium">{label}</span>}
+            {!collapsed && <span className="text-[0.87rem] font-medium">{t(labelKey)}</span>}
           </Link>
         ))}
       </nav>
@@ -236,7 +238,7 @@ export default function Sidebar() {
           {dark ? <Sun size={19} style={{ opacity: 0.6 }} /> : <Moon size={19} style={{ opacity: 0.6 }} />}
           {!collapsed && (
             <span className="text-[0.87rem] font-medium">
-              {dark ? "Yorug' rejim" : "Qorong'u rejim"}
+              {dark ? t("nav.lightMode") : t("nav.darkMode")}
             </span>
           )}
         </button>
@@ -251,7 +253,7 @@ export default function Sidebar() {
           style={{ color: "var(--sidebar-text)" }}
         >
           <Settings size={19} style={{ opacity: 0.6 }} />
-          {!collapsed && <span className="text-[0.87rem] font-medium">Sozlamalar</span>}
+          {!collapsed && <span className="text-[0.87rem] font-medium">{t("nav.settings")}</span>}
         </Link>
 
         {/* User */}
@@ -320,14 +322,14 @@ export default function Sidebar() {
         >
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[0.67rem] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-              Balans
+              {t("nav.balance")}
             </span>
             <span className="text-[0.75rem] font-bold tabular-nums" style={{ color: "var(--accent)" }}>
               {new Intl.NumberFormat('uz-UZ').format(balanceUzs)} UZS
             </span>
           </div>
           <div className="text-[0.7rem] text-right" style={{ color: "var(--text-muted)" }}>
-            Hisobni to'ldirish →
+            {t("nav.topUp")} →
           </div>
         </Link>
       )}
@@ -341,7 +343,7 @@ export default function Sidebar() {
         >
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[0.67rem] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-              Oylik limit
+              {t("nav.monthlyLimit")}
             </span>
             <span className="text-[0.75rem] font-bold tabular-nums" style={{
               color: used / limit >= 0.9 ? "var(--error)" : used / limit >= 0.7 ? "var(--warning)" : "var(--text-primary)"

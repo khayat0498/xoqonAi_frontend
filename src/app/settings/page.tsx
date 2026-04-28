@@ -7,6 +7,7 @@ import { ArrowLeft, User, Bell, Globe, Moon, Sun, Shield, LogOut, Trash2, Lock, 
 import { removeToken, getToken } from "@/lib/auth";
 import { useUser } from "@/lib/user-context";
 import { useUserWS } from "@/lib/user-ws";
+import { useT } from "@/lib/i18n-context";
 
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
@@ -99,10 +100,10 @@ export default function SettingsPage() {
   const router = useRouter();
   const { user, uploadAvatar } = useUser();
   const { lastEvent } = useUserWS();
+  const { t, lang, setLang } = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const [dark, setDark] = useState(false);
   const [notif, setNotif] = useState(true);
-  const [lang, setLang] = useState<"uz" | "ru" | "en">("uz");
   const [planKey, setPlanKey] = useState("free");
 
   // Profile edit modal
@@ -235,7 +236,7 @@ export default function SettingsPage() {
         >
           <ArrowLeft size={16} />
         </Link>
-        <h1 className="text-base font-semibold text-white relative" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Sozlamalar</h1>
+        <h1 className="text-base font-semibold text-white relative" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("settings.title")}</h1>
       </div>
 
       {/* Content */}
@@ -273,7 +274,7 @@ export default function SettingsPage() {
                   {user?.name ?? ""}
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  {user?.role === "student" ? "Student" : "O'qituvchi"}
+                  {user?.role === "student" ? t("settings.student") : t("settings.teacher")}
                 </p>
                 <p className="text-[10px] font-bold mt-0.5" style={{ color: PLAN_META[planKey]?.color ?? "var(--text-muted)" }}>
                   {PLAN_META[planKey]?.label ?? "Free"}
@@ -283,34 +284,34 @@ export default function SettingsPage() {
             </div>
 
             {/* Billing & Support */}
-            <Section title="Billing & Yordam">
-              <Row icon={History} label="Usage" sub="Tekshirishlar tarixi" onClick={() => router.push("/history")} />
-              <Row icon={CreditCard} label="Billing" sub="Joriy reja va to'lov" onClick={() => router.push("/billing")} />
-              <Row icon={Layers} label="Tarif rejalar" sub="Rejangizni o'zgartiring" onClick={() => router.push("/plans")} />
-              <Row icon={MessageSquare} label="Bog'lanish" sub="Yordam markazi" onClick={() => router.push("/contact")} />
-              <Row icon={HelpCircle} label="Ko'p so'raladigan savollar" sub="FAQ" last onClick={() => router.push("/faq")} />
+            <Section title={t("settings.billingSupport")}>
+              <Row icon={History} label={t("settings.billingSupportItems.usage")} sub={t("settings.billingSupportItems.usageSub")} onClick={() => router.push("/history")} />
+              <Row icon={CreditCard} label={t("settings.billingSupportItems.billing")} sub={t("settings.billingSupportItems.billingSub")} onClick={() => router.push("/billing")} />
+              <Row icon={Layers} label={t("settings.billingSupportItems.plans")} sub={t("settings.billingSupportItems.plansSub")} onClick={() => router.push("/plans")} />
+              <Row icon={MessageSquare} label={t("settings.billingSupportItems.contact")} sub={t("settings.billingSupportItems.contactSub")} onClick={() => router.push("/contact")} />
+              <Row icon={HelpCircle} label={t("settings.billingSupportItems.faq")} sub={t("settings.billingSupportItems.faqSub")} last onClick={() => router.push("/faq")} />
             </Section>
 
             {/* Asosiy */}
-            <Section title="Asosiy">
-              <Row icon={User} label="Profil ma'lumotlari" sub="Ism, rasm, bio" onClick={openProfileModal} />
-              <Row icon={Lock} label="Parol o'zgartirish" last onClick={() => { setPasswordError(""); setCurrentPassword(""); setNewPassword(""); setPasswordModal(true); }} />
+            <Section title={t("settings.main")}>
+              <Row icon={User} label={t("settings.profile")} sub={t("settings.profileSub")} onClick={openProfileModal} />
+              <Row icon={Lock} label={t("settings.password")} last onClick={() => { setPasswordError(""); setCurrentPassword(""); setNewPassword(""); setPasswordModal(true); }} />
             </Section>
 
             {/* Ko'rinish */}
-            <Section title="Ko'rinish">
+            <Section title={t("settings.appearance")}>
               <Row
                 icon={dark ? Sun : Moon}
-                label={dark ? "Yorug' rejim" : "Qorong'u rejim"}
+                label={dark ? t("settings.lightMode") : t("settings.darkMode")}
                 right={<Toggle on={dark} onChange={toggleDark} />}
               />
               <div
                 className="flex items-center gap-3 px-4 py-3.5"
               >
                 <Globe size={17} className="shrink-0" style={{ color: "var(--text-muted)" }} />
-                <span className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>Til</span>
+                <span className="flex-1 text-sm font-medium" style={{ color: "var(--text-primary)" }}>{t("settings.language")}</span>
                 <div className="flex gap-1">
-                  {(["uz", "ru", "en"] as const).map((l) => (
+                  {(["uz", "ru"] as const).map((l) => (
                     <button
                       key={l}
                       onClick={() => setLang(l)}
@@ -329,24 +330,24 @@ export default function SettingsPage() {
             </Section>
 
             {/* Bildirishnomalar */}
-            <Section title="Bildirishnomalar">
+            <Section title={t("settings.notifications")}>
               <Row
                 icon={Bell}
-                label="Push bildirishnomalar"
-                sub="Tekshirish tayyor bo'lganda"
+                label={t("settings.pushNotif")}
+                sub={t("settings.pushNotifSub")}
                 right={<Toggle on={notif} onChange={() => setNotif(!notif)} />}
               />
-              <Row icon={Shield} label="Ikki bosqichli himoya" sub="Hozircha o'chiq" last />
+              <Row icon={Shield} label={t("settings.twoFA")} sub={t("settings.twoFASub")} last />
             </Section>
 
             {/* Hisob */}
-            <Section title="Hisob">
-              <Row icon={LogOut} label="Chiqish" danger onClick={handleLogout} />
-              <Row icon={Trash2} label="Hisobni o'chirish" sub="Barcha ma'lumotlar o'chiriladi" danger last />
+            <Section title={t("settings.account")}>
+              <Row icon={LogOut} label={t("settings.logout")} danger onClick={handleLogout} />
+              <Row icon={Trash2} label={t("settings.deleteAccount")} sub={t("settings.deleteAccountSub")} danger last />
             </Section>
 
             <p className="text-center text-xs" style={{ color: "var(--border)" }}>
-              Xoqon AI · v1.0.0
+              SI baho · v1.0.0
             </p>
 
           </div>
@@ -363,16 +364,16 @@ export default function SettingsPage() {
           >
             <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
             <div className="flex items-center justify-between">
-              <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Profil ma'lumotlari</p>
+              <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>{t("settings.profile")}</p>
               <button onClick={() => setProfileModal(false)} className="w-7 h-7 flex items-center justify-center rounded-full" style={{ background: "var(--bg-primary)", color: "var(--text-muted)", fontSize: 16 }}>×</button>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Ism</label>
+              <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{t("settings.name")}</label>
               <input
                 autoFocus
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                placeholder="Ismingiz"
+                placeholder={t("settings.namePlaceholder")}
                 className="w-full px-3 py-2.5 text-sm font-medium outline-none"
                 style={{
                   background: "var(--bg-primary)",
@@ -389,7 +390,7 @@ export default function SettingsPage() {
               className="w-full py-3 text-sm font-bold rounded-xl transition-all"
               style={{ background: "var(--accent)", color: "#fff", opacity: profileSaving || !editName.trim() ? 0.6 : 1 }}
             >
-              {profileSaving ? "Saqlanmoqda..." : "Saqlash"}
+              {profileSaving ? t("settings.saving") : t("settings.save")}
             </button>
           </div>
         </div>
@@ -405,12 +406,12 @@ export default function SettingsPage() {
           >
             <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
             <div className="flex items-center justify-between">
-              <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Parol o'zgartirish</p>
+              <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>{t("settings.password")}</p>
               <button onClick={() => setPasswordModal(false)} className="w-7 h-7 flex items-center justify-center rounded-full" style={{ background: "var(--bg-primary)", color: "var(--text-muted)", fontSize: 16 }}>×</button>
             </div>
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Joriy parol</label>
+                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{t("settings.currentPassword")}</label>
                 <input
                   autoFocus
                   type="password"
@@ -427,12 +428,12 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Yangi parol</label>
+                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{t("settings.newPassword")}</label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Min 8 ta belgi, katta/kichik harf, raqam"
+                  placeholder={t("settings.newPasswordPlaceholder")}
                   className="w-full px-3 py-2.5 text-sm font-medium outline-none"
                   style={{
                     background: "var(--bg-primary)",
@@ -450,7 +451,7 @@ export default function SettingsPage() {
               className="w-full py-3 text-sm font-bold rounded-xl transition-all"
               style={{ background: "var(--accent)", color: "#fff", opacity: passwordSaving || !currentPassword || !newPassword ? 0.6 : 1 }}
             >
-              {passwordSaving ? "Saqlanmoqda..." : "O'zgartirish"}
+              {passwordSaving ? t("settings.saving") : t("settings.change")}
             </button>
           </div>
         </div>

@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Mail, Phone } from "lucide-react";
+import { useT } from "@/lib/i18n-context";
 
 type Tab = "gmail" | "phone";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useT();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
   const [tab, setTab] = useState<Tab>("gmail");
@@ -22,12 +24,12 @@ export default function LoginPage() {
     const trimmed = email.trim().toLowerCase();
 
     if (!trimmed) {
-      setError("Emailni kiriting");
+      setError(t("auth.errors.emailRequired"));
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setError("Email formati noto'g'ri");
+      setError(t("auth.errors.emailInvalid"));
       return;
     }
 
@@ -44,17 +46,17 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Xatolik yuz berdi");
+        setError(data.error ?? t("auth.errors.generic"));
         return;
       }
 
       if (data.exists) {
         router.push(`/auth/password?mode=login&email=${encodeURIComponent(trimmed)}`);
       } else {
-        setError("Bu email ro'yxatdan o'tmagan. Google orqali ro'yxatdan o'ting");
+        setError(t("auth.errors.emailNotRegistered"));
       }
     } catch {
-      setError("Server bilan aloqa yo'q");
+      setError(t("auth.errors.serverDown"));
     } finally {
       setLoading(false);
     }
@@ -66,12 +68,12 @@ export default function LoginPage() {
     const trimmed = phone.trim();
 
     if (!trimmed) {
-      setError("Telefon raqamini kiriting");
+      setError(t("auth.errors.phoneRequired"));
       return;
     }
 
     // TODO: SMS OTP implementatsiya
-    setError("SMS OTP hali tayyor emas. Gmail orqali kiring");
+    setError(t("auth.errors.smsNotReady"));
   }
 
   return (
@@ -79,18 +81,26 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
 
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div
-            className="w-16 h-16 flex items-center justify-center mx-auto mb-4"
-            style={{ background: "linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 100%)", boxShadow: "var(--shadow-card)", borderRadius: "var(--radius-md)" }}
-          >
-            <span className="text-white text-2xl font-bold">X</span>
+        <div className="text-center mb-8" style={{ fontFamily: "'Merienda', cursive" }}>
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <span
+              className="flex items-center justify-center font-bold"
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: "9999px",
+                background: "#387C8D",
+                color: "#fff",
+                fontSize: "1.5rem",
+                boxShadow: "var(--shadow-card)",
+              }}
+            >
+              SI
+            </span>
+            <span style={{ color: "#387C8D", fontSize: "2.5rem", fontWeight: 600, lineHeight: 1 }}>baho</span>
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-            Xoqon AI
-          </h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-            Uy ishlarini AI bilan tekshiring
+            {t("brand.tagline")}
           </p>
         </div>
 
@@ -100,10 +110,10 @@ export default function LoginPage() {
           style={{ background: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-card)" }}
         >
           <h2 className="text-lg font-bold mb-1" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-            Kirish
+            {t("auth.login")}
           </h2>
           <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
-            Hisobingizga kiring yoki ro'yxatdan o'ting
+            {t("auth.loginSub")}
           </p>
 
           {/* Tab Menu */}
@@ -135,7 +145,7 @@ export default function LoginPage() {
               }}
             >
               <Phone size={15} />
-              Telefon
+              {t("auth.phone")}
             </button>
           </div>
 
@@ -145,7 +155,7 @@ export default function LoginPage() {
               <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4 mb-4">
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--text-muted)" }}>
-                    Email
+                    {t("auth.email")}
                   </label>
                   <div className="relative">
                     <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
@@ -181,9 +191,9 @@ export default function LoginPage() {
                     borderRadius: "var(--radius-md)",
                   }}
                 >
-                  {loading ? "Tekshirilmoqda..." : (
+                  {loading ? t("auth.checking") : (
                     <>
-                      Davom etish
+                      {t("auth.continue")}
                       <ArrowRight size={16} />
                     </>
                   )}
@@ -193,7 +203,7 @@ export default function LoginPage() {
               {/* Divider */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>yoki</span>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{t("auth.or")}</span>
                 <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
               </div>
 
@@ -214,7 +224,7 @@ export default function LoginPage() {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                Google bilan ro'yxatdan o'tish
+                {t("auth.googleSignup")}
               </a>
             </>
           )}
@@ -224,7 +234,7 @@ export default function LoginPage() {
             <form onSubmit={handlePhoneSubmit} className="flex flex-col gap-4">
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--text-muted)" }}>
-                  Telefon raqam
+                  {t("auth.phoneNumber")}
                 </label>
                 <div className="relative">
                   <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
@@ -260,9 +270,9 @@ export default function LoginPage() {
                   borderRadius: "var(--radius-md)",
                 }}
               >
-                {loading ? "Yuborilmoqda..." : (
+                {loading ? t("auth.sending") : (
                   <>
-                    Kod yuborish
+                    {t("auth.sendCode")}
                     <ArrowRight size={16} />
                   </>
                 )}
@@ -271,9 +281,9 @@ export default function LoginPage() {
           )}
 
           <p className="text-xs text-center mt-4" style={{ color: "var(--text-muted)" }}>
-            Kirish orqali{" "}
-            <span className="underline cursor-pointer">foydalanish shartlari</span>
-            {" "}ga rozilik bildirasiz
+            {t("auth.termsPrefix")}{" "}
+            <span className="underline cursor-pointer">{t("auth.termsLink")}</span>
+            {" "}{t("auth.termsSuffix")}
           </p>
         </div>
       </div>
