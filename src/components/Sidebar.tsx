@@ -104,29 +104,29 @@ export default function Sidebar() {
     >
       {/* Logo */}
       <div
-        className="flex items-center gap-3"
+        className="flex items-center justify-center"
         style={{
-          padding: collapsed ? "24px 14px 20px" : "24px 20px 20px",
+          padding: collapsed ? "28px 12px 24px" : "32px 20px 28px",
           borderBottom: "1px solid var(--sidebar-border)",
         }}
       >
-        <div className="flex items-center gap-2" style={{ fontFamily: "'Merienda', cursive" }}>
+        <div className="flex items-center gap-3" style={{ fontFamily: "'Merienda', cursive" }}>
           <span
             className="flex items-center justify-center font-bold"
             style={{
-              width: collapsed ? 36 : 42,
-              height: collapsed ? 36 : 42,
+              width: collapsed ? 48 : 56,
+              height: collapsed ? 48 : 56,
               borderRadius: "9999px",
               background: "#387C8D",
               color: "#fff",
-              fontSize: collapsed ? "0.95rem" : "1.1rem",
+              fontSize: collapsed ? "1.15rem" : "1.35rem",
               flexShrink: 0,
             }}
           >
             SI
           </span>
           {!collapsed && (
-            <span style={{ color: "#387C8D", fontSize: "1.6rem", fontWeight: 600 }}>baho</span>
+            <span style={{ color: "#387C8D", fontSize: "2rem", fontWeight: 600, lineHeight: 1 }}>baho</span>
           )}
         </div>
       </div>
