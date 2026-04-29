@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ArrowLeft, Folder, CheckCircle2, Clock, XCircle, Loader2, Database } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
@@ -60,6 +61,7 @@ function StatusIcon({ status }: { status: string }) {
 }
 
 export default function HistoryPage() {
+  const { t } = useT();
   const [items, setItems] = useState<SubmissionItem[]>([]);
   const [cacheLogs, setCacheLogs] = useState<CacheLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,8 +137,8 @@ export default function HistoryPage() {
           <ArrowLeft size={16} />
         </Link>
         <div className="flex-1 relative">
-          <h1 className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Tarixlar</h1>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{total} ta tekshiruv</p>
+          <h1 className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("history.title")}</h1>
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{t("history.checksCount").replace("{total}", String(total))}</p>
         </div>
       </div>
 
@@ -151,7 +153,7 @@ export default function HistoryPage() {
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-2">
               <Clock size={32} style={{ color: "var(--text-muted)" }} />
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>Hali tekshiruvlar yo'q</p>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("history.noChecksYet")}</p>
             </div>
           ) : (
             <div className="px-4 pt-5 pb-8 flex flex-col gap-5">
@@ -177,9 +179,9 @@ export default function HistoryPage() {
                             <Database size={16} style={{ color: "#6366f1" }} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Kesh yaratish</p>
+                            <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{t("history.cacheCreation")}</p>
                             <p className="text-[11px] truncate mt-0.5" style={{ color: "var(--text-muted)" }}>
-                              {log.inputTokens ? `${log.inputTokens.toLocaleString()} token · ` : ""}{log.note ?? "Prompt keshi"}
+                              {log.inputTokens ? `${log.inputTokens.toLocaleString()} token · ` : ""}{log.note ?? t("history.promptCache")}
                             </p>
                           </div>
                           <div className="flex flex-col items-end gap-1 shrink-0">
@@ -241,7 +243,7 @@ export default function HistoryPage() {
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <StatusIcon status={item.status} />
                             <span className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
-                              {item.subject ?? "Fan ko'rsatilmagan"}
+                              {item.subject ?? t("history.noSubject")}
                             </span>
                             {item.grade && item.grade !== "-" && (
                               <span className="text-xs font-bold" style={{ color: "var(--accent)" }}>· {item.grade}</span>
@@ -288,7 +290,7 @@ export default function HistoryPage() {
                   style={{ border: "1px dashed var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-muted)" }}
                 >
                   {loading ? <Loader2 size={14} className="animate-spin" /> : null}
-                  Ko'proq yuklash
+                  {t("history.loadMore")}
                 </button>
               )}
             </div>

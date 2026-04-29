@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, X, Clock, CheckCircle2, Circle, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
@@ -43,6 +44,7 @@ function weekRange(days: Date[]): { from: string; to: string } {
 }
 
 export default function SchedulePage() {
+  const { t } = useT();
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [weekBase, setWeekBase] = useState<Date>(today);
@@ -138,7 +140,7 @@ export default function SchedulePage() {
 
         <div className="relative flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Jadval</h1>
+            <h1 className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("schedule.title")}</h1>
             <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>
               {selectedDate.toLocaleDateString("uz-UZ", { day: "numeric", month: "long", year: "numeric" })}
             </p>
@@ -148,7 +150,7 @@ export default function SchedulePage() {
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all hover:opacity-80 relative"
             style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}
           >
-            <Plus size={15} /> Reja qo&apos;shish
+            <Plus size={15} /> {t("schedule.addPlan")}
           </button>
         </div>
 
@@ -176,7 +178,7 @@ export default function SchedulePage() {
                 >
                   <span className="text-[10px] font-medium"
                     style={{ color: active ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.45)" }}>
-                    {isToday(day) ? "Bugun" : formatDay(day)}
+                    {isToday(day) ? t("schedule.today") : formatDay(day)}
                   </span>
                   <span className="text-sm font-bold"
                     style={{ color: active ? "#fff" : "rgba(255,255,255,0.8)" }}>
@@ -212,7 +214,7 @@ export default function SchedulePage() {
                 style={{ width: `${(doneCount / dayItems.length) * 100}%`, background: "var(--success)" }} />
             </div>
             <span className="text-xs font-medium shrink-0" style={{ color: "var(--text-muted)" }}>
-              {doneCount}/{dayItems.length} bajarildi
+              {t("schedule.progress").replace("{done}", String(doneCount)).replace("{total}", String(dayItems.length))}
             </span>
           </div>
         )}
@@ -221,7 +223,7 @@ export default function SchedulePage() {
           {dayItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 gap-3">
               <CalendarDays size={32} style={{ color: "var(--border)" }} />
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>Bu kun uchun reja yo&apos;q</p>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("schedule.noPlanToday")}</p>
               <button
                 onClick={() => setShowModal(true)}
                 className="text-sm px-4 py-2 font-medium"
@@ -295,7 +297,7 @@ export default function SchedulePage() {
           <div className="w-full max-w-sm p-5 animate-fade-in"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Yangi reja</h2>
+              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("schedule.newPlan")}</h2>
               <button onClick={() => setShowModal(false)} style={{ color: "var(--text-muted)" }}>
                 <X size={18} />
               </button>
@@ -303,7 +305,7 @@ export default function SchedulePage() {
 
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-xs font-medium mb-1.5 block" style={{ color: "var(--text-muted)" }}>VAQT</label>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "var(--text-muted)" }}>{t("schedule.timeLabel")}</label>
                 <input type="time" value={form.time}
                   onChange={(e) => setForm({ ...form, time: e.target.value })}
                   className="w-full px-4 py-2.5 text-sm outline-none"
@@ -311,7 +313,7 @@ export default function SchedulePage() {
               </div>
 
               <div>
-                <label className="text-xs font-medium mb-1.5 block" style={{ color: "var(--text-muted)" }}>SINF</label>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "var(--text-muted)" }}>{t("schedule.classLabel")}</label>
                 <div className="flex flex-wrap gap-2">
                   {classList.map((cls) => (
                     <button key={cls.id}
@@ -330,7 +332,7 @@ export default function SchedulePage() {
               </div>
 
               <div>
-                <label className="text-xs font-medium mb-1.5 block" style={{ color: "var(--text-muted)" }}>FAN</label>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "var(--text-muted)" }}>{t("schedule.subjectLabel")}</label>
                 <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
                   {SUBJECTS.map((s) => (
                     <button key={s}
@@ -349,10 +351,10 @@ export default function SchedulePage() {
               </div>
 
               <div>
-                <label className="text-xs font-medium mb-1.5 block" style={{ color: "var(--text-muted)" }}>IZOH (ixtiyoriy)</label>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "var(--text-muted)" }}>{t("schedule.notesLabel")}</label>
                 <input value={form.note}
                   onChange={(e) => setForm({ ...form, note: e.target.value })}
-                  placeholder="Masalan: 3-bob mashqlari"
+                  placeholder={t("schedule.notesPlaceholder")}
                   className="w-full px-4 py-2.5 text-sm outline-none"
                   style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)", borderRadius: "var(--radius-sm)" }} />
               </div>
@@ -361,11 +363,11 @@ export default function SchedulePage() {
             <div className="flex gap-2 mt-4">
               <button onClick={() => setShowModal(false)} className="flex-1 py-2.5 text-sm"
                 style={{ background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)", borderRadius: "var(--radius-sm)" }}>
-                Bekor
+                {t("schedule.cancel")}
               </button>
               <button onClick={() => void addItem()} className="flex-1 py-2.5 text-sm font-medium transition-all hover:opacity-80"
                 style={{ background: "var(--cta)", color: "#fff", borderRadius: "var(--radius-sm)" }}>
-                Qo&apos;shish
+                {t("schedule.add")}
               </button>
             </div>
           </div>
