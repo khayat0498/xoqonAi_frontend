@@ -2,30 +2,31 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { useT } from "@/lib/i18n-context";
 
-const ICON_CATEGORIES: { label: string; icons: string[] }[] = [
+const ICON_CATEGORIES: { key: string; icons: string[] }[] = [
   {
-    label: "Ta'lim",
+    key: "education",
     icons: ["📁","📂","📐","📖","📚","📝","📒","📓","📕","📗","📘","📙","✏️","🖊️","🎓","🏫","📎","📌","🔖","📋","🗂️","🗃️","🗄️","🧑‍🏫","👨‍🎓","📑","🏅"],
   },
   {
-    label: "Fan",
+    key: "science",
     icons: ["🔬","🧪","🧬","🔭","💻","🧮","🌡️","⚗️","🧲","💡","⚡","🔋","📡","🛰️","🤖","🧠","🔧","⚙️","🖥️","📱"],
   },
   {
-    label: "Sport & Hobbi",
+    key: "sportsHobbies",
     icons: ["⚽","🏀","🎾","🏐","🎵","🎨","🎭","🎬","🎮","♟️","🎯","🏆","🥇","🎪","🎸","🎹","🎤","🏊","🚴","🧘"],
   },
   {
-    label: "Tabiat",
+    key: "nature",
     icons: ["🌍","🌸","🌻","🍀","🌈","⭐","🌙","☀️","🔥","💧","❄️","🌊","🍎","🍊","🌲","🦋","🐝","🌺","🍃","🌵"],
   },
   {
-    label: "Belgilar",
+    key: "symbols",
     icons: ["❤️","💜","💙","💚","💛","🧡","🤍","🖤","🔴","🟠","🟡","🟢","🔵","🟣","⬛","⬜","🔶","🔷","💎","🏷️","🔑","🛡️","🎀","🪄","✨","🌟","💫","🎗️"],
   },
   {
-    label: "Bayroqlar & Boshqa",
+    key: "flagsOther",
     icons: ["🇺🇿","🏳️","🚩","📍","🗺️","🧭","⏰","📅","💼","🎒","🧳","📦","🗑️","🔒","🔓","💰","🎁","🧩","🃏","🪁"],
   },
 ];
@@ -37,6 +38,7 @@ interface IconPickerProps {
 }
 
 export default function IconPicker({ value, onChange, size = 36 }: IconPickerProps) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
 
   // Lock body scroll when modal open
@@ -63,7 +65,7 @@ export default function IconPicker({ value, onChange, size = 36 }: IconPickerPro
           boxShadow: "var(--shadow-clay-sm)",
           cursor: "pointer",
         }}
-        title="Icon tanlash"
+        title={t("iconPicker.selectIconTitle")}
       >
         {value || "📁"}
       </button>
@@ -94,7 +96,7 @@ export default function IconPicker({ value, onChange, size = 36 }: IconPickerPro
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{value || "📁"}</span>
                 <span className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
-                  Icon tanlang
+                  {t("iconPicker.selectIcon")}
                 </span>
               </div>
               <button
@@ -115,12 +117,12 @@ export default function IconPicker({ value, onChange, size = 36 }: IconPickerPro
             {/* Icons grid by category — scrollable */}
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {ICON_CATEGORIES.map((cat) => (
-                <div key={cat.label} className="mb-4">
+                <div key={cat.key} className="mb-4">
                   <p
                     className="text-[11px] font-bold uppercase tracking-widest mb-2"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    {cat.label}
+                    {t(`iconPicker.categories.${cat.key}`)}
                   </p>
                   <div className="grid grid-cols-7 sm:grid-cols-9 gap-1">
                     {cat.icons.map((icon) => (

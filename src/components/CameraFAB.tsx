@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Camera, X, Send, Loader2, Images, ChevronRight, BookOpen, Check, Trash2, Plus, FolderOpen } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const getCV = () => (window as any).cv;
@@ -57,6 +58,7 @@ export default function CameraFAB() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cvReady = useOpenCV();
+  const { t } = useT();
 
   const urlStudentId   = searchParams.get("studentId");
   const urlStudentName = searchParams.get("studentName");
@@ -346,7 +348,7 @@ export default function CameraFAB() {
     if (capturedImages.length === 0) return;
     const effectiveCondition = folderCondition.trim() || urlCondition || "";
     if (!effectiveCondition) {
-      setSendError("Masala sharti kiritilmagan — orqaga qaytib shartni kiriting");
+      setSendError(t("camera.noConditionError"));
       return;
     }
     setSending(true); setSendError("");
@@ -371,7 +373,7 @@ export default function CameraFAB() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setSendError((err as any).error || "Xatolik yuz berdi");
+        setSendError((err as any).error || t("camera.genericError"));
         return;
       }
       closeAll();
@@ -405,7 +407,7 @@ export default function CameraFAB() {
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
               <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-                Fan tanlang
+                {t("camera.selectSubject")}
               </p>
               <button onClick={closeAll} className="w-8 h-8 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
@@ -418,7 +420,7 @@ export default function CameraFAB() {
                   <Loader2 size={20} className="animate-spin" style={{ color: "var(--accent)" }} />
                 </div>
               ) : subjects.length === 0 ? (
-                <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>Fan topilmadi</p>
+                <p className="text-sm text-center py-8" style={{ color: "var(--text-muted)" }}>{t("camera.subjectNotFound")}</p>
               ) : subjects.map(s => (
                 <button key={s.id} onClick={() => selectSubject(s)}
                   className="w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-[var(--surface-hover)]"
@@ -443,7 +445,7 @@ export default function CameraFAB() {
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
               <div>
                 <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-                  Jild tanlang
+                  {t("camera.selectFolder")}
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--accent)" }}>
                   {selectedSubject.icon} {selectedSubject.name}
@@ -453,7 +455,7 @@ export default function CameraFAB() {
                 <button onClick={() => setStep("subject")}
                   className="text-xs px-2.5 py-1.5 font-medium"
                   style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                  ← Orqaga
+                  {t("camera.back")}
                 </button>
                 <button onClick={closeAll} className="w-8 h-8 flex items-center justify-center"
                   style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
@@ -467,7 +469,7 @@ export default function CameraFAB() {
                 <div className="flex flex-col items-center gap-3 py-8 px-5">
                   <FolderOpen size={32} style={{ color: "var(--text-muted)" }} />
                   <p className="text-sm text-center" style={{ color: "var(--text-muted)" }}>
-                    Bu fan uchun jild yo'q
+                    {t("camera.noFoldersForSubject")}
                   </p>
                 </div>
               ) : (
@@ -492,7 +494,7 @@ export default function CameraFAB() {
                     value={newFolderName}
                     onChange={e => setNewFolderName(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") saveNewFolder(); if (e.key === "Escape") setCreatingFolder(false); }}
-                    placeholder="Jild nomi..."
+                    placeholder={t("camera.folderNamePlaceholder")}
                     className="flex-1 px-3 py-2 text-sm outline-none"
                     style={{ background: "var(--bg-primary)", border: "1px solid var(--accent)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
                   />
@@ -511,7 +513,7 @@ export default function CameraFAB() {
                 <button onClick={() => { setCreatingFolder(true); setNewFolderName(""); }}
                   className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all"
                   style={{ border: "1px dashed var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-muted)" }}>
-                  <Plus size={15} /> Yangi jild yaratish
+                  <Plus size={15} /> {t("camera.createNewFolder")}
                 </button>
               )}
             </div>
@@ -529,7 +531,7 @@ export default function CameraFAB() {
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
               <div>
                 <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-                  Masala sharti
+                  {t("camera.problemCondition")}
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                   {selectedFolder?.icon || "📁"} {selectedFolder?.name}
@@ -540,7 +542,7 @@ export default function CameraFAB() {
                 <button onClick={() => setStep("folder")}
                   className="text-xs px-2.5 py-1.5 font-medium"
                   style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                  ← Orqaga
+                  {t("camera.back")}
                 </button>
                 <button onClick={closeAll} className="w-8 h-8 flex items-center justify-center"
                   style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", color: "var(--text-muted)" }}>
@@ -551,14 +553,14 @@ export default function CameraFAB() {
             <div className="px-5 pt-4 pb-2">
               {urlCondition && !folderCondition && (
                 <div className="mb-2 px-3 py-2 rounded-lg text-xs" style={{ background: "var(--accent-light)", color: "var(--accent)", border: "1px solid var(--accent)" }}>
-                  ✓ Sessiyadan: {urlCondition.length > 80 ? urlCondition.slice(0, 80) + "…" : urlCondition}
+                  {t("camera.sessionConditionPrefix")}{urlCondition.length > 80 ? urlCondition.slice(0, 80) + "…" : urlCondition}
                 </div>
               )}
               <textarea
                 autoFocus
                 value={folderCondition}
                 onChange={e => { setFolderCondition(e.target.value); if (e.target.value.trim()) setConditionError(false); }}
-                placeholder={urlCondition ? "O'zgartirish uchun yozing (ixtiyoriy)" : "Masala shartini kiriting (majburiy)"}
+                placeholder={urlCondition ? t("camera.conditionOptionalPlaceholder") : t("camera.conditionRequiredPlaceholder")}
                 rows={4}
                 className="w-full px-3 py-2.5 text-sm outline-none resize-none"
                 style={{
@@ -570,7 +572,7 @@ export default function CameraFAB() {
               />
               {conditionError && (
                 <p className="text-xs mt-1" style={{ color: "var(--error)" }}>
-                  Masala shartini kiriting — tizim ishlashi uchun majburiy
+                  {t("camera.conditionRequired")}
                 </p>
               )}
             </div>
@@ -578,7 +580,7 @@ export default function CameraFAB() {
               <button onClick={openCamera}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all"
                 style={{ background: "var(--cta)", color: "#fff" }}>
-                <Camera size={16} /> Kamerani ochish
+                <Camera size={16} /> {t("camera.openCamera")}
               </button>
             </div>
           </div>
@@ -590,7 +592,7 @@ export default function CameraFAB() {
         <div className="fixed inset-0 z-[100] flex flex-col" style={{ background: "#000" }}>
           <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ background: "rgba(0,0,0,0.6)" }}>
             <div>
-              <p className="text-sm font-semibold text-white">Hujjatni skanerlash</p>
+              <p className="text-sm font-semibold text-white">{t("camera.scanDocument")}</p>
               {selectedSubject && (
                 <p className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
                   {selectedSubject.icon} {selectedSubject.name}
@@ -696,7 +698,7 @@ export default function CameraFAB() {
             <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
               <div>
                 <p className="font-bold text-sm" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-                  Tahlilga yuborish · {capturedImages.length} ta rasm
+                  {t("camera.confirmHeader").replace("{n}", String(capturedImages.length))}
                 </p>
                 <div className="flex flex-col gap-0.5 mt-0.5">
                   {urlStudentName && <p className="text-xs" style={{ color: "var(--accent)" }}>{urlStudentName}</p>}
@@ -737,7 +739,7 @@ export default function CameraFAB() {
               <button onClick={sendToAI} disabled={sending}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all"
                 style={{ background: "var(--cta)", color: "#fff", opacity: sending ? 0.7 : 1 }}>
-                {sending ? <><Loader2 size={16} className="animate-spin" /> Yuborilmoqda...</> : <><Send size={16} /> Tahlil qilish</>}
+                {sending ? <><Loader2 size={16} className="animate-spin" /> {t("camera.sending")}</> : <><Send size={16} /> {t("camera.analyze")}</>}
               </button>
             </div>
           </div>

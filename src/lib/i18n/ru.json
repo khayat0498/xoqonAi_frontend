@@ -528,6 +528,42 @@
     "deleteStudentTitle": "Удалить ученика",
     "deleteStudentMsg": "{name} будет удалён из всех классов."
   },
+  "transfer": {
+    "manageClasses": "Управление классами"
+  },
+  "iconPicker": {
+    "selectIcon": "Выбрать иконку",
+    "selectIconTitle": "Выбрать иконку",
+    "categories": {
+      "education": "Образование",
+      "science": "Наука",
+      "sportsHobbies": "Спорт и хобби",
+      "nature": "Природа",
+      "symbols": "Символы",
+      "flagsOther": "Флаги и прочее"
+    }
+  },
+  "camera": {
+    "selectSubject": "Выберите предмет",
+    "subjectNotFound": "Предметы не найдены",
+    "selectFolder": "Выберите папку",
+    "back": "← Назад",
+    "noFoldersForSubject": "Нет папок для этого предмета",
+    "folderNamePlaceholder": "Название папки...",
+    "createNewFolder": "Создать новую папку",
+    "problemCondition": "Условие задачи",
+    "sessionConditionPrefix": "✓ Из сессии: ",
+    "conditionOptionalPlaceholder": "Введите для изменения (необязательно)",
+    "conditionRequiredPlaceholder": "Введите условие задачи (обязательно)",
+    "conditionRequired": "Введите условие задачи — система не работает без него",
+    "openCamera": "Открыть камеру",
+    "scanDocument": "Сканировать документ",
+    "confirmHeader": "Отправить на анализ · {n} фото",
+    "sending": "Отправка...",
+    "analyze": "Анализировать",
+    "noConditionError": "Условие задачи не введено — вернитесь и введите условие",
+    "genericError": "Произошла ошибка"
+  },
   "home": {
     "welcome": "Добро пожаловать",
     "monthlyChecks": "проверок",

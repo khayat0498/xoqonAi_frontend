@@ -2,6 +2,7 @@
 
 import { Bell, Search } from "lucide-react";
 import { useUser } from "@/lib/user-context";
+import { useT } from "@/lib/i18n-context";
 
 interface TopBarProps {
   title: string;
@@ -10,6 +11,7 @@ interface TopBarProps {
 
 export default function TopBar({ title, subtitle }: TopBarProps) {
   const { user } = useUser();
+  const { t } = useT();
   return (
     <header
       className="flex items-center justify-between px-6 py-4 border-b"
@@ -41,7 +43,7 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
           }}
         >
           <Search size={15} />
-          <span className="hidden sm:block">Qidirish...</span>
+          <span className="hidden sm:block">{t("dashboard.searchPlaceholder")}</span>
         </div>
 
         {/* Notification */}

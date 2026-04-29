@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Users, Check } from "lucide-react";
 import type { Student, ClassItem } from "@/lib/store";
+import { useT } from "@/lib/i18n-context";
 
 interface Props {
   student: Student;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function TransferStudentModal({ student, classes, onSave, onClose }: Props) {
+  const { t } = useT();
   const initialEnrolled = classes
     .filter((c) => c.studentIds.includes(student.id))
     .map((c) => c.id);
@@ -54,7 +56,7 @@ export default function TransferStudentModal({ student, classes, onSave, onClose
         >
           <div>
             <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-              Sinflarni boshqarish
+              {t("transfer.manageClasses")}
             </p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
               {student.name}
@@ -101,10 +103,10 @@ export default function TransferStudentModal({ student, classes, onSave, onClose
                     className="text-sm font-medium"
                     style={{ color: isEnrolled ? "var(--accent)" : "var(--text-primary)" }}
                   >
-                    {cls.name} sinfi
+                    {cls.name} {t("home.classSuffix")}
                   </p>
                   <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
-                    <Users size={10} /> {cls.studentCount} o'quvchi
+                    <Users size={10} /> {cls.studentCount} {t("home.studentsUnit")}
                   </p>
                 </div>
 
@@ -129,7 +131,7 @@ export default function TransferStudentModal({ student, classes, onSave, onClose
               borderRadius: "var(--radius-sm)",
             }}
           >
-            Saqlash
+            {t("common.save")}
           </button>
         </div>
       </div>

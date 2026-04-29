@@ -528,6 +528,42 @@
     "deleteStudentTitle": "O'quvchini o'chirish",
     "deleteStudentMsg": "{name} barcha sinflardan ham o'chiriladi."
   },
+  "transfer": {
+    "manageClasses": "Sinflarni boshqarish"
+  },
+  "iconPicker": {
+    "selectIcon": "Icon tanlang",
+    "selectIconTitle": "Icon tanlash",
+    "categories": {
+      "education": "Ta'lim",
+      "science": "Fan",
+      "sportsHobbies": "Sport & Hobbi",
+      "nature": "Tabiat",
+      "symbols": "Belgilar",
+      "flagsOther": "Bayroqlar & Boshqa"
+    }
+  },
+  "camera": {
+    "selectSubject": "Fan tanlang",
+    "subjectNotFound": "Fan topilmadi",
+    "selectFolder": "Jild tanlang",
+    "back": "← Orqaga",
+    "noFoldersForSubject": "Bu fan uchun jild yo'q",
+    "folderNamePlaceholder": "Jild nomi...",
+    "createNewFolder": "Yangi jild yaratish",
+    "problemCondition": "Masala sharti",
+    "sessionConditionPrefix": "✓ Sessiyadan: ",
+    "conditionOptionalPlaceholder": "O'zgartirish uchun yozing (ixtiyoriy)",
+    "conditionRequiredPlaceholder": "Masala shartini kiriting (majburiy)",
+    "conditionRequired": "Masala shartini kiriting — tizim ishlashi uchun majburiy",
+    "openCamera": "Kamerani ochish",
+    "scanDocument": "Hujjatni skanerlash",
+    "confirmHeader": "Tahlilga yuborish · {n} ta rasm",
+    "sending": "Yuborilmoqda...",
+    "analyze": "Tahlil qilish",
+    "noConditionError": "Masala sharti kiritilmagan — orqaga qaytib shartni kiriting",
+    "genericError": "Xatolik yuz berdi"
+  },
   "home": {
     "welcome": "Xush kelibsiz",
     "monthlyChecks": "ta tekshiruv",
