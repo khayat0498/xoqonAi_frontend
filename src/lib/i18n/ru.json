@@ -260,6 +260,14 @@
     "send": "Отправить",
     "imagesPerMonth": "изображений/мес"
   },
+  "folder": {
+    "notFound": "Папка не найдена",
+    "subjectsCount": "предметов",
+    "noSubjectsYet": "Пока нет предметов",
+    "assignmentsCount": "заданий",
+    "noPrompt": "Нет промпта",
+    "back": "Назад"
+  },
   "history": {
     "title": "История",
     "noHistory": "Пока нет проверок",

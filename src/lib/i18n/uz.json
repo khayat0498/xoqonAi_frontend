@@ -260,6 +260,14 @@
     "send": "Yuborish",
     "imagesPerMonth": "ta rasm/oy"
   },
+  "folder": {
+    "notFound": "Papka topilmadi",
+    "subjectsCount": "ta fan",
+    "noSubjectsYet": "Hali fan yo'q",
+    "assignmentsCount": "ta topshiriq",
+    "noPrompt": "Prompt yo'q",
+    "back": "Orqaga"
+  },
   "history": {
     "title": "Tarix",
     "noHistory": "Hozircha tekshirishlar yo'q",
