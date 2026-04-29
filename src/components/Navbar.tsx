@@ -6,24 +6,26 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { Moon, Sun, CalendarDays, BarChart3, Home, FolderOpen, Settings } from "lucide-react";
 import { useUser } from "@/lib/user-context";
+import { useT } from "@/lib/i18n-context";
 
 const studentLinks = [
-  { href: "/home", label: "Bosh sahifa", icon: Home },
-  { href: "/dashboard", label: "Papkalarim", icon: FolderOpen },
-  { href: "/settings", label: "Sozlamalar", icon: Settings },
+  { href: "/home", labelKey: "nav.home", icon: Home },
+  { href: "/dashboard", labelKey: "nav.folders", icon: FolderOpen },
+  { href: "/settings", labelKey: "nav.settings", icon: Settings },
 ];
 
 const teacherLinks = [
-  { href: "/home", label: "Bosh sahifa", icon: Home },
-  { href: "/schedule", label: "Jadval", icon: CalendarDays },
-  { href: "/dashboard/stats", label: "Statistika", icon: BarChart3 },
-  { href: "/settings", label: "Sozlamalar", icon: Settings },
+  { href: "/home", labelKey: "nav.home", icon: Home },
+  { href: "/schedule", labelKey: "nav.schedule", icon: CalendarDays },
+  { href: "/dashboard/stats", labelKey: "nav.stats", icon: BarChart3 },
+  { href: "/settings", labelKey: "nav.settings", icon: Settings },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const [dark, setDark] = useState(false);
   const { user } = useUser();
+  const { t } = useT();
 
   const links = user?.role === "student" ? studentLinks : teacherLinks;
 
@@ -45,19 +47,19 @@ export default function Navbar() {
               width: 36,
               height: 36,
               borderRadius: "9999px",
-              background: "#387C8D",
+              background: "var(--accent)",
               color: "#fff",
               fontSize: "1rem",
             }}
           >
             SI
           </span>
-          <span style={{ color: "#387C8D", fontSize: "1.5rem", fontWeight: 600 }}>baho</span>
+          <span style={{ color: "var(--accent)", fontSize: "1.5rem", fontWeight: 600 }}>baho</span>
         </Link>
 
         {/* Nav links */}
         <nav className="flex items-center gap-1">
-          {links.map(({ href, label }) => {
+          {links.map(({ href, labelKey }) => {
             const active = pathname === href;
             return (
               <Link
@@ -73,7 +75,7 @@ export default function Navbar() {
                   borderRadius: "var(--radius-sm)",
                 }}
               >
-                {label}
+                {t(labelKey)}
               </Link>
             );
           })}
@@ -85,7 +87,7 @@ export default function Navbar() {
             onClick={toggleDark}
             className="w-9 h-9 border flex items-center justify-center transition-all hover:opacity-70"
             style={{ borderColor: "var(--border)", color: "var(--text-secondary)", borderRadius: "var(--radius-sm)" }}
-            title={dark ? "Yorug' rejim" : "Qorong'u rejim"}
+            title={dark ? t("nav.lightMode") : t("nav.darkMode")}
           >
             {dark ? <Sun size={16} /> : <Moon size={16} />}
           </button>

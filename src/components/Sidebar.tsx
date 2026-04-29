@@ -119,7 +119,7 @@ export default function Sidebar() {
               width: collapsed ? 48 : 56,
               height: collapsed ? 48 : 56,
               borderRadius: "9999px",
-              background: "#387C8D",
+              background: "var(--accent)",
               color: "#fff",
               fontSize: collapsed ? "1.15rem" : "1.35rem",
               flexShrink: 0,
@@ -128,7 +128,7 @@ export default function Sidebar() {
             SI
           </span>
           {!collapsed && (
-            <span style={{ color: "#387C8D", fontSize: "2rem", fontWeight: 600, lineHeight: 1 }}>baho</span>
+            <span style={{ color: "var(--accent)", fontSize: "2rem", fontWeight: 600, lineHeight: 1 }}>baho</span>
           )}
         </div>
       </div>

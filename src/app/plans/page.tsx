@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 import { useUserWS } from "@/lib/user-ws";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
@@ -52,40 +53,47 @@ const PLAN_COLORS: Record<string, string> = {
   free: "var(--text-muted)", pro: "var(--accent)", premium: "var(--warning)", enterprise: "#8B5CF6",
 };
 
-function fmtPrice(amount: number): string {
-  if (amount === 0) return "Bepul";
-  return amount.toLocaleString("uz-UZ") + " so'm/oy";
-}
-function fmtPriceYear(amount: number): string {
-  if (amount === 0) return "Bepul";
-  return amount.toLocaleString("uz-UZ") + " so'm/yil";
+function useFmtPrice() {
+  const { t } = useT();
+  const fmtPrice = (amount: number): string => {
+    if (amount === 0) return t("plans.free_word");
+    return amount.toLocaleString("uz-UZ") + " " + t("plans.perMonthSum");
+  };
+  const fmtPriceYear = (amount: number): string => {
+    if (amount === 0) return t("plans.free_word");
+    return amount.toLocaleString("uz-UZ") + " " + t("plans.perYearSum");
+  };
+  return { fmtPrice, fmtPriceYear };
 }
 
 function useCountdown(endsAt: string | null) {
+  const { t } = useT();
   const [left, setLeft] = useState("");
   useEffect(() => {
     if (!endsAt) return;
     const tick = () => {
       const diff = new Date(endsAt).getTime() - Date.now();
-      if (diff <= 0) { setLeft("Tugadi"); return; }
+      if (diff <= 0) { setLeft(t("plans.ended")); return; }
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
       setLeft(h > 24
-        ? `${Math.floor(h / 24)} kun ${h % 24} soat`
+        ? `${Math.floor(h / 24)} ${t("plans.day")} ${h % 24} ${t("plans.hour")}`
         : `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
       );
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [endsAt]);
+  }, [endsAt, t]);
   return left;
 }
 
 export default function PlansPage() {
   const router = useRouter();
   const { lastEvent } = useUserWS();
+  const { t } = useT();
+  const { fmtPrice, fmtPriceYear } = useFmtPrice();
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [plans, setPlans] = useState<PlanConfig[]>([]);
   const [promos, setPromos] = useState<Promotion[]>([]);
@@ -127,9 +135,9 @@ export default function PlansPage() {
         body: JSON.stringify({ planKey: confirmPlan.key, period: billing }),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error ?? "Xatolik"); }
+      if (!res.ok) { alert(data.error ?? t("plans.errorGeneric")); }
       else { setSentOk(true); setPendingRequest(data.request); setTimeout(() => setConfirmPlan(null), 1800); }
-    } catch { alert("Server bilan bog'lanib bo'lmadi"); }
+    } catch { alert(t("plans.errorServer")); }
     finally { setSending(false); }
   };
 
@@ -168,7 +176,7 @@ export default function PlansPage() {
           style={{ background: "rgba(255,255,255,0.18)", borderRadius: "var(--radius-sm)", color: "#fff" }}>
           <ArrowLeft size={18} />
         </button>
-        <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>Tarif rejalar</h1>
+        <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{t("plans.title")}</h1>
       </div>
 
       <div className="bg-grid flex-1 overflow-y-auto">
@@ -180,7 +188,7 @@ export default function PlansPage() {
           )}
 
           <p className="text-center text-sm mb-5" style={{ color: "var(--text-secondary)" }}>
-            O&apos;zingizga mos rejani tanlang
+            {t("plans.chooseYourPlan")}
           </p>
 
           {/* Pending banner */}
@@ -190,10 +198,10 @@ export default function PlansPage() {
               <Clock size={16} style={{ color: "var(--warning)", flexShrink: 0 }} />
               <div>
                 <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                  {pendingRequest.planKey.charAt(0).toUpperCase() + pendingRequest.planKey.slice(1)} rejasi so&apos;rovi yuborildi
+                  {pendingRequest.planKey.charAt(0).toUpperCase() + pendingRequest.planKey.slice(1)} {t("plans.requestSent")}
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  Admin ko&apos;rib chiqmoqda. Tasdiqlangach rejangiz o&apos;zgaradi.
+                  {t("plans.adminReviewing")}
                 </p>
               </div>
             </div>
@@ -212,7 +220,7 @@ export default function PlansPage() {
                     color: billing === b ? "#fff" : "var(--text-muted)",
                     boxShadow: billing === b ? "var(--shadow-clay-sm)" : "none",
                   }}>
-                  {b === "monthly" ? "Oylik" : "Yillik"}
+                  {b === "monthly" ? t("plans.monthly") : t("plans.yearly")}
                   {b === "yearly" && (
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
                       style={{ background: billing === "yearly" ? "rgba(255,255,255,0.25)" : "var(--success)", color: "#fff" }}>
@@ -246,10 +254,10 @@ export default function PlansPage() {
                 const effectiveLimit = getEffectiveLimit(plan, promo);
                 const discountedMonthly = getDiscountedPrice(plan, promo);
 
-                const displayPrice = isEnterprise ? "Kelishiladi"
-                  : isFree ? "Bepul"
+                const displayPrice = isEnterprise ? t("plans.negotiable")
+                  : isFree ? t("plans.free_word")
                   : billing === "monthly"
-                    ? discountedMonthly ? `${discountedMonthly.toLocaleString("uz-UZ")} so'm/oy` : fmtPrice(plan.priceMonthly)
+                    ? discountedMonthly ? `${discountedMonthly.toLocaleString("uz-UZ")} ${t("plans.perMonthSum")}` : fmtPrice(plan.priceMonthly)
                     : fmtPriceYear(plan.priceYearly);
 
                 const savedAmount = plan.priceMonthly > 0 ? (plan.priceMonthly * 12) - plan.priceYearly : 0;
@@ -273,7 +281,7 @@ export default function PlansPage() {
                           transform: "rotate(35deg)",
                           boxShadow: "0 2px 8px rgba(239,68,68,0.35)",
                         }}>
-                        AKSIYA
+                        {t("plans.promoBadge")}
                       </div>
                     )}
 
@@ -283,7 +291,7 @@ export default function PlansPage() {
                         style={{ background: "rgba(45,212,160,0.1)", borderRadius: "var(--radius-sm)", border: "1px solid rgba(45,212,160,0.2)" }}>
                         <Sparkles size={12} style={{ color: "var(--success)" }} />
                         <span className="text-[11px] font-bold" style={{ color: "var(--success)" }}>
-                          {savedAmount.toLocaleString("uz-UZ")} so&apos;m tejaysiz
+                          {savedAmount.toLocaleString("uz-UZ")} {t("plans.youSave")}
                         </span>
                       </div>
                     )}
@@ -309,12 +317,12 @@ export default function PlansPage() {
                       </div>
                       {isCurrent && (
                         <span className="text-[10px] font-bold uppercase px-2.5 py-1" style={{ color, background: `${color}15`, borderRadius: 8 }}>
-                          Joriy
+                          {t("plans.current")}
                         </span>
                       )}
                       {isPending && !isCurrent && (
                         <span className="text-[10px] font-bold uppercase px-2.5 py-1 flex items-center gap-1" style={{ color: "var(--warning)", background: "var(--warning-bg)", borderRadius: 8 }}>
-                          <Clock size={10} /> Kutilmoqda
+                          <Clock size={10} /> {t("plans.pending")}
                         </span>
                       )}
                     </div>
@@ -328,16 +336,16 @@ export default function PlansPage() {
                     <div className="flex flex-col gap-2">
                       {/* Tekshirishlar limiti */}
                       <AutoRow color={color}
-                        original={plan.limitMonthly === 0 ? "Cheksiz" : `${plan.limitMonthly} ta/oy`}
-                        promo={effectiveLimit ? `${effectiveLimit} ta/oy` : null}
+                        original={plan.limitMonthly === 0 ? t("plans.unlimited") : `${plan.limitMonthly} ${t("plans.perMonthShort2")}`}
+                        promo={effectiveLimit ? `${effectiveLimit} ${t("plans.perMonthShort2")}` : null}
                         strike={effectiveLimit !== null}
                       />
                       {/* Sinflar */}
                       {(plan.maxClasses > 0 || (promo && promo.maxClasses > 0)) && (
                         <AutoRow color={color}
-                          original={plan.maxClasses === 0 ? "Cheksiz sinf" : `${plan.maxClasses} ta sinf`}
+                          original={plan.maxClasses === 0 ? t("plans.unlimitedClasses") : `${plan.maxClasses} ${t("plans.classes")}`}
                           promo={promo && promo.maxClasses > 0 && promo.maxClasses !== plan.maxClasses
-                            ? (promo.maxClasses === 0 ? "Cheksiz sinf" : `${promo.maxClasses} ta sinf`)
+                            ? (promo.maxClasses === 0 ? t("plans.unlimitedClasses") : `${promo.maxClasses} ${t("plans.classes")}`)
                             : null}
                           strike={!!(promo && promo.maxClasses > 0 && promo.maxClasses !== plan.maxClasses)}
                         />
@@ -345,9 +353,9 @@ export default function PlansPage() {
                       {/* O'quvchilar */}
                       {(plan.maxStudentsPerClass > 0 || (promo && promo.maxStudentsPerClass > 0)) && (
                         <AutoRow color={color}
-                          original={plan.maxStudentsPerClass === 0 ? "Cheksiz o'quvchi" : `Sinfga ${plan.maxStudentsPerClass} ta o'quvchi`}
+                          original={plan.maxStudentsPerClass === 0 ? t("plans.unlimitedStudents") : t("plans.studentsPerClass").replace("{n}", String(plan.maxStudentsPerClass))}
                           promo={promo && promo.maxStudentsPerClass > 0 && promo.maxStudentsPerClass !== plan.maxStudentsPerClass
-                            ? `Sinfga ${promo.maxStudentsPerClass} ta o'quvchi`
+                            ? t("plans.studentsPerClass").replace("{n}", String(promo.maxStudentsPerClass))
                             : null}
                           strike={!!(promo && promo.maxStudentsPerClass > 0 && promo.maxStudentsPerClass !== plan.maxStudentsPerClass)}
                         />
@@ -378,12 +386,12 @@ export default function PlansPage() {
                         boxShadow: isActionable && !isCurrent && !isPending ? "var(--shadow-clay-sm)" : "none",
                         cursor: isActionable ? "pointer" : "default",
                       }}>
-                      {isCurrent ? "Joriy reja"
-                        : isPending ? "So'rov yuborildi"
-                        : isFree ? "Bepul"
-                        : isEnterprise ? "Bog'laning"
-                        : pendingRequest ? "So'rov kutilmoqda"
-                        : "So'rov yuborish"}
+                      {isCurrent ? t("plans.currentPlanBtn")
+                        : isPending ? t("plans.requestSentBtn")
+                        : isFree ? t("plans.freeBtn")
+                        : isEnterprise ? t("plans.contactBtn")
+                        : pendingRequest ? t("plans.requestPending")
+                        : t("plans.requestPlan")}
                     </button>
                   </div>
                 );
@@ -405,9 +413,9 @@ export default function PlansPage() {
                 <div className="w-14 h-14 flex items-center justify-center rounded-full" style={{ background: "var(--success-bg)" }}>
                   <Check size={28} style={{ color: "var(--success)" }} />
                 </div>
-                <p className="text-base font-bold text-center" style={{ color: "var(--text-primary)" }}>So&apos;rov yuborildi!</p>
+                <p className="text-base font-bold text-center" style={{ color: "var(--text-primary)" }}>{t("plans.successTitle")}</p>
                 <p className="text-sm text-center" style={{ color: "var(--text-muted)" }}>
-                  Admin tasdiqlashi bilanoq {confirmPlan.name} rejangiz faollashadi.
+                  {t("plans.successMessage").replace("{plan}", confirmPlan.name)}
                 </p>
               </div>
             ) : (
@@ -415,10 +423,10 @@ export default function PlansPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
-                      {confirmPlan.name} rejasini so&apos;rash
+                      {t("plans.requestPlanTitle").replace("{plan}", confirmPlan.name)}
                     </p>
                     <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                      {billing === "monthly" ? "Oylik" : "Yillik"} · Admin tasdiqlaydi
+                      {billing === "monthly" ? t("plans.monthly") : t("plans.yearly")} · {t("plans.modalSub")}
                     </p>
                   </div>
                   <button onClick={() => setConfirmPlan(null)} className="w-8 h-8 flex items-center justify-center"
@@ -429,19 +437,19 @@ export default function PlansPage() {
                 <div className="p-4 rounded-xl flex items-start gap-3" style={{ background: "var(--bg-primary)", border: "1px solid var(--border)" }}>
                   <Clock size={16} style={{ color: "var(--warning)", marginTop: 1, flexShrink: 0 }} />
                   <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                    So&apos;rovingiz adminga yuboriladi. Admin to&apos;lovni tasdiqlаgach, rejangiz avtomatik faollashadi.
+                    {t("plans.modalNote")}
                   </p>
                 </div>
                 <div className="flex gap-3">
                   <button onClick={() => setConfirmPlan(null)} className="flex-1 py-3 text-sm font-semibold"
                     style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
-                    Bekor qilish
+                    {t("plans.cancel")}
                   </button>
                   <button onClick={handleSendRequest} disabled={sending}
                     className="flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
                     style={{ borderRadius: "var(--radius-sm)", background: "var(--accent)", color: "#fff", boxShadow: "var(--shadow-clay-sm)" }}>
                     {sending && <Loader2 size={15} className="animate-spin" />}
-                    {sending ? "Yuborilmoqda..." : "Yuborish"}
+                    {sending ? t("plans.sending") : t("plans.send")}
                   </button>
                 </div>
               </>
@@ -500,6 +508,7 @@ function AutoRow({ color, original, promo, strike }: {
 
 // ─── Plan aksiya info ───
 function PromoInfo({ promo, effectiveLimit, originalLimit }: { promo: Promotion; effectiveLimit: number | null; originalLimit: number }) {
+  const { t } = useT();
   const countdown = useCountdown(promo.endsAt);
   return (
     <div className="px-3 py-2 rounded-xl flex items-center gap-2"
@@ -510,7 +519,7 @@ function PromoInfo({ promo, effectiveLimit, originalLimit }: { promo: Promotion;
         {effectiveLimit && (
           <p className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
             <span style={{ textDecoration: "line-through" }}>{originalLimit}</span>
-            <strong style={{ color: "var(--success)" }}>{effectiveLimit}</strong> ta rasm/oy
+            <strong style={{ color: "var(--success)" }}>{effectiveLimit}</strong> {t("plans.imagesPerMonth")}
           </p>
         )}
       </div>
