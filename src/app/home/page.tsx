@@ -9,6 +9,7 @@ import { Users, CheckCircle2, TrendingUp, BookOpen, Camera, Eye, Search, Folder,
 import { useUser } from "@/lib/user-context";
 import { useUserWS } from "@/lib/user-ws";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
@@ -40,6 +41,7 @@ function HomePageInner() {
   const { user } = useUser();
   const { lastEvent } = useUserWS();
   const searchParams = useSearchParams();
+  const { t } = useT();
   const [planKey, setPlanKey] = useState("free");
   const [used, setUsed] = useState(0);
   const [limit, setLimit] = useState(60);
@@ -122,12 +124,12 @@ function HomePageInner() {
     const thisMonth = doneFiles.filter(f => new Date(f.createdAt) >= startOfMonth).length;
     const thisWeek = doneFiles.filter(f => new Date(f.createdAt) >= startOfWeek).length;
     return [
-      { label: "Jami sinflar", value: String(classList.length),   icon: BookOpen,    color: "#4a9aaa", bg: "rgba(74,154,170,0.12)" },
-      { label: "O'quvchilar",  value: String(studentList.length), icon: Users,       color: "#6875f5", bg: "rgba(104,117,245,0.1)" },
-      { label: "Bu oy",        value: String(thisMonth),          icon: CheckCircle2,color: "#3dbd7d", bg: "rgba(61,189,125,0.12)" },
-      { label: "Bu hafta",     value: String(thisWeek),           icon: TrendingUp,  color: "#e05c5c", bg: "rgba(224,92,92,0.1)" },
+      { label: t("home.totalClasses"), value: String(classList.length),   icon: BookOpen,    color: "#4a9aaa", bg: "rgba(74,154,170,0.12)" },
+      { label: t("home.students"),     value: String(studentList.length), icon: Users,       color: "#6875f5", bg: "rgba(104,117,245,0.1)" },
+      { label: t("home.thisMonth"),    value: String(thisMonth),          icon: CheckCircle2,color: "#3dbd7d", bg: "rgba(61,189,125,0.12)" },
+      { label: t("home.thisWeek"),     value: String(thisWeek),           icon: TrendingUp,  color: "#e05c5c", bg: "rgba(224,92,92,0.1)" },
     ];
-  }, [classList, studentList, allFiles]);
+  }, [classList, studentList, allFiles, t]);
   const [notifications, setNotifications] = useState<{ id: string; grade: string | null; score: number | null; subject: string | null; failed?: boolean; status?: string }[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -176,7 +178,7 @@ function HomePageInner() {
       }
       if (subjectsRes.ok) {
         const data = await subjectsRes.json();
-        setSubjectList([{ id: "__general__", name: "Umumiy", icon: "📚" }, ...data]);
+        setSubjectList([{ id: "__general__", name: t("home.general"), icon: "📚" }, ...data]);
       }
       await refreshFolders();
       // Initial notifications: recent done/failed submissions
@@ -338,7 +340,7 @@ function HomePageInner() {
   const viewingSubjectInfo = viewingSubjectId && !isGeneralView(viewingSubjectId)
     ? subjectList.find(s => s.id === viewingSubjectId) ?? null
     : viewingSubjectId === "__general__"
-    ? { id: "__general__", name: "Umumiy", icon: "📚" }
+    ? { id: "__general__", name: t("home.general"), icon: "📚" }
     : null;
   const foldersForView = viewingSubjectId === null
     ? []
@@ -362,30 +364,30 @@ function HomePageInner() {
 
   const SORT_OPTIONS: Record<string, { label: string; value: string }[]> = {
     papkalarim: [
-      { label: "Nomi (A→Z)", value: "name-asc" },
-      { label: "Nomi (Z→A)", value: "name-desc" },
-      { label: "Yangi", value: "date-new" },
-      { label: "Eski", value: "date-old" },
-      { label: "Fayllar soni", value: "files" },
+      { label: t("home.sortNameAsc"), value: "name-asc" },
+      { label: t("home.sortNameDesc"), value: "name-desc" },
+      { label: t("home.sortNew"), value: "date-new" },
+      { label: t("home.sortOld"), value: "date-old" },
+      { label: t("home.sortFilesCount"), value: "files" },
     ],
     tahlillar: [
-      { label: "Ism (A→Z)", value: "name-asc" },
-      { label: "Ism (Z→A)", value: "name-desc" },
-      { label: "Yangi", value: "date-new" },
-      { label: "Eski", value: "date-old" },
-      { label: "Fan bo'yicha", value: "subject" },
+      { label: t("home.sortFirstNameAsc"), value: "name-asc" },
+      { label: t("home.sortFirstNameDesc"), value: "name-desc" },
+      { label: t("home.sortNew"), value: "date-new" },
+      { label: t("home.sortOld"), value: "date-old" },
+      { label: t("home.sortBySubject"), value: "subject" },
     ],
     sinflarim: [
-      { label: "Nomi (A→Z)", value: "name-asc" },
-      { label: "Nomi (Z→A)", value: "name-desc" },
-      { label: "O'quvchi soni", value: "students" },
+      { label: t("home.sortNameAsc"), value: "name-asc" },
+      { label: t("home.sortNameDesc"), value: "name-desc" },
+      { label: t("home.sortStudentsCount"), value: "students" },
     ],
     oquvchilar: [
-      { label: "Nomi (A→Z)", value: "name-asc" },
-      { label: "Nomi (Z→A)", value: "name-desc" },
-      { label: "Ball (yuqori)", value: "grade-high" },
-      { label: "Ball (past)", value: "grade-low" },
-      { label: "Tekshirishlar", value: "submissions" },
+      { label: t("home.sortNameAsc"), value: "name-asc" },
+      { label: t("home.sortNameDesc"), value: "name-desc" },
+      { label: t("home.sortGradeHigh"), value: "grade-high" },
+      { label: t("home.sortGradeLow"), value: "grade-low" },
+      { label: t("home.sortChecks"), value: "submissions" },
     ],
   };
 
@@ -401,7 +403,7 @@ function HomePageInner() {
           boxShadow: "var(--shadow-clay-sm)",
           color: "var(--text-muted)",
         }}
-        title="Saralash"
+        title={t("home.sort")}
       >
         <ArrowUpDown size={14} />
       </button>
@@ -463,7 +465,7 @@ function HomePageInner() {
             <ChevronLeft size={20} />
           </Link>
           <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>
-            Jildlar
+            {t("home.headerJildlar")}
           </h1>
         </div>
       )}
@@ -489,7 +491,7 @@ function HomePageInner() {
 
         <div className="relative flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium mb-0.5" style={{ color: "var(--text-muted)" }}>Xush kelibsiz,</p>
+            <p className="text-sm font-medium mb-0.5" style={{ color: "var(--text-muted)" }}>{t("home.welcome")},</p>
             {/* Desktop: ism + plan badge yonma-yon */}
             <div className="hidden md:flex items-center gap-2">
               <h1
@@ -519,8 +521,8 @@ function HomePageInner() {
             {/* Usage — desktop */}
             <p className="hidden md:block text-xs mt-1 font-semibold tabular-nums" style={{ color: "var(--text-muted)" }}>
               {planKey === "pay_per_use"
-                ? `${(balanceUzs ?? 0).toLocaleString()} so'm`
-                : `${used} / ${limit >= 99999 ? "∞" : limit} ta tekshiruv`}
+                ? `${(balanceUzs ?? 0).toLocaleString()} ${t("home.sum")}`
+                : `${used} / ${limit >= 99999 ? "∞" : limit} ${t("home.monthlyChecks")}`}
             </p>
             {/* Inline stats — mobile only */}
             <div className="flex items-center gap-3 mt-2 md:hidden flex-wrap">
@@ -573,7 +575,7 @@ function HomePageInner() {
               }}
             >
               {planKey === "pay_per_use"
-                ? `${(balanceUzs ?? 0).toLocaleString()} so'm`
+                ? `${(balanceUzs ?? 0).toLocaleString()} ${t("home.sum")}`
                 : `${PLAN_LABEL[planKey]?.label ?? "Free"} · ${used}/${limit >= 99999 ? "∞" : limit}`}
             </Link>
             <div className="flex items-center gap-2">
@@ -688,8 +690,8 @@ function HomePageInner() {
                       </p>
                       <p className="text-base font-semibold mt-0.5 text-white leading-snug">
                         {remaining > 0
-                          ? `${remaining} ta tekshirilmagan`
-                          : "Barchasi tekshirildi!"}
+                          ? `${remaining} ${t("home.notChecked")}`
+                          : t("home.allChecked")}
                       </p>
                       <div className="flex items-center gap-2 mt-2 mb-1">
                         <div className="h-1.5 rounded-full flex-1" style={{ background: "rgba(255,255,255,0.25)" }}>
@@ -741,8 +743,8 @@ function HomePageInner() {
                 }}
               >
                 {([
-                  { key: "folders" as const, label: "Jildlar", icon: Folder },
-                  { key: "tahlillar" as const, label: "Tahlillar", icon: FlaskConical },
+                  { key: "folders" as const, label: t("home.folders"), icon: Folder },
+                  { key: "tahlillar" as const, label: t("home.analyses"), icon: FlaskConical },
                 ]).map(({ key, label, icon: Icon }) => (
                   <button
                     key={key}
@@ -771,9 +773,9 @@ function HomePageInner() {
                 }}
               >
                 {([
-                  { key: "papkalarim" as const, label: "Jildlar", icon: Folder },
-                  { key: "sinflarim" as const, label: "Sinflar", icon: BookOpen },
-                  { key: "oquvchilar" as const, label: "O'quvchilar", icon: Users },
+                  { key: "papkalarim" as const, label: t("home.folders"), icon: Folder },
+                  { key: "sinflarim" as const, label: t("home.classes"), icon: BookOpen },
+                  { key: "oquvchilar" as const, label: t("home.students"), icon: Users },
                 ]).map(({ key, label, icon: Icon }) => (
                   <button
                     key={key}
@@ -812,12 +814,12 @@ function HomePageInner() {
                             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay-sm)" }}>
                             <span className="text-3xl">{s.icon || "📖"}</span>
                             <span className="text-sm font-semibold text-center truncate w-full" style={{ color: "var(--text-primary)" }}>{s.name}</span>
-                            <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{cnt} ta jild</span>
+                            <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{cnt} {t("home.filesCount")}</span>
                           </button>
                         );
                       })}
                       {subjectList.length === 0 && (
-                        <p className="col-span-2 text-sm text-center py-12" style={{ color: "var(--text-muted)" }}>Fan qo&apos;shilmagan. Admin paneldan fanlar qo&apos;shing.</p>
+                        <p className="col-span-2 text-sm text-center py-12" style={{ color: "var(--text-muted)" }}>{t("home.noSubjects")}</p>
                       )}
                     </div>
                   ) : (
@@ -830,7 +832,7 @@ function HomePageInner() {
                             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}>
                             <span className="text-xl">{s.icon || "📖"}</span>
                             <span className="text-sm font-semibold flex-1" style={{ color: "var(--text-primary)" }}>{s.name}</span>
-                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>{cnt} ta jild</span>
+                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>{cnt} {t("home.filesCount")}</span>
                           </button>
                         );
                       })}
@@ -851,7 +853,7 @@ function HomePageInner() {
                       style={{ background: "var(--accent-light)", border: "1px solid var(--accent)", borderRadius: "var(--radius-sm)" }}>
                       <span className="text-base">{viewingSubjectInfo?.icon || "📁"}</span>
                       <span className="text-sm font-bold flex-1 truncate" style={{ color: "var(--accent)" }}>
-                        {viewingSubjectInfo?.name || "Umumiy"}
+                        {viewingSubjectInfo?.name || t("home.general")}
                       </span>
                     </div>
                     {renderSortBtn()}
@@ -859,7 +861,7 @@ function HomePageInner() {
                   <div className="clay-input flex items-center gap-2 px-3 py-2 mb-3 shrink-0">
                     <Search size={14} style={{ color: "var(--text-muted)" }} />
                     <input value={search} onChange={e => setSearch(e.target.value)}
-                      placeholder="Jild qidirish..." className="bg-transparent outline-none text-sm flex-1"
+                      placeholder={t("home.searchFolder")} className="bg-transparent outline-none text-sm flex-1"
                       style={{ color: "var(--text-primary)" }} />
                   </div>
                   <div className="flex-1 overflow-y-auto md:px-2">
@@ -881,12 +883,12 @@ function HomePageInner() {
                                 <button onClick={() => { setEditingFolder(folder.id); setEditName(folder.name); setEditIcon(folder.icon ?? "📁"); setNameError(""); setMenuOpenFolder(null); }}
                                   className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
                                   style={{ color: "var(--text-primary)" }}>
-                                  <Pencil size={13} /> Tahrirlash
+                                  <Pencil size={13} /> {t("home.edit")}
                                 </button>
                                 <button onClick={() => { handleDeleteFolder(folder.id); setMenuOpenFolder(null); }}
                                   className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
                                   style={{ color: "var(--error)" }}>
-                                  <Trash2 size={13} /> O&apos;chirish
+                                  <Trash2 size={13} /> {t("home.delete")}
                                 </button>
                               </div>
                             )}
@@ -897,7 +899,7 @@ function HomePageInner() {
                               <input autoFocus value={editName}
                                 onChange={e => { setEditName(e.target.value); setNameError(""); }}
                                 onKeyDown={e => {
-                                  if (e.key === "Enter") { if (localFolderNameExists(editName.trim(), folder.id)) { setNameError("Bu nom band!"); return; } handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError(""); }
+                                  if (e.key === "Enter") { if (localFolderNameExists(editName.trim(), folder.id)) { setNameError(t("home.nameTaken")); return; } handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError(""); }
                                   if (e.key === "Escape") { setEditingFolder(null); setNameError(""); }
                                 }}
                                 onBlur={() => { if (!localFolderNameExists(editName.trim(), folder.id)) handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError(""); }}
@@ -908,7 +910,7 @@ function HomePageInner() {
                             <Link href={`/folder/${folder.id}`} className="flex flex-col items-center gap-2 w-full">
                               <span className="text-3xl">{folder.icon || "📁"}</span>
                               <span className="text-sm font-semibold text-center truncate w-full" style={{ color: "var(--text-primary)" }}>{folder.name}</span>
-                              <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{folder.submissionCount ?? 0} ta fayl</span>
+                              <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{folder.submissionCount ?? 0} {t("home.filesUnitCount")}</span>
                             </Link>
                           )}
                         </div>
@@ -922,24 +924,24 @@ function HomePageInner() {
                             onChange={e => { setNewFolderName(e.target.value); setNameError(""); }}
                             onKeyDown={e => {
                               if (e.key === "Enter" && newFolderName.trim()) {
-                                if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
+                                if (localFolderNameExists(newFolderName.trim())) { setNameError(t("home.nameTaken")); return; }
                                 handleCreateFolder(newFolderName.trim(), newFolderIcon, isGeneralView(viewingSubjectId) ? null : viewingSubjectId);
                                 setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
                               }
                               if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }
                             }}
-                            placeholder="Jild nomi..." className="clay-input w-full px-2 py-1 text-sm text-center outline-none" style={{ color: "var(--text-primary)" }} />
+                            placeholder={t("home.folderNamePlaceholder")} className="clay-input w-full px-2 py-1 text-sm text-center outline-none" style={{ color: "var(--text-primary)" }} />
                           {nameError && <p className="text-[11px] font-semibold" style={{ color: "var(--error)" }}>{nameError}</p>}
                           <div className="flex gap-2">
                             <button onClick={() => {
                               if (!newFolderName.trim()) return;
-                              if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
+                              if (localFolderNameExists(newFolderName.trim())) { setNameError(t("home.nameTaken")); return; }
                               handleCreateFolder(newFolderName.trim(), newFolderIcon, isGeneralView(viewingSubjectId) ? null : viewingSubjectId);
                               setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
                             }} className="px-3 py-1 text-xs font-bold text-white" style={{ background: "var(--cta)", borderRadius: 8 }}>OK</button>
                             <button onClick={() => { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }}
                               className="px-3 py-1 text-xs font-bold"
-                              style={{ color: "var(--text-muted)", background: "var(--bg-card)", borderRadius: 8, border: "1px solid var(--border)" }}>Bekor</button>
+                              style={{ color: "var(--text-muted)", background: "var(--bg-card)", borderRadius: 8, border: "1px solid var(--border)" }}>{t("home.cancelShort")}</button>
                           </div>
                         </div>
                       ) : (
@@ -947,7 +949,7 @@ function HomePageInner() {
                           className="flex flex-col items-center justify-center gap-2 p-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
                           style={{ background: "transparent", border: "2px dashed var(--border)", borderRadius: "var(--radius-md)" }}>
                           <FolderPlus size={24} style={{ color: "var(--accent)" }} />
-                          <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>Yangi jild</span>
+                          <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>{t("home.newFolderBtn")}</span>
                         </button>
                       )}
                     </div>
@@ -963,7 +965,7 @@ function HomePageInner() {
                               <input autoFocus value={editName}
                                 onChange={e => { setEditName(e.target.value); setNameError(""); }}
                                 onKeyDown={e => {
-                                  if (e.key === "Enter") { if (localFolderNameExists(editName.trim(), folder.id)) { setNameError("Bu nom band!"); return; } handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError(""); }
+                                  if (e.key === "Enter") { if (localFolderNameExists(editName.trim(), folder.id)) { setNameError(t("home.nameTaken")); return; } handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError(""); }
                                   if (e.key === "Escape") { setEditingFolder(null); setNameError(""); }
                                 }}
                                 onBlur={() => { if (!localFolderNameExists(editName.trim(), folder.id)) handleRenameFolder(folder.id, editName.trim(), editIcon); setEditingFolder(null); setNameError(""); }}
@@ -978,7 +980,7 @@ function HomePageInner() {
                               </Link>
                             </>
                           )}
-                          <span className="text-xs shrink-0" style={{ color: "var(--text-muted)" }}>{folder.submissionCount ?? 0} ta fayl</span>
+                          <span className="text-xs shrink-0" style={{ color: "var(--text-muted)" }}>{folder.submissionCount ?? 0} {t("home.filesUnitCount")}</span>
                           <div className="relative shrink-0" ref={menuOpenFolder === folder.id ? menuRef : undefined}>
                             <button onClick={e => { e.stopPropagation(); setMenuOpenFolder(menuOpenFolder === folder.id ? null : folder.id); }}
                               className="w-8 h-8 flex items-center justify-center rounded-lg transition-all"
@@ -991,12 +993,12 @@ function HomePageInner() {
                                 <button onClick={() => { setEditingFolder(folder.id); setEditName(folder.name); setEditIcon(folder.icon ?? "📁"); setNameError(""); setMenuOpenFolder(null); }}
                                   className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
                                   style={{ color: "var(--text-primary)" }}>
-                                  <Pencil size={13} /> Tahrirlash
+                                  <Pencil size={13} /> {t("home.edit")}
                                 </button>
                                 <button onClick={() => { handleDeleteFolder(folder.id); setMenuOpenFolder(null); }}
                                   className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]"
                                   style={{ color: "var(--error)" }}>
-                                  <Trash2 size={13} /> O&apos;chirish
+                                  <Trash2 size={13} /> {t("home.delete")}
                                 </button>
                               </div>
                             )}
@@ -1012,17 +1014,17 @@ function HomePageInner() {
                             onChange={e => { setNewFolderName(e.target.value); setNameError(""); }}
                             onKeyDown={e => {
                               if (e.key === "Enter" && newFolderName.trim()) {
-                                if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
+                                if (localFolderNameExists(newFolderName.trim())) { setNameError(t("home.nameTaken")); return; }
                                 handleCreateFolder(newFolderName.trim(), newFolderIcon, isGeneralView(viewingSubjectId) ? null : viewingSubjectId);
                                 setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
                               }
                               if (e.key === "Escape") { setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError(""); }
                             }}
-                            placeholder="Jild nomi..." className="clay-input flex-1 px-2 py-1 text-sm outline-none" style={{ color: "var(--text-primary)" }} />
+                            placeholder={t("home.folderNamePlaceholder")} className="clay-input flex-1 px-2 py-1 text-sm outline-none" style={{ color: "var(--text-primary)" }} />
                           {nameError && <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--error)" }}>{nameError}</span>}
                           <button onClick={() => {
                             if (!newFolderName.trim()) return;
-                            if (localFolderNameExists(newFolderName.trim())) { setNameError("Bu nom band!"); return; }
+                            if (localFolderNameExists(newFolderName.trim())) { setNameError(t("home.nameTaken")); return; }
                             handleCreateFolder(newFolderName.trim(), newFolderIcon, isGeneralView(viewingSubjectId) ? null : viewingSubjectId);
                             setCreatingFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNameError("");
                           }} className="px-3 py-1.5 text-xs font-bold text-white" style={{ background: "var(--cta)", borderRadius: 8 }}>OK</button>
@@ -1032,7 +1034,7 @@ function HomePageInner() {
                           className="flex items-center gap-3 px-4 py-3 transition-all"
                           style={{ border: "2px dashed var(--border)", borderRadius: "var(--radius-sm)" }}>
                           <FolderPlus size={18} style={{ color: "var(--accent)" }} />
-                          <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>Yangi jild</span>
+                          <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>{t("home.newFolderBtn")}</span>
                         </button>
                       )}
                     </div>
@@ -1052,7 +1054,7 @@ function HomePageInner() {
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Tahlil qidirish..."
+                    placeholder={t("home.searchAnalysis")}
                     className="bg-transparent outline-none text-sm flex-1"
                     style={{ color: "var(--text-primary)" }}
                   />
@@ -1083,11 +1085,11 @@ function HomePageInner() {
                               <div className="absolute right-0 top-9 z-50 animate-fade-in py-1"
                                 style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay)", minWidth: 140 }}>
                                 <Link href={`/submission/${file.id}`} onClick={() => setMenuOpenFile(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
-                                    <Eye size={13} /> Ko&apos;rish
+                                    <Eye size={13} /> {t("home.view")}
                                   </Link>
                                 <button onClick={() => { handleDeleteFile(file.id); setMenuOpenFile(null); }}
                                   className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--error)" }}>
-                                  <Trash2 size={13} /> O&apos;chirish
+                                  <Trash2 size={13} /> {t("home.delete")}
                                 </button>
                               </div>
                             )}
@@ -1099,7 +1101,7 @@ function HomePageInner() {
                               </div>
                               <span className="text-[11px] font-bold px-2 py-0.5" style={{ color: gColor, background: `${gColor}12`, borderRadius: 6 }}>{file.grade ?? "—"}</span>
                             </div>
-                            <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{file.studentName ?? "Nomalum"}</p>
+                            <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{file.studentName ?? t("home.unknown")}</p>
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-medium" style={{ color: "var(--accent)" }}>{file.subject}</span>
                               <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{file.createdAt?.slice(0, 10)}</span>
@@ -1127,7 +1129,7 @@ function HomePageInner() {
                               <FileText size={18} style={{ color: gColor }} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{file.studentName ?? "Nomalum"}</p>
+                              <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{file.studentName ?? t("home.unknown")}</p>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[11px]" style={{ color: "var(--accent)" }}>{file.subject}</span>
                                 <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{file.folderId ? (folderList.find(f => f.id === file.folderId)?.name ?? "—") : "—"}</span>
@@ -1148,11 +1150,11 @@ function HomePageInner() {
                               <div className="absolute right-0 top-9 z-50 animate-fade-in py-1"
                                 style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay)", minWidth: 140 }}>
                                 <Link href={`/submission/${file.id}`} onClick={() => setMenuOpenFile(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
-                                    <Eye size={13} /> Ko&apos;rish
+                                    <Eye size={13} /> {t("home.view")}
                                   </Link>
                                 <button onClick={() => { handleDeleteFile(file.id); setMenuOpenFile(null); }}
                                   className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--error)" }}>
-                                  <Trash2 size={13} /> O&apos;chirish
+                                  <Trash2 size={13} /> {t("home.delete")}
                                 </button>
                               </div>
                             )}
@@ -1165,7 +1167,7 @@ function HomePageInner() {
                 {sortedFiles.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-16 gap-3">
                     <FlaskConical size={40} style={{ color: "var(--text-muted)", opacity: 0.4 }} />
-                    <p className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>Tahlillar topilmadi</p>
+                    <p className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>{t("home.noAnalyses")}</p>
                   </div>
                 )}
               </div>
@@ -1181,7 +1183,7 @@ function HomePageInner() {
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Sinf qidirish..."
+                    placeholder={t("home.searchClass")}
                     className="bg-transparent outline-none text-sm flex-1"
                     style={{ color: "var(--text-primary)" }}
                   />
@@ -1190,7 +1192,7 @@ function HomePageInner() {
                   onClick={() => { setCreatingClass(true); setNewClassName(""); setNameError(""); }}
                   className="w-9 h-9 flex items-center justify-center shrink-0 transition-all hover:scale-105"
                   style={{ background: "var(--cta)", borderRadius: "var(--radius-sm)", color: "#fff", boxShadow: "var(--shadow-clay-sm)" }}
-                  title="Yangi sinf"
+                  title={t("home.newClassBtn")}
                 >
                   <Plus size={16} />
                 </button>
@@ -1212,12 +1214,12 @@ function HomePageInner() {
                         setSavingClass(true);
                         const ok = await handleCreateClass(newClassName.trim());
                         setSavingClass(false);
-                        if (!ok) { setNameError("Bu nom band!"); return; }
+                        if (!ok) { setNameError(t("home.nameTaken")); return; }
                         setCreatingClass(false);
                       }
                       if (e.key === "Escape") setCreatingClass(false);
                     }}
-                    placeholder="Sinf nomi..."
+                    placeholder={t("home.classNamePlaceholder")}
                     className="clay-input flex-1 px-3 py-2 text-sm outline-none"
                     style={{ color: "var(--text-primary)" }}
                   />
@@ -1228,13 +1230,13 @@ function HomePageInner() {
                       setSavingClass(true);
                       const ok = await handleCreateClass(newClassName.trim());
                       setSavingClass(false);
-                      if (!ok) { setNameError("Bu nom band!"); return; }
+                      if (!ok) { setNameError(t("home.nameTaken")); return; }
                       setCreatingClass(false);
                     }}
                     className="px-3 py-2 text-xs font-bold text-white"
                     style={{ background: "var(--cta)", borderRadius: 8, boxShadow: "var(--shadow-clay-sm)", opacity: savingClass ? 0.6 : 1 }}
                   >
-                    {savingClass ? "..." : "Yaratish"}
+                    {savingClass ? "..." : t("home.create")}
                   </button>
                   <button onClick={() => setCreatingClass(false)} style={{ color: "var(--text-muted)" }}>
                     <X size={16} />
@@ -1274,13 +1276,13 @@ function HomePageInner() {
                             style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay)", minWidth: 150, backdropFilter: "blur(16px)" }}
                           >
                             <Link href={`/class/${cls.id}`} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
-                              <Eye size={13} /> Ko&apos;rish
+                              <Eye size={13} /> {t("home.view")}
                             </Link>
                             <button onClick={() => { setEditingClass(cls.id); setEditClassName(cls.name); setNameError(""); setMenuOpenClass(null); }} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
                               <Pencil size={13} /> Tahrirlash
                             </button>
                             <Link href={`/class/${cls.id}`} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
-                              <ListOrdered size={13} /> Ro&apos;yxat
+                              <ListOrdered size={13} /> {t("home.list")}
                             </Link>
                             <button onClick={() => { handleDeleteClass(cls.id); setMenuOpenClass(null); }} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--error)" }}>
                               <Trash2 size={13} /> O&apos;chirish
@@ -1301,7 +1303,7 @@ function HomePageInner() {
                             onKeyDown={async (e) => {
                               if (e.key === "Enter" && editClassName.trim()) {
                                 const ok = await handleRenameClass(cls.id, editClassName.trim());
-                                if (!ok) { setNameError("Bu nom band!"); return; }
+                                if (!ok) { setNameError(t("home.nameTaken")); return; }
                                 setEditingClass(null); setNameError("");
                               }
                               if (e.key === "Escape") { setEditingClass(null); setNameError(""); }
@@ -1322,11 +1324,11 @@ function HomePageInner() {
                               {cls.icon || "🏫"}
                             </div>
                             <span className="text-sm font-bold text-center" style={{ color: "var(--text-primary)" }}>
-                              {cls.name} sinfi
+                              {cls.name} {t("home.classSuffix")}
                             </span>
                             <div className="flex items-center gap-2">
                               <span className="text-[11px] font-semibold px-2 py-0.5" style={{ color: "var(--accent)", background: "var(--accent-light)", borderRadius: 6 }}>
-                                {cls.studentCount} o&apos;quvchi
+                                {cls.studentCount} {t("home.studentsUnit")}
                               </span>
                             </div>
                             <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{cls.createdAt?.slice(0, 10)}</span>
@@ -1337,7 +1339,7 @@ function HomePageInner() {
                             className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold transition-all hover:opacity-80 mt-1"
                             style={{ background: "var(--cta)", color: "#fff", borderRadius: "var(--radius-sm)" }}
                           >
-                            <Camera size={12} /> Tekshirish
+                            <Camera size={12} /> {t("home.check")}
                           </Link>
                         </>
                       )}
@@ -1370,7 +1372,7 @@ function HomePageInner() {
                             onKeyDown={async (e) => {
                               if (e.key === "Enter" && editClassName.trim()) {
                                 const ok = await handleRenameClass(cls.id, editClassName.trim());
-                                if (!ok) { setNameError("Bu nom band!"); return; }
+                                if (!ok) { setNameError(t("home.nameTaken")); return; }
                                 setEditingClass(null); setNameError("");
                               }
                               if (e.key === "Escape") { setEditingClass(null); setNameError(""); }
@@ -1391,7 +1393,7 @@ function HomePageInner() {
                               {cls.icon || "🏫"}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <span className="text-sm font-bold block truncate" style={{ color: "var(--text-primary)" }}>{cls.name} sinfi</span>
+                              <span className="text-sm font-bold block truncate" style={{ color: "var(--text-primary)" }}>{cls.name} {t("home.classSuffix")}</span>
                               <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{cls.createdAt?.slice(0, 10)}</span>
                             </div>
                           </Link>
@@ -1423,13 +1425,13 @@ function HomePageInner() {
                             style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay)", minWidth: 150 }}
                           >
                             <Link href={`/class/${cls.id}`} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
-                              <Eye size={13} /> Ko&apos;rish
+                              <Eye size={13} /> {t("home.view")}
                             </Link>
                             <button onClick={() => { setEditingClass(cls.id); setEditClassName(cls.name); setNameError(""); setMenuOpenClass(null); }} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
                               <Pencil size={13} /> Tahrirlash
                             </button>
                             <Link href={`/class/${cls.id}`} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
-                              <ListOrdered size={13} /> Ro&apos;yxat
+                              <ListOrdered size={13} /> {t("home.list")}
                             </Link>
                             <button onClick={() => { handleDeleteClass(cls.id); setMenuOpenClass(null); }} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--error)" }}>
                               <Trash2 size={13} /> O&apos;chirish
@@ -1455,7 +1457,7 @@ function HomePageInner() {
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="O'quvchi qidirish..."
+                    placeholder={t("home.searchStudent")}
                     className="bg-transparent outline-none text-sm flex-1"
                     style={{ color: "var(--text-primary)" }}
                   />
@@ -1474,7 +1476,7 @@ function HomePageInner() {
                     }}
                   >
                     <BookOpen size={14} />
-                    <span className="hidden sm:inline">{selectedClass ? classList.find((c) => c.id === selectedClass)?.name : "Hammasi"}</span>
+                    <span className="hidden sm:inline">{selectedClass ? classList.find((c) => c.id === selectedClass)?.name : t("home.all")}</span>
                     <ChevronDown size={12} />
                   </button>
                   {showClassFilter && (
@@ -1496,7 +1498,7 @@ function HomePageInner() {
                           fontWeight: selectedClass === null ? 700 : 500,
                         }}
                       >
-                        {selectedClass === null && "✓ "}Hammasi
+                        {selectedClass === null && "✓ "}{t("home.all")}
                       </button>
                       {classList.map((cls) => (
                         <button
@@ -1508,7 +1510,7 @@ function HomePageInner() {
                             fontWeight: selectedClass === cls.id ? 700 : 500,
                           }}
                         >
-                          {selectedClass === cls.id && "✓ "}{cls.name} sinfi
+                          {selectedClass === cls.id && "✓ "}{cls.name} {t("home.classSuffix")}
                         </button>
                       ))}
                     </div>
@@ -1557,20 +1559,20 @@ function HomePageInner() {
                                   border: `2px solid ${hasTg ? "#29B6F6" : "var(--border)"}`,
                                   boxShadow: "var(--shadow-clay-sm)",
                                 }}
-                                title={hasTg ? (student.telegramId ?? "") : "Telegram ulanmagan"}
+                                title={hasTg ? (student.telegramId ?? "") : t("home.telegramNotConnected")}
                               >
                                 <Send size={9} style={{ color: hasTg ? "#fff" : "var(--text-muted)" }} />
                               </div>
                             </div>
                             <p className="text-sm font-bold text-center truncate w-full" style={{ color: "var(--text-primary)" }}>{student.name}</p>
                             <div className="flex items-center gap-2">
-                              <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{student.classCount} ta sinf</span>
+                              <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{student.classCount} {t("home.classesUnit")}</span>
                             </div>
                           </Link>
                           <div className="flex items-center gap-1.5">
                             <button
                               className="w-8 h-8 flex items-center justify-center transition-all hover:scale-110"
-                              title="Tekshirish"
+                              title={t("home.check")}
                               style={{
                                 background: "var(--cta-ghost)",
                                 color: "var(--cta)",
@@ -1584,7 +1586,7 @@ function HomePageInner() {
                             <Link
                               href={`/student/${student.id}`}
                               className="w-8 h-8 flex items-center justify-center transition-all hover:scale-110"
-                              title="Ko'rish"
+                              title={t("home.view")}
                               style={{
                                 background: "var(--accent-light)",
                                 color: "var(--accent)",
@@ -1598,7 +1600,7 @@ function HomePageInner() {
                             <button
                               onClick={() => setDeleteStudentId(student.id)}
                               className="w-8 h-8 flex items-center justify-center transition-all hover:scale-110"
-                              title="O'chirish"
+                              title={t("home.delete")}
                               style={{
                                 background: "var(--error-bg)",
                                 color: "var(--error)",
@@ -1650,7 +1652,7 @@ function HomePageInner() {
                                   background: hasTg ? "#29B6F6" : "var(--bg-card)",
                                   border: `2px solid ${hasTg ? "#29B6F6" : "var(--border)"}`,
                                 }}
-                                title={hasTg ? (student.telegramId ?? "") : "Telegram ulanmagan"}
+                                title={hasTg ? (student.telegramId ?? "") : t("home.telegramNotConnected")}
                               >
                                 <Send size={7} style={{ color: hasTg ? "#fff" : "var(--text-muted)" }} />
                               </div>
@@ -1660,14 +1662,14 @@ function HomePageInner() {
                             <p className="text-[0.95rem] font-semibold truncate" style={{ color: "var(--text-primary)" }}>{student.name}</p>
                             <div className="flex items-center gap-3 mt-0.5">
                               <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                                {student.classCount} ta sinf
+                                {student.classCount} {t("home.classesUnit")}
                               </span>
                             </div>
                           </Link>
                           <div className="flex items-center gap-2 shrink-0">
                             <button
                               className="w-9 h-9 flex items-center justify-center transition-all hover:scale-105"
-                              title="Tekshirish"
+                              title={t("home.check")}
                               style={{
                                 background: "var(--cta-ghost)",
                                 color: "var(--cta)",
@@ -1681,7 +1683,7 @@ function HomePageInner() {
                             <Link
                               href={`/student/${student.id}`}
                               className="w-9 h-9 flex items-center justify-center transition-all hover:scale-105"
-                              title="Ko'rish"
+                              title={t("home.view")}
                               style={{
                                 background: "var(--accent-light)",
                                 color: "var(--accent)",
@@ -1695,7 +1697,7 @@ function HomePageInner() {
                             <button
                               onClick={() => setDeleteStudentId(student.id)}
                               className="w-9 h-9 flex items-center justify-center transition-all hover:scale-105"
-                              title="O'chirish"
+                              title={t("home.delete")}
                               style={{
                                 background: "var(--error-bg)",
                                 color: "var(--error)",
@@ -1725,23 +1727,23 @@ function HomePageInner() {
           <div className="w-full max-w-xs p-5 animate-fade-in"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>O&apos;quvchini o&apos;chirish</p>
+              <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("home.deleteStudentTitle")}</p>
               <button onClick={() => setDeleteStudentId(null)} className="w-8 h-8 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
                 <X size={15} />
               </button>
             </div>
             <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
-              <b>{studentList.find(s => s.id === deleteStudentId)?.name}</b> barcha sinflardan ham o&apos;chiriladi.
+              <b>{studentList.find(s => s.id === deleteStudentId)?.name}</b> {t("home.deleteStudentMessage")}
             </p>
             <div className="flex gap-2">
               <button onClick={() => setDeleteStudentId(null)} className="flex-1 py-2.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                Bekor
+                {t("home.cancelShort")}
               </button>
               <button onClick={() => void handleDeleteStudent(deleteStudentId)} className="flex-1 py-2.5 text-sm font-medium"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--error)", color: "#fff" }}>
-                O&apos;chirish
+                {t("home.delete")}
               </button>
             </div>
           </div>
@@ -1764,18 +1766,18 @@ function HomePageInner() {
               </svg>
             </div>
             <div>
-              <h3 className="text-base font-bold mb-1" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>Tarif limiti</h3>
+              <h3 className="text-base font-bold mb-1" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>{t("home.planLimit")}</h3>
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{planAlert}</p>
             </div>
             <div className="flex gap-2 w-full">
               <button onClick={() => setPlanAlert(null)} className="flex-1 py-2.5 text-sm font-medium"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                Yopish
+                {t("home.close")}
               </button>
               <button onClick={() => setPlanAlert(null)} className="flex-1 py-2.5 text-sm font-semibold"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--cta)", color: "#fff", boxShadow: "var(--shadow-clay-sm)" }}
               >
-                <a href="/plans">Tarifni yangilash</a>
+                <a href="/plans">{t("home.upgradePlan")}</a>
               </button>
             </div>
           </div>
@@ -1794,12 +1796,12 @@ function HomePageInner() {
               <X size={16} />
             </button>
             <h1 className="text-base font-semibold flex-1" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-              Tahlil natijalari
+              {t("home.analysisResults")}
             </h1>
             {unreadCount > 0 && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full"
                 style={{ background: "rgba(224,92,92,0.12)", color: "#e05c5c" }}>
-                {unreadCount} yangi
+                {unreadCount} {t("home.newCount")}
               </span>
             )}
           </div>
@@ -1809,7 +1811,7 @@ function HomePageInner() {
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full gap-3">
                 <Bell size={32} style={{ color: "var(--text-muted)" }} />
-                <p className="text-sm" style={{ color: "var(--text-muted)" }}>Hali natija yo'q</p>
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("home.noResultsYet")}</p>
               </div>
             ) : notifications.map((n) => (
               <Link key={n.id} href={`/submission/${n.id}`}
@@ -1827,13 +1829,13 @@ function HomePageInner() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                    {n.subject ?? "Tahlil"}{n.failed ? " — xatolik" : ""}
+                    {n.subject ?? t("home.analysis")}{n.failed ? ` — ${t("home.errorSuffix")}` : ""}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                    {n.failed ? "Tahlil xatolik bilan tugadi"
+                    {n.failed ? t("home.analysisFailed")
                       : (n.status === "pending" || n.status === "processing")
-                      ? "Tahlil qilinmoqda..."
-                      : `Ball: ${n.score ?? "—"}`}
+                      ? t("home.analysisInProgress")
+                      : `${t("home.score")}: ${n.score ?? "—"}`}
                   </p>
                 </div>
                 <ChevronDown size={15} style={{ color: "var(--text-muted)", transform: "rotate(-90deg)", flexShrink: 0 }} />
