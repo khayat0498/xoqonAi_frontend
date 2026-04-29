@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bookmark } from "lucide-react";
+import { useT } from "@/lib/i18n-context";
 
 export default function BookmarksPage() {
   const router = useRouter();
+  const { t } = useT();
 
   return (
     <div className="flex flex-col h-screen" style={{ background: "var(--bg-primary)" }}>
@@ -21,7 +23,7 @@ export default function BookmarksPage() {
           style={{ background: "rgba(255,255,255,0.18)", borderRadius: "var(--radius-sm)", color: "#fff", backdropFilter: "blur(8px)" }}>
           <ArrowLeft size={18} />
         </button>
-        <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>Bookmarks</h1>
+        <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{t("bookmarks.title")}</h1>
       </div>
 
       <div className="bg-grid flex-1 overflow-y-auto flex items-center justify-center">
@@ -31,10 +33,10 @@ export default function BookmarksPage() {
             <Bookmark size={36} style={{ color: "var(--accent)" }} />
           </div>
           <h2 className="text-lg font-bold mb-2" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-            Saqlangan tahlillar
+            {t("bookmarks.heading")}
           </h2>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Muhim tahlillarni saqlang va bu yerda ko&apos;ring. Hozircha saqlangan tahlil yo&apos;q.
+            {t("bookmarks.empty")}
           </p>
         </div>
       </div>

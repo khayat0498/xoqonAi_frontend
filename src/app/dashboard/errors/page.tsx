@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowLeft, AlertCircle } from "lucide-react";
+import { useT } from "@/lib/i18n-context";
 
 export default function ErrorBankPage() {
   const router = useRouter();
+  const { t } = useT();
 
   return (
     <div className="flex flex-col h-screen" style={{ background: "var(--bg-primary)" }}>
@@ -21,7 +23,7 @@ export default function ErrorBankPage() {
           style={{ background: "rgba(255,255,255,0.18)", borderRadius: "var(--radius-sm)", color: "#fff", backdropFilter: "blur(8px)" }}>
           <ArrowLeft size={18} />
         </button>
-        <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>Xato banki</h1>
+        <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{t("errorBank.title")}</h1>
       </div>
 
       <div className="bg-grid flex-1 overflow-y-auto flex items-center justify-center">
@@ -31,10 +33,10 @@ export default function ErrorBankPage() {
             <AlertCircle size={36} style={{ color: "var(--accent)" }} />
           </div>
           <h2 className="text-lg font-bold mb-2" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-            Xato banki
+            {t("errorBank.heading")}
           </h2>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Sizning eng ko&apos;p takrorlangan xatolaringiz bu yerda ko&apos;rinadi. Hozircha ma&apos;lumot yo&apos;q.
+            {t("errorBank.empty")}
           </p>
         </div>
       </div>

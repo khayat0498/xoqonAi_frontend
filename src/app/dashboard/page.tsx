@@ -7,6 +7,7 @@ import {
   ArrowLeft, Plus, Users, X, Pencil, Trash2, MoreVertical, Search, UserPlus, Send,
 } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -53,6 +54,7 @@ function clsBadge(cls: ClassItem) {
 }
 
 export default function DashboardPage() {
+  const { t } = useT();
   const router = useRouter();
   const [tab, setTab] = useState<"classes" | "students">("classes");
 
@@ -195,19 +197,19 @@ export default function DashboardPage() {
           <ArrowLeft size={16} />
         </Link>
         <h1 className="flex-1 text-base font-semibold text-white relative z-10" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-          {tab === "classes" ? "Sinflar" : "O'quvchilar"}
+          {tab === "classes" ? t("dashboard.tabs.classes") : t("dashboard.tabs.students")}
         </h1>
         {tab === "classes" ? (
           <button onClick={() => setShowNewClass(true)}
             className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl font-medium relative z-10"
             style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
-            <Plus size={14} /> Yangi sinf
+            <Plus size={14} /> {t("home.newClass")}
           </button>
         ) : (
           <button onClick={() => setShowNewStudent(true)}
             className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl font-medium relative z-10"
             style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
-            <Plus size={14} /> Yangi
+            <Plus size={14} /> {t("dashboard.newStudentBtn")}
           </button>
         )}
       </div>
@@ -219,15 +221,15 @@ export default function DashboardPage() {
         <div className="px-5 pt-5 shrink-0">
           <div className="flex p-1 gap-1"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
-            {(["classes", "students"] as const).map((t) => (
-              <button key={t} onClick={() => setTab(t)}
+            {(["classes", "students"] as const).map((tabKey) => (
+              <button key={tabKey} onClick={() => setTab(tabKey)}
                 className="flex-1 py-2 text-sm font-medium transition-all"
                 style={{
                   borderRadius: "var(--radius-sm)",
-                  background: tab === t ? "var(--accent)" : "transparent",
-                  color: tab === t ? "#fff" : "var(--text-muted)",
+                  background: tab === tabKey ? "var(--accent)" : "transparent",
+                  color: tab === tabKey ? "#fff" : "var(--text-muted)",
                 }}>
-                {t === "classes" ? "Sinflar" : "O'quvchilar"}
+                {tabKey === "classes" ? t("dashboard.tabs.classes") : t("dashboard.tabs.students")}
               </button>
             ))}
           </div>
@@ -252,9 +254,9 @@ export default function DashboardPage() {
                           {badge.text}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{cls.name} sinfi</p>
+                          <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{cls.name} {t("home.classSuffix")}</p>
                           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                            {cls.studentCount} o'quvchi
+                            {cls.studentCount} {t("home.studentsUnit")}
                           </p>
                         </div>
                       </Link>
@@ -276,7 +278,7 @@ export default function DashboardPage() {
                         </button>
                         <Link href={`/class/${cls.id}`} className="px-3 py-2 text-xs font-medium"
                           style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                          Ro'yxat
+                          {t("home.list")}
                         </Link>
                         <button onClick={(e) => openClassMenu(e, cls.id)}
                           className="w-8 h-8 flex items-center justify-center"
@@ -293,9 +295,9 @@ export default function DashboardPage() {
                           {badge.text}
                         </div>
                         <div>
-                          <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{cls.name} sinfi</p>
+                          <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{cls.name} {t("home.classSuffix")}</p>
                           <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                            {cls.studentCount} o'quvchi
+                            {cls.studentCount} {t("home.studentsUnit")}
                           </p>
                         </div>
                       </Link>
@@ -303,7 +305,7 @@ export default function DashboardPage() {
                         <Link href={`/class/${cls.id}`}
                           className="flex-1 py-2 text-xs font-medium text-center transition-all hover:opacity-80"
                           style={{ background: "var(--accent)", color: "#fff", borderRadius: "var(--radius-sm)" }}>
-                          Ro'yxat
+                          {t("home.list")}
                         </Link>
                         <button
                           onClick={() => { if (cls.telegramGroupId) { setSendClassId(cls.id); setSelectedSubject(""); } }}
@@ -335,7 +337,7 @@ export default function DashboardPage() {
                 className="px-4 py-3.5 flex items-center justify-center gap-2 transition-all hover:opacity-60 md:min-h-36"
                 style={{ border: "2px dashed var(--border)", color: "var(--text-muted)", borderRadius: "var(--radius-md)" }}>
                 <Plus size={16} />
-                <span className="text-sm">Yangi sinf qo'shish</span>
+                <span className="text-sm">{t("dashboard.addNewClass")}</span>
               </button>
             </div>
           )}
@@ -348,7 +350,7 @@ export default function DashboardPage() {
                 style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
                 <Search size={14} style={{ color: "var(--text-muted)" }} />
                 <input value={search} onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Qidirish..."
+                  placeholder={t("dashboard.searchPlaceholder")}
                   className="flex-1 bg-transparent outline-none text-sm"
                   style={{ color: "var(--text-primary)" }} />
               </div>
@@ -383,7 +385,7 @@ export default function DashboardPage() {
                                     <Send size={12} style={{ color: "var(--text-muted)" }} />
                                     <span style={{ position: "absolute", top: "50%", left: "-1px", right: "-1px", height: "2px", background: "var(--text-muted)", transform: "rotate(-35deg)", opacity: 0.45 }} />
                                   </span>
-                                  {s.classCount} ta sinf
+                                  {s.classCount} {t("home.classesUnit")}
                                 </>
                               )}
                             </p>
@@ -432,7 +434,7 @@ export default function DashboardPage() {
                                     <Send size={12} style={{ color: "var(--text-muted)" }} />
                                     <span style={{ position: "absolute", top: "50%", left: "-1px", right: "-1px", height: "2px", background: "var(--text-muted)", transform: "rotate(-35deg)", opacity: 0.45 }} />
                                   </span>
-                                  {s.classCount} ta sinf
+                                  {s.classCount} {t("home.classesUnit")}
                                 </>
                               )}
                             </p>
@@ -442,7 +444,7 @@ export default function DashboardPage() {
                           <Link href={`/student/${s.id}`}
                             className="flex-1 py-2 text-xs font-medium text-center transition-all hover:opacity-80"
                             style={{ background: "var(--accent)", color: "#fff", borderRadius: "var(--radius-sm)" }}>
-                            Profil
+                            {t("dashboard.profileBtn")}
                           </Link>
                           <button
                             onClick={() => { if (s.telegramId) { setSendStudentId(s.id); setSelectedSubject(""); } }}
@@ -476,7 +478,7 @@ export default function DashboardPage() {
                   className="px-4 py-3.5 flex items-center justify-center gap-2 transition-all hover:opacity-60 md:min-h-36"
                   style={{ border: "2px dashed var(--border)", color: "var(--text-muted)", borderRadius: "var(--radius-md)" }}>
                   <UserPlus size={15} />
-                  <span className="text-sm">Yangi o'quvchi qo'shish</span>
+                  <span className="text-sm">{t("dashboard.addNewStudent")}</span>
                 </button>
               </div>
             </div>
@@ -493,13 +495,13 @@ export default function DashboardPage() {
             <button onClick={() => { router.push(`/class/${classMenuState.id}/profile`); setClassMenuState(null); }}
               className="w-full flex items-center gap-2.5 px-4 py-3 text-sm hover:opacity-70 transition-all">
               <Pencil size={14} style={{ color: "var(--text-muted)" }} />
-              <span style={{ color: "var(--text-primary)" }}>Tahrirlash</span>
+              <span style={{ color: "var(--text-primary)" }}>{t("common.edit")}</span>
             </button>
             <div style={{ height: 1, background: "var(--border)" }} />
             <button onClick={() => { setDeleteClassId(classMenuState.id); setClassMenuState(null); }}
               className="w-full flex items-center gap-2.5 px-4 py-3 text-sm hover:opacity-70 transition-all">
               <Trash2 size={14} style={{ color: "var(--error)" }} />
-              <span style={{ color: "var(--error)" }}>O'chirish</span>
+              <span style={{ color: "var(--error)" }}>{t("common.delete")}</span>
             </button>
           </div>
         </>
@@ -514,13 +516,13 @@ export default function DashboardPage() {
             <button onClick={() => { router.push(`/student/${studentMenuState.id}`); setStudentMenuState(null); }}
               className="w-full flex items-center gap-2.5 px-4 py-3 text-sm hover:opacity-70 transition-all">
               <Users size={14} style={{ color: "var(--text-muted)" }} />
-              <span style={{ color: "var(--text-primary)" }}>Profilni ko'rish</span>
+              <span style={{ color: "var(--text-primary)" }}>{t("class.viewProfile")}</span>
             </button>
             <div style={{ height: 1, background: "var(--border)" }} />
             <button onClick={() => { setDeleteStudentId(studentMenuState.id); setStudentMenuState(null); }}
               className="w-full flex items-center gap-2.5 px-4 py-3 text-sm hover:opacity-70 transition-all">
               <Trash2 size={14} style={{ color: "var(--error)" }} />
-              <span style={{ color: "var(--error)" }}>O'chirish</span>
+              <span style={{ color: "var(--error)" }}>{t("common.delete")}</span>
             </button>
           </div>
         </>
@@ -534,7 +536,7 @@ export default function DashboardPage() {
           <div className="w-full max-w-sm p-5 animate-fade-in"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Yangi sinf</h2>
+              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("dashboard.newClassTitle")}</h2>
               <button onClick={() => { setShowNewClass(false); setNewClassIcon(""); setNewClassName(""); setNewClassTgGroup(""); }}
                 className="w-8 h-8 flex items-center justify-center hover:opacity-70"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
@@ -543,7 +545,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-end gap-3 mb-3">
               <div className="shrink-0 flex flex-col items-center gap-1.5">
-                <p className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>KO'RINISH</p>
+                <p className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{t("dashboard.appearance")}</p>
                 <div className="flex items-center justify-center font-bold"
                   style={{
                     borderRadius: "var(--radius-sm)",
@@ -558,17 +560,17 @@ export default function DashboardPage() {
               </div>
               <div className="flex-1 flex flex-col gap-2">
                 <div>
-                  <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Belgi (max 4 ta, ixtiyoriy)</p>
+                  <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>{t("dashboard.iconLabel")}</p>
                   <input value={newClassIcon} onChange={(e) => setNewClassIcon(e.target.value.slice(0, 4))}
                     placeholder={newClassName.charAt(0) || "9A"} maxLength={4}
                     className="w-full px-3 py-2 text-sm outline-none font-bold text-center"
                     style={{ borderRadius: "var(--radius-sm)", background: "var(--accent-light)", border: "1px solid var(--accent)", color: "var(--accent)" }} />
                 </div>
                 <div>
-                  <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Sinf nomi</p>
+                  <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>{t("dashboard.classNameLabel")}</p>
                   <input autoFocus value={newClassName} onChange={(e) => setNewClassName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addClass()}
-                    placeholder="Masalan: 9-A"
+                    placeholder={t("dashboard.classNameExample")}
                     className="w-full px-3 py-2 text-sm outline-none"
                     style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
                 </div>
@@ -576,7 +578,7 @@ export default function DashboardPage() {
             </div>
             <div className="mb-3">
               <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>
-                Telegram guruh ID (ixtiyoriy)
+                {t("dashboard.telegramGroupIdLabel")}
               </p>
               <div className="flex items-center gap-2 px-3 py-2"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)" }}>
@@ -591,11 +593,11 @@ export default function DashboardPage() {
               <button onClick={() => { setShowNewClass(false); setNewClassIcon(""); setNewClassName(""); setNewClassTgGroup(""); }}
                 className="flex-1 py-2.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                Bekor
+                {t("common.cancel")}
               </button>
               <button onClick={addClass} className="flex-1 py-2.5 text-sm font-medium"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--cta)", color: "#fff" }}>
-                Yaratish
+                {t("dashboard.create")}
               </button>
             </div>
           </div>
@@ -610,7 +612,7 @@ export default function DashboardPage() {
           <div className="w-full max-w-sm p-5 animate-fade-in"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Yangi o'quvchi</h2>
+              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("dashboard.newStudentTitle")}</h2>
               <button onClick={() => { setShowNewStudent(false); setNewStudentName(""); setNewStudentTgId(""); setNewStudentClassIds([]); }}
                 className="w-8 h-8 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
@@ -620,7 +622,7 @@ export default function DashboardPage() {
 
             <div className="flex flex-col gap-3">
               <div>
-                <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>Ism Familiya</p>
+                <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>{t("dashboard.fullName")}</p>
                 <input autoFocus value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && createStudent()}
                   placeholder="Ali Valiyev"
@@ -628,7 +630,7 @@ export default function DashboardPage() {
                   style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
               </div>
               <div>
-                <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>Telegram ID (ixtiyoriy)</p>
+                <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>{t("dashboard.telegramIdOptional")}</p>
                 <input value={newStudentTgId} onChange={(e) => setNewStudentTgId(e.target.value)}
                   placeholder="@username yoki raqam"
                   className="w-full px-3 py-2.5 text-sm outline-none"
@@ -638,7 +640,7 @@ export default function DashboardPage() {
               {/* Guruh tanlash */}
               {classList.length > 0 && (
                 <div>
-                  <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>Guruhga biriktirish (ixtiyoriy)</p>
+                  <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{t("dashboard.assignGroup")}</p>
                   <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto">
                     {classList.map((cls) => {
                       const badge = clsBadge(cls);
@@ -656,7 +658,7 @@ export default function DashboardPage() {
                             {badge.text}
                           </div>
                           <span className="flex-1 text-sm font-medium" style={{ color: selected ? "var(--accent)" : "var(--text-primary)" }}>
-                            {cls.name} sinfi
+                            {cls.name} {t("home.classSuffix")}
                           </span>
                           <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
                             style={{ borderColor: selected ? "var(--accent)" : "var(--border)", background: selected ? "var(--accent)" : "transparent" }}>
@@ -674,11 +676,11 @@ export default function DashboardPage() {
               <button onClick={() => { setShowNewStudent(false); setNewStudentName(""); setNewStudentTgId(""); setNewStudentClassIds([]); }}
                 className="flex-1 py-2.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                Bekor
+                {t("common.cancel")}
               </button>
               <button onClick={createStudent} className="flex-1 py-2.5 text-sm font-medium"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--cta)", color: "#fff" }}>
-                Qo'shish
+                {t("dashboard.addBtn")}
               </button>
             </div>
           </div>
@@ -698,10 +700,10 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex flex-col gap-0.5">
                   <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-                    Telegram guruhga yuborish
+                    {t("dashboard.sendToGroup")}
                   </h2>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    {cls.name} · {cls.telegramGroupId} · {cls.studentCount} o'quvchi
+                    {t("dashboard.groupInfo").replace("{name}", cls.name).replace("{groupId}", cls.telegramGroupId ?? "").replace("{count}", String(cls.studentCount))}
                   </p>
                 </div>
                 <button onClick={() => setSendClassId(null)}
@@ -711,7 +713,7 @@ export default function DashboardPage() {
                 </button>
               </div>
 
-              <p className="text-xs mb-2.5 font-medium" style={{ color: "var(--text-muted)" }}>Fan tanlang</p>
+              <p className="text-xs mb-2.5 font-medium" style={{ color: "var(--text-muted)" }}>{t("class.selectSubject")}</p>
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {SUBJECTS.map((sub) => {
                   const active = selectedSubject === sub.name;
@@ -735,7 +737,7 @@ export default function DashboardPage() {
               <div className="flex gap-2">
                 <button onClick={() => setSendClassId(null)} className="flex-1 py-2.5 text-sm"
                   style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                  Bekor
+                  {t("common.cancel")}
                 </button>
                 <button
                   disabled={!selectedSubject}
@@ -749,7 +751,7 @@ export default function DashboardPage() {
                     opacity: selectedSubject ? 1 : 0.6,
                   }}>
                   <Send size={14} />
-                  Yuborish
+                  {t("common.send")}
                 </button>
               </div>
             </div>
@@ -770,7 +772,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex flex-col gap-0.5">
                   <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-                    Natijani yuborish
+                    {t("dashboard.sendResult")}
                   </h2>
                   <p className="text-xs flex items-center gap-1" style={{ color: "#229ED9" }}>
                     <Send size={11} style={{ color: "#229ED9" }} />
@@ -784,7 +786,7 @@ export default function DashboardPage() {
                 </button>
               </div>
 
-              <p className="text-xs mb-2.5 font-medium" style={{ color: "var(--text-muted)" }}>Fan tanlang</p>
+              <p className="text-xs mb-2.5 font-medium" style={{ color: "var(--text-muted)" }}>{t("class.selectSubject")}</p>
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {SUBJECTS.map((sub) => {
                   const active = selectedSubject === sub.name;
@@ -808,7 +810,7 @@ export default function DashboardPage() {
               <div className="flex gap-2">
                 <button onClick={() => setSendStudentId(null)} className="flex-1 py-2.5 text-sm"
                   style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                  Bekor
+                  {t("common.cancel")}
                 </button>
                 <button
                   disabled={!selectedSubject}
@@ -822,7 +824,7 @@ export default function DashboardPage() {
                     opacity: selectedSubject ? 1 : 0.6,
                   }}>
                   <Send size={14} />
-                  Yuborish
+                  {t("common.send")}
                 </button>
               </div>
             </div>
@@ -838,24 +840,23 @@ export default function DashboardPage() {
           <div className="w-full max-w-xs p-5 animate-fade-in"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Sinfni o'chirish</p>
+              <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("dashboard.deleteClassTitle")}</p>
               <button onClick={() => setDeleteClassId(null)}
                 className="w-8 h-8 flex items-center justify-center hover:opacity-70"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
                 <X size={15} />
               </button>
             </div>
-            <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
-              <b>{classList.find((c) => c.id === deleteClassId)?.name}</b> sinfi va barcha ma'lumotlari o'chadi.
-            </p>
+            <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}
+              dangerouslySetInnerHTML={{ __html: t("dashboard.deleteClassMsg").replace("{name}", `<b>${classList.find((c) => c.id === deleteClassId)?.name ?? ""}</b>`) }} />
             <div className="flex gap-2">
               <button onClick={() => setDeleteClassId(null)} className="flex-1 py-2.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                Bekor
+                {t("common.cancel")}
               </button>
               <button onClick={() => deleteClass(deleteClassId)} className="flex-1 py-2.5 text-sm font-medium"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--error)", color: "#fff" }}>
-                O'chirish
+                {t("common.delete")}
               </button>
             </div>
           </div>
@@ -870,24 +871,23 @@ export default function DashboardPage() {
           <div className="w-full max-w-xs p-5 animate-fade-in"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>O'quvchini o'chirish</p>
+              <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("dashboard.deleteStudentTitle")}</p>
               <button onClick={() => setDeleteStudentId(null)}
                 className="w-8 h-8 flex items-center justify-center hover:opacity-70"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
                 <X size={15} />
               </button>
             </div>
-            <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
-              <b>{allStudents.find((s) => s.id === deleteStudentId)?.name}</b> barcha sinflardan ham o'chiriladi.
-            </p>
+            <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}
+              dangerouslySetInnerHTML={{ __html: t("dashboard.deleteStudentMsg").replace("{name}", `<b>${allStudents.find((s) => s.id === deleteStudentId)?.name ?? ""}</b>`) }} />
             <div className="flex gap-2">
               <button onClick={() => setDeleteStudentId(null)} className="flex-1 py-2.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                Bekor
+                {t("common.cancel")}
               </button>
               <button onClick={() => deleteStudent(deleteStudentId)} className="flex-1 py-2.5 text-sm font-medium"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--error)", color: "#fff" }}>
-                O'chirish
+                {t("common.delete")}
               </button>
             </div>
           </div>

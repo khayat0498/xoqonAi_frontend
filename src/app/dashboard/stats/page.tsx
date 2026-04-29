@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, TrendingUp, Star, Flame, Target, CheckCircle2, BookOpen, AlertCircle } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
@@ -52,6 +53,7 @@ const EMPTY_WEEKLY = [
 ];
 
 export default function StatsPage() {
+  const { t } = useT();
   const [stats, setStats] = useState<StatsData>({
     total: 0, avgScore: 0, streak: 0, accuracy: 0,
     weeklyData: EMPTY_WEEKLY, subjectStats: [], commonErrors: [],
@@ -72,10 +74,10 @@ export default function StatsPage() {
   const weekTotal = stats.weeklyData.reduce((s, d) => s + d.checks, 0);
 
   const topStats = [
-    { label: "Jami tekshirish", value: loading ? "..." : String(stats.total),     icon: CheckCircle2, color: "var(--success)", bg: "var(--success-bg)" },
-    { label: "O'rtacha baho",   value: loading ? "..." : String(stats.avgScore),  icon: Star,         color: "var(--warning)", bg: "var(--warning-bg)" },
-    { label: "Streak",          value: loading ? "..." : `${stats.streak} kun`,   icon: Flame,        color: "#EA580C", bg: "#FFF7ED" },
-    { label: "Aniqlik",         value: loading ? "..." : `${stats.accuracy}%`,    icon: Target,       color: "#6366F1", bg: "#EEF2FF" },
+    { label: t("dashboardStats.totalChecks"), value: loading ? "..." : String(stats.total),                          icon: CheckCircle2, color: "var(--success)", bg: "var(--success-bg)" },
+    { label: t("dashboardStats.avgScore"),    value: loading ? "..." : String(stats.avgScore),                       icon: Star,         color: "var(--warning)", bg: "var(--warning-bg)" },
+    { label: t("dashboardStats.streak"),      value: loading ? "..." : `${stats.streak} ${t("dashboardStats.streakUnit")}`, icon: Flame, color: "#EA580C", bg: "#FFF7ED" },
+    { label: t("dashboardStats.accuracy"),    value: loading ? "..." : `${stats.accuracy}%`,                         icon: Target,       color: "#6366F1", bg: "#EEF2FF" },
   ];
 
   return (
@@ -90,7 +92,7 @@ export default function StatsPage() {
           <ArrowLeft size={16} />
         </Link>
         <div>
-          <h1 className="text-base font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Statistika</h1>
+          <h1 className="text-base font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("dashboardStats.title")}</h1>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             {new Date().toLocaleDateString("uz-UZ", { month: "long", year: "numeric" })}
           </p>
@@ -121,11 +123,11 @@ export default function StatsPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TrendingUp size={15} style={{ color: "var(--text-secondary)" }} />
-              <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Bu haftaki tekshirishlar</span>
+              <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{t("dashboardStats.weeklyChecks")}</span>
             </div>
             <span className="text-xs font-semibold px-2.5 py-1"
               style={{ background: "var(--accent-light)", color: "var(--text-secondary)", borderRadius: "var(--radius-sm)" }}>
-              {weekTotal} ta jami
+              {weekTotal} {t("dashboardStats.totalUnit")}
             </span>
           </div>
 
@@ -155,13 +157,13 @@ export default function StatsPage() {
           </svg>
         </div>
 
-        {/* Fanlar bo'yicha */}
+        {/* By subjects */}
         {stats.subjectStats.length > 0 && (
           <div className="card-3d p-5"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-card)" }}>
             <div className="flex items-center gap-2 mb-4">
               <BookOpen size={15} style={{ color: "var(--text-secondary)" }} />
-              <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Fanlar bo&apos;yicha</span>
+              <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{t("dashboardStats.bySubjects")}</span>
             </div>
             <div className="flex flex-col gap-4">
               {stats.subjectStats.map((s, i) => (
@@ -174,7 +176,7 @@ export default function StatsPage() {
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{s.name}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>{s.total} ta</span>
+                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>{s.total} {t("dashboardStats.subjectUnit")}</span>
                         <span className="text-xs font-bold px-2 py-0.5" style={{ background: "var(--warning-bg)", color: "var(--warning)", borderRadius: "var(--radius-sm)" }}>
                           {s.avg}
                         </span>
@@ -191,13 +193,13 @@ export default function StatsPage() {
           </div>
         )}
 
-        {/* Eng ko'p xatolar */}
+        {/* Common errors */}
         {stats.commonErrors.length > 0 && (
           <div className="card-3d p-5"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-card)" }}>
             <div className="flex items-center gap-2 mb-4">
               <AlertCircle size={15} style={{ color: "var(--error)" }} />
-              <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>Eng ko&apos;p uchraydigan xatolar</span>
+              <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{t("dashboardStats.commonErrors")}</span>
             </div>
             <div className="flex flex-col gap-3.5">
               {stats.commonErrors.map((e, i) => (
@@ -231,12 +233,12 @@ export default function StatsPage() {
           </div>
           <div>
             <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
-              {stats.total > 0 ? "Ajoyib natijalar!" : "Hali tekshirishlar yo'q"}
+              {stats.total > 0 ? t("dashboardStats.greatResult") : t("dashboardStats.noChecksYet")}
             </p>
             <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--text-muted)" }}>
               {stats.total > 0
-                ? `Jami ${stats.total} ta uy ishi tekshirildi, ${stats.accuracy}% aniqlikka erishildi.`
-                : "Birinchi uy ishini tekshirishdan boshlang!"}
+                ? t("dashboardStats.summary").replace("{total}", String(stats.total)).replace("{accuracy}", String(stats.accuracy))
+                : t("dashboardStats.startChecking")}
             </p>
           </div>
         </div>

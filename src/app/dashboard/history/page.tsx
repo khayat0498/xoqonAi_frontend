@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowLeft, History } from "lucide-react";
+import { useT } from "@/lib/i18n-context";
 
 export default function HistoryPage() {
   const router = useRouter();
+  const { t } = useT();
 
   return (
     <div className="flex flex-col h-screen" style={{ background: "var(--bg-primary)" }}>
@@ -21,7 +23,7 @@ export default function HistoryPage() {
           style={{ background: "rgba(255,255,255,0.18)", borderRadius: "var(--radius-sm)", color: "#fff", backdropFilter: "blur(8px)" }}>
           <ArrowLeft size={18} />
         </button>
-        <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>Tarix</h1>
+        <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{t("history.title")}</h1>
       </div>
 
       <div className="bg-grid flex-1 overflow-y-auto flex items-center justify-center">
@@ -31,10 +33,10 @@ export default function HistoryPage() {
             <History size={36} style={{ color: "var(--accent)" }} />
           </div>
           <h2 className="text-lg font-bold mb-2" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
-            Tekshirish tarixi
+            {t("history.dashHeading")}
           </h2>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Barcha tekshirilgan ishlaringiz tarixi bu yerda ko&apos;rinadi. Hozircha tarix yo&apos;q.
+            {t("history.dashEmpty")}
           </p>
         </div>
       </div>
