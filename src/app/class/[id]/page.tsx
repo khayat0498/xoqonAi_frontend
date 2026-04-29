@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 import { useUserWS } from "@/lib/user-ws";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
@@ -24,6 +25,7 @@ const avatarColors = ["#1a5c6b","#6366F1","#e8732a","#2a9d6a","#3B82F6","#8B5CF6
 export default function ClassPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useT();
 
   const [cls, setCls]               = useState<ClassInfo | null>(null);
   const [studentList, setStudentList] = useState<ClassStudent[]>([]);
@@ -102,7 +104,7 @@ export default function ClassPage() {
       }
       if (subjectsRes.ok) {
         const data = await subjectsRes.json();
-        const withGeneral = [{ id: "__general__", name: "Umumiy", icon: "📚" }, ...data];
+        const withGeneral = [{ id: "__general__", name: t("home.general"), icon: "📚" }, ...data];
         setSessionSubjects(withGeneral);
         setSendSubjects(withGeneral);
       }
@@ -323,12 +325,12 @@ export default function ClassPage() {
           <ArrowLeft size={16} />
         </button>
         <div className="flex-1 relative">
-          <h1 className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{cls?.name} sinfi</h1>
+          <h1 className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{cls?.name} {t("class.classSuffix")}</h1>
           <p className="text-xs flex items-center gap-1.5" style={{ color:"rgba(255,255,255,0.7)" }}>
-            {studentList.length} o&apos;quvchi
+            {studentList.length} {t("class.studentsUnit")}
             {cls?.telegramGroupId && (
               <span className="flex items-center gap-0.5" style={{ color: "#5af" }}>
-                · <Send size={9} /> Guruh biriktirilgan
+                · <Send size={9} /> {t("class.groupAttached")}
               </span>
             )}
           </p>
@@ -346,7 +348,7 @@ export default function ClassPage() {
         <button onClick={() => { setShowAdd(true); setAddSearch(""); setShowCreate(false); setNewName(""); }}
           className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl font-medium relative"
           style={{ background:"rgba(255,255,255,0.18)", color:"#fff" }}>
-          <Plus size={14} /> Qo&apos;shish
+          <Plus size={14} /> {t("class.addBtn")}
         </button>
       </div>
 
@@ -359,7 +361,7 @@ export default function ClassPage() {
             style={{ background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
             <Search size={14} style={{ color:"var(--text-muted)" }} />
             <input value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Qidirish..." className="flex-1 bg-transparent outline-none text-sm"
+              placeholder={t("class.search")} className="flex-1 bg-transparent outline-none text-sm"
               style={{ color:"var(--text-primary)" }} />
           </div>
         </div>
@@ -381,7 +383,7 @@ export default function ClassPage() {
                   <button onClick={openSessionSetup}
                     className="text-xs px-3 py-1.5 rounded-xl font-medium"
                     style={{ background: "var(--accent)", color: "#fff" }}>
-                    O&apos;zgartirish
+                    {t("class.change")}
                   </button>
                   <button onClick={() => {
                     setSessionSubject(null); setSessionCondition(""); localStorage.removeItem(`class_session_${id}`);
@@ -389,7 +391,7 @@ export default function ClassPage() {
                   }}
                     className="text-xs px-3 py-1.5 rounded-xl font-medium"
                     style={{ background: "var(--bg-primary)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
-                    Yangi
+                    {t("class.new")}
                   </button>
                 </div>
               </div>
@@ -397,13 +399,13 @@ export default function ClassPage() {
                 <div className="px-4 py-2 flex items-center gap-2 text-[11px]"
                   style={{ borderTop: "1px solid var(--accent)40", color: "var(--accent)" }}>
                   <span>⚡</span>
-                  <span className="font-semibold">Kesh faol</span>
+                  <span className="font-semibold">{t("class.cacheActive")}</span>
                   <span style={{ color: "var(--text-secondary)" }}>·</span>
                   <span style={{ color: "var(--text-secondary)" }}>{cacheInfo.tokenCount.toLocaleString()} token</span>
                   <span style={{ color: "var(--text-secondary)" }}>·</span>
-                  <span style={{ color: "var(--text-secondary)" }}>
-                    Yaratish+saqlash: <strong style={{ color: "var(--accent)" }}>{cacheInfo.totalOverheadUzs.toLocaleString()} so&apos;m</strong> / soat
-                  </span>
+                  <span style={{ color: "var(--text-secondary)" }} dangerouslySetInnerHTML={{
+                    __html: t("class.cacheCost").replace("{amount}", `<strong style="color: var(--accent)">${cacheInfo.totalOverheadUzs.toLocaleString()}</strong>`)
+                  }} />
                 </div>
               )}
             </div>
@@ -412,7 +414,7 @@ export default function ClassPage() {
               className="w-full flex items-center gap-3 px-4 py-3 text-left transition-all hover:opacity-80"
               style={{ border: "1px dashed var(--border)", borderRadius: "var(--radius-md)", color: "var(--text-muted)" }}>
               <Camera size={16} />
-              <span className="text-sm flex-1">Fan va masala shartini tanlang</span>
+              <span className="text-sm flex-1">{t("class.selectSubjectAndCondition")}</span>
               <ChevronRight size={14} />
             </button>
           )}
@@ -422,8 +424,8 @@ export default function ClassPage() {
         <div className="md:hidden px-5 py-1.5 grid text-xs shrink-0"
           style={{ color:"var(--text-muted)", gridTemplateColumns:"1.5rem 1fr auto" }}>
           <span>#</span>
-          <span>Ism Familiya</span>
-          <span className="pr-1">Amallar</span>
+          <span>{t("class.fullName")}</span>
+          <span className="pr-1">{t("class.actions")}</span>
         </div>
 
         {/* Students */}
@@ -549,7 +551,7 @@ export default function ClassPage() {
                         <button
                           onClick={() => { if (student.telegramId) { setSendStudent(student); setSelectedSubject(""); } }}
                           className="w-8 h-8 flex items-center justify-center relative"
-                          title="Natijani yuborish"
+                          title={t("class.sendResult")}
                           style={{
                             borderRadius: "var(--radius-sm)",
                             background: student.telegramId ? "#E8F5FB" : "var(--bg-primary)",
@@ -564,7 +566,7 @@ export default function ClassPage() {
                         </button>
                         <button
                           onClick={() => openCameraForStudent(student)}
-                          className="flex-1 h-8 flex items-center justify-center hover:opacity-80" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff" }} title="Tekshirish">
+                          className="flex-1 h-8 flex items-center justify-center hover:opacity-80" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff" }} title={t("class.checkAction")}>
                           <Camera size={14} />
                         </button>
                         <Link href="/submission/1" className="w-8 h-8 flex items-center justify-center hover:opacity-70"
@@ -625,7 +627,7 @@ export default function ClassPage() {
               <button
                 onClick={() => openCameraForStudent(activeStudent)}
                 className="flex items-center gap-3 px-4 py-3.5 font-medium text-sm" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff" }}>
-                <Camera size={18} /> Uy ishini tekshirish
+                <Camera size={18} /> {t("class.checkHomework")}
               </button>
               <button
                 onClick={() => { if (activeStudent.telegramId) { setActiveStudent(null); setSendStudent(activeStudent); setSelectedSubject(""); } }}
@@ -639,27 +641,27 @@ export default function ClassPage() {
                   cursor: activeStudent.telegramId ? "pointer" : "not-allowed",
                 }}>
                 <Send size={18} style={{ color: activeStudent.telegramId ? "#229ED9" : "var(--text-muted)" }} />
-                Natijani yuborish
+                {t("class.sendResult")}
               </button>
               <Link href="/submission/1" onClick={() => setActiveStudent(null)}
                 className="flex items-center gap-3 px-4 py-3.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-primary)" }}>
-                <FileText size={18} style={{ color:"var(--text-secondary)" }} /> Tekshirishlar tarixi
+                <FileText size={18} style={{ color:"var(--text-secondary)" }} /> {t("class.checkHistory")}
               </Link>
               <Link href={`/student/${activeStudent.id}`} onClick={() => setActiveStudent(null)}
                 className="flex items-center gap-3 px-4 py-3.5 text-sm"
                 style={{ borderRadius: "var(--radius-lg)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-primary)" }}>
-                Profilni ko&apos;rish
+                {t("class.viewProfile")}
               </Link>
               <button onClick={() => { setActiveStudent(null); setEditingId(activeStudent.id); setEditName(activeStudent.name); }}
                 className="flex items-center gap-3 px-4 py-3.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-primary)" }}>
-                <Pencil size={18} style={{ color:"var(--text-secondary)" }} /> Ismni tahrirlash
+                <Pencil size={18} style={{ color:"var(--text-secondary)" }} /> {t("class.editName")}
               </button>
               <button onClick={() => { setActiveStudent(null); setDeleteId(activeStudent.id); }}
                 className="flex items-center gap-3 px-4 py-3.5 text-sm font-medium"
                 style={{ borderRadius: "var(--radius-sm)", background:"var(--error-bg)", color:"var(--error)" }}>
-                <Trash2 size={18} /> Sinfdan chiqarish
+                <Trash2 size={18} /> {t("class.removeFromClass")}
               </button>
             </div>
           </div>
@@ -676,7 +678,7 @@ export default function ClassPage() {
 
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor:"var(--border)" }}>
-              <p className="text-base font-semibold" style={{ color:"var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>O&apos;quvchi qo&apos;shish</p>
+              <p className="text-base font-semibold" style={{ color:"var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("class.addStudent")}</p>
               <button onClick={() => setShowAdd(false)} className="w-8 h-8 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-muted)" }}>
                 <X size={15} />
@@ -689,7 +691,7 @@ export default function ClassPage() {
                 style={{ background:"var(--bg-primary)", border:"1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
                 <Search size={13} style={{ color:"var(--text-muted)" }} />
                 <input autoFocus value={addSearch} onChange={(e) => setAddSearch(e.target.value)}
-                  placeholder="O'quvchi qidirish..." className="flex-1 bg-transparent outline-none text-sm"
+                  placeholder={t("class.searchStudent")} className="flex-1 bg-transparent outline-none text-sm"
                   style={{ color:"var(--text-primary)" }} />
               </div>
             </div>
@@ -729,7 +731,7 @@ export default function ClassPage() {
               })}
 
               {notInClass.length === 0 && !addSearch && classStudentIds.length === allStudents.length && (
-                <p className="text-xs text-center py-3" style={{ color:"var(--text-muted)" }}>Barcha o&apos;quvchilar bu sinfda</p>
+                <p className="text-xs text-center py-3" style={{ color:"var(--text-muted)" }}>{t("class.allInClass")}</p>
               )}
             </div>
 
@@ -739,16 +741,16 @@ export default function ClassPage() {
                 <div className="flex flex-col gap-2">
                   <input autoFocus value={newName} onChange={(e) => setNewName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") void createAndAdd(); }}
-                    placeholder="Ism Familiya"
+                    placeholder={t("class.fullName")}
                     className="w-full px-3 py-2 text-sm outline-none"
                     style={{ background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-primary)", borderRadius: "var(--radius-sm)" }} />
                   <input value={newTgId} onChange={(e) => setNewTgId(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") void createAndAdd(); }}
-                    placeholder="Telegram ID (ixtiyoriy)"
+                    placeholder={t("class.telegramIdOptional")}
                     className="w-full px-3 py-2 text-sm outline-none"
                     style={{ background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-primary)", borderRadius: "var(--radius-sm)" }} />
                   <div className="flex gap-2">
-                    <button onClick={() => void createAndAdd()} disabled={savingStudent || !newName.trim()} className="flex-1 py-2 text-sm font-medium" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff", opacity: savingStudent ? 0.6 : 1 }}>{savingStudent ? "..." : "Qo'shish"}</button>
+                    <button onClick={() => void createAndAdd()} disabled={savingStudent || !newName.trim()} className="flex-1 py-2 text-sm font-medium" style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff", opacity: savingStudent ? 0.6 : 1 }}>{savingStudent ? "..." : t("class.addBtn")}</button>
                     <button onClick={() => { setShowCreate(false); setNewName(""); setNewTgId(""); }} className="w-9 h-9 flex items-center justify-center" style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-muted)" }}><X size={14} /></button>
                   </div>
                 </div>
@@ -756,7 +758,7 @@ export default function ClassPage() {
                 <button onClick={() => setShowCreate(true)}
                   className="w-full flex items-center justify-center gap-2 py-2.5 text-sm transition-all hover:opacity-80"
                   style={{ border:"1px dashed var(--border)", color:"var(--text-muted)", borderRadius: "var(--radius-sm)" }}>
-                  <UserPlus size={15} /> Yangi o&apos;quvchi yaratish
+                  <UserPlus size={15} /> {t("class.createNewStudent")}
                 </button>
               )}
             </div>
@@ -772,23 +774,23 @@ export default function ClassPage() {
           <div className="w-full max-w-xs p-5 animate-fade-in"
             style={{ background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-base font-semibold" style={{ color:"var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Sinfdan chiqarish</p>
+              <p className="text-base font-semibold" style={{ color:"var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("class.removeFromClass")}</p>
               <button onClick={() => setDeleteId(null)} className="w-8 h-8 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-muted)" }}>
                 <X size={15} />
               </button>
             </div>
-            <p className="text-sm mb-4" style={{ color:"var(--text-muted)" }}>
-              <b>{studentList.find((s) => s.id === deleteId)?.name}</b> bu sinfdan chiqariladi.
-            </p>
+            <p className="text-sm mb-4" style={{ color:"var(--text-muted)" }} dangerouslySetInnerHTML={{
+              __html: t("class.willBeRemoved").replace("{name}", `<b>${studentList.find((s) => s.id === deleteId)?.name ?? ""}</b>`)
+            }} />
             <div className="flex gap-2">
               <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-card)", border:"1px solid var(--border)", color:"var(--text-secondary)" }}>
-                Bekor
+                {t("class.cancel")}
               </button>
               <button onClick={() => void removeFromClass(deleteId)} className="flex-1 py-2.5 text-sm font-medium"
                 style={{ borderRadius: "var(--radius-sm)", background:"var(--error)", color:"#fff" }}>
-                Chiqarish
+                {t("class.remove")}
               </button>
             </div>
           </div>
@@ -810,13 +812,13 @@ export default function ClassPage() {
             </button>
             <div className="flex-1">
               <p className="text-base font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>
-                {sessionStep === "subject" ? "Fan tanlang" : "Masala sharti"}
+                {sessionStep === "subject" ? t("class.selectSubject") : t("class.problemCondition")}
               </p>
               <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>
                 {sessionStep === "condition" && setupSubject
                   ? `${setupSubject.icon ?? "📖"} ${setupSubject.name} · `
                   : ""}
-                {cls?.name} sinfi
+                {cls?.name} {t("class.classSuffix")}
               </p>
             </div>
             <button onClick={() => { setShowSessionSetup(false); setPendingStudentForCamera(null); }}
@@ -841,7 +843,7 @@ export default function ClassPage() {
                     </button>
                   ))}
                   {sessionSubjects.length === 0 && (
-                    <p className="text-center py-16 text-sm" style={{ color: "var(--text-muted)" }}>Fan topilmadi</p>
+                    <p className="text-center py-16 text-sm" style={{ color: "var(--text-muted)" }}>{t("class.noSubjectsFound")}</p>
                   )}
                   {/* Fansiz tekshirish */}
                   <button
@@ -849,7 +851,7 @@ export default function ClassPage() {
                     className="w-full flex items-center gap-4 px-5 py-4 text-left transition-all hover:opacity-80"
                     style={{ background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: "var(--radius-md)" }}>
                     <span className="text-3xl">📷</span>
-                    <span className="flex-1 text-base font-medium" style={{ color: "var(--text-muted)" }}>Fansiz tekshirish</span>
+                    <span className="flex-1 text-base font-medium" style={{ color: "var(--text-muted)" }}>{t("class.checkWithoutSubject")}</span>
                     <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />
                   </button>
                 </div>
@@ -866,7 +868,7 @@ export default function ClassPage() {
               </div>
               <div className="flex-1 flex flex-col">
                 <label className="text-sm font-semibold mb-2 flex items-center gap-1" style={{ color: "var(--text-secondary)" }}>
-                  Masala sharti <span style={{ color: "#ef4444" }}>*</span>
+                  {t("class.problemCondition")} <span style={{ color: "#ef4444" }}>*</span>
                 </label>
                 <textarea
                   autoFocus
@@ -878,12 +880,12 @@ export default function ClassPage() {
                     color: "var(--text-primary)",
                     minHeight: 180,
                   }}
-                  placeholder="Masalan: Darslik 45-bet, 3-mashq. Barcha misollarni ishlang..."
+                  placeholder={t("class.problemConditionPlaceholder")}
                   value={setupCondition}
                   onChange={(e) => setSetupCondition(e.target.value)}
                 />
                 <p className="text-xs mt-2" style={{ color: setupCondition.trim() ? "var(--text-muted)" : "#ef4444" }}>
-                  {setupCondition.trim() ? "AI masala shartiga asoslanib baholaydi" : "Majburiy — masala sharti bo'lmasa tizim ishlamaydi"}
+                  {setupCondition.trim() ? t("class.aiUsesCondition") : t("class.conditionRequired")}
                 </p>
               </div>
               <button
@@ -896,7 +898,7 @@ export default function ClassPage() {
                   boxShadow: setupCondition.trim() ? "0 4px 16px rgba(104,117,245,0.35)" : "none",
                   cursor: setupCondition.trim() ? "pointer" : "not-allowed",
                 }}>
-                <Camera size={20} /> Saqlash va davom etish
+                <Camera size={20} /> {t("class.saveAndContinue")}
               </button>
             </div>
           )}
@@ -913,23 +915,23 @@ export default function ClassPage() {
           >
             <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
             <div className="flex items-center justify-between">
-              <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Sinf sozlamalari</p>
+              <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>{t("class.classSettings")}</p>
               <button onClick={() => setShowSettings(false)} className="w-7 h-7 flex items-center justify-center rounded-full" style={{ background: "var(--bg-primary)", color: "var(--text-muted)", fontSize: 16 }}>×</button>
             </div>
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Sinf nomi</label>
+                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{t("class.className")}</label>
                 <input
                   autoFocus
                   value={settingsName}
                   onChange={(e) => setSettingsName(e.target.value)}
-                  placeholder="Masalan: 10-A"
+                  placeholder={t("class.classNameExample")}
                   className="w-full px-3 py-2.5 text-sm font-medium outline-none"
                   style={{ background: "var(--bg-primary)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Telegram guruh ID</label>
+                <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{t("class.telegramGroupId")}</label>
                 <input
                   value={settingsTgGroup}
                   onChange={(e) => setSettingsTgGroup(e.target.value)}
@@ -938,7 +940,7 @@ export default function ClassPage() {
                   style={{ background: "var(--bg-primary)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", fontFamily: "monospace" }}
                 />
                 <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                  Guruh ID ni olish uchun @userinfobot ga guruhni forward qiling. Odatda -100 bilan boshlanadi.
+                  {t("class.groupIdHelp")}
                 </p>
               </div>
             </div>
@@ -948,7 +950,7 @@ export default function ClassPage() {
               className="w-full py-3 text-sm font-bold rounded-xl transition-all"
               style={{ background: "var(--accent)", color: "#fff", opacity: settingsSaving || !settingsName.trim() ? 0.6 : 1 }}
             >
-              {settingsSaving ? "Saqlanmoqda..." : "Saqlash"}
+              {settingsSaving ? t("class.saving") : t("class.save")}
             </button>
           </div>
         </div>
@@ -963,7 +965,7 @@ export default function ClassPage() {
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
             <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
               <div>
-                <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Natijani yuborish</p>
+                <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("class.sendResult")}</p>
                 <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
                   <Send size={10} style={{ color: "#229ED9" }} /> {sendStudent.telegramId} · {sendStudent.name}
                 </p>
@@ -974,7 +976,7 @@ export default function ClassPage() {
               </button>
             </div>
             <div className="p-3 flex flex-col gap-1.5 max-h-72 overflow-y-auto">
-              <p className="text-xs px-1 mb-0.5" style={{ color: "var(--text-muted)" }}>Mavzuni tanlang:</p>
+              <p className="text-xs px-1 mb-0.5" style={{ color: "var(--text-muted)" }}>{t("class.selectTopic")}</p>
               {sendSubjects.map((sub) => {
                 const active = selectedSubject === sub.name;
                 return (
@@ -997,7 +999,7 @@ export default function ClassPage() {
             <div className="px-4 pb-4 pt-2 flex gap-2">
               <button onClick={() => setSendStudent(null)} className="flex-1 py-2.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                Bekor
+                {t("class.cancel")}
               </button>
               <button
                 disabled={!selectedSubject || sending}
@@ -1034,11 +1036,11 @@ export default function ClassPage() {
                 {sending ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : sendResult === "ok" ? (
-                  "✓ Yuborildi"
+                  t("class.sentCheck")
                 ) : sendResult === "error" ? (
-                  "Xatolik"
+                  t("class.errorShort")
                 ) : (
-                  <><Send size={14} /> Yuborish</>
+                  <><Send size={14} /> {t("class.send")}</>
                 )}
               </button>
             </div>
