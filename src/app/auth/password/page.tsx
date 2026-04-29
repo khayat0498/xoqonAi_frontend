@@ -4,17 +4,19 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ArrowLeft, Lock } from "lucide-react";
 import { setToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
-function validatePassword(pw: string): string | null {
-  if (pw.length < 8) return "Parol kamida 8 ta belgidan iborat bo'lishi kerak";
-  if (!/[a-z]/.test(pw)) return "Parolda kichik harf bo'lishi kerak";
-  if (!/[A-Z]/.test(pw)) return "Parolda katta harf bo'lishi kerak";
-  if (!/\d/.test(pw)) return "Parolda raqam bo'lishi kerak";
+function validatePassword(pw: string, t: (k: string) => string): string | null {
+  if (pw.length < 8) return t("auth.errors.passwordTooShort");
+  if (!/[a-z]/.test(pw)) return t("auth.errors.passwordNoLower");
+  if (!/[A-Z]/.test(pw)) return t("auth.errors.passwordNoUpper");
+  if (!/\d/.test(pw)) return t("auth.errors.passwordNoDigit");
   return null;
 }
 
 function PasswordForm() {
   const router = useRouter();
+  const { t } = useT();
   const params = useSearchParams();
 
   const tempToken = params.get("temp") ?? "";
@@ -34,7 +36,6 @@ function PasswordForm() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
   useEffect(() => {
-    // Login mode uses email from query param
     if (mode === "login") {
       if (!emailParam) {
         router.replace("/auth/login");
@@ -44,7 +45,6 @@ function PasswordForm() {
       return;
     }
 
-    // Signup/reset mode uses temp token
     if (!tempToken) {
       router.replace("/auth/login");
       return;
@@ -60,21 +60,19 @@ function PasswordForm() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    // Login mode — only check non-empty
     if (mode === "login") {
       if (!password) {
-        setError("Parolni kiriting");
+        setError(t("auth.errors.passwordRequired"));
         return;
       }
     } else {
-      // Signup/reset — strong password validation
-      const pwError = validatePassword(password);
+      const pwError = validatePassword(password, t);
       if (pwError) {
         setError(pwError);
         return;
       }
       if (password !== confirm) {
-        setError("Parollar mos kelmadi");
+        setError(t("auth.errors.passwordMismatch"));
         return;
       }
     }
@@ -84,7 +82,6 @@ function PasswordForm() {
 
     try {
       if (mode === "login") {
-        // Direct login with email + password
         const res = await fetch(`${apiUrl}/api/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -93,14 +90,13 @@ function PasswordForm() {
 
         const data = await res.json();
         if (!res.ok) {
-          setError(data.error ?? "Parol noto'g'ri");
+          setError(data.error ?? t("auth.errors.wrongPassword"));
           return;
         }
 
         setToken(data.token);
         router.replace("/home");
       } else {
-        // Signup or reset — use temp token
         const res = await fetch(`${apiUrl}/api/auth/complete`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -109,7 +105,7 @@ function PasswordForm() {
 
         const data = await res.json();
         if (!res.ok) {
-          setError(data.error ?? "Xatolik yuz berdi");
+          setError(data.error ?? t("auth.errors.generic"));
           return;
         }
 
@@ -117,20 +113,15 @@ function PasswordForm() {
         router.replace("/home");
       }
     } catch {
-      setError("Server bilan aloqa yo'q");
+      setError(t("auth.errors.serverDown"));
     } finally {
       setLoading(false);
     }
   }
 
-  const title = mode === "signup" ? "Parol o'rnating" : mode === "reset" ? "Yangi parol" : "Parolni kiriting";
-  const subtitle =
-    mode === "signup"
-      ? "Hisobingiz uchun parol o'rnating (kamida 8 ta belgi, katta-kichik harf va raqam)"
-      : mode === "reset"
-      ? "Yangi parol o'rnating (kamida 8 ta belgi, katta-kichik harf va raqam)"
-      : "Hisobingizga kirish uchun parolni kiriting";
-  const btnLabel = mode === "signup" ? "Ro'yxatdan o'tish" : mode === "reset" ? "Parolni yangilash" : "Kirish";
+  const title = mode === "signup" ? t("auth.setPassword") : mode === "reset" ? t("auth.newPasswordTitle") : t("auth.enterPasswordTitle");
+  const subtitle = mode === "signup" ? t("auth.setPasswordSub") : mode === "reset" ? t("auth.resetPasswordSub") : t("auth.loginPasswordSub");
+  const btnLabel = mode === "signup" ? t("auth.register") : mode === "reset" ? t("auth.updatePassword") : t("auth.login");
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-grid px-4">
@@ -143,7 +134,7 @@ function PasswordForm() {
           style={{ color: "var(--text-muted)" }}
         >
           <ArrowLeft size={16} />
-          Orqaga
+          {t("common.back")}
         </button>
 
         {/* Card */}
@@ -166,7 +157,7 @@ function PasswordForm() {
             {/* Email */}
             <div>
               <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--text-muted)" }}>
-                Email
+                {t("auth.email")}
               </label>
               <input
                 type="email"
@@ -186,14 +177,14 @@ function PasswordForm() {
             {/* Password */}
             <div>
               <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--text-muted)" }}>
-                Parol
+                {t("auth.password")}
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                  placeholder={mode === "login" ? "Parolni kiriting" : "Kamida 8 ta belgi"}
+                  placeholder={mode === "login" ? t("auth.passwordPlaceholder") : t("auth.minCharsHint")}
                   autoFocus
                   className="w-full px-4 py-3 pr-12 text-sm outline-none transition-all"
                   style={{
@@ -214,18 +205,18 @@ function PasswordForm() {
               </div>
             </div>
 
-            {/* Confirm password — signup va reset uchun */}
+            {/* Confirm password */}
             {(mode === "signup" || mode === "reset") && (
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide mb-1.5 block" style={{ color: "var(--text-muted)" }}>
-                  Parolni tasdiqlang
+                  {t("auth.confirmPassword")}
                 </label>
                 <div className="relative">
                   <input
                     type={showConfirm ? "text" : "password"}
                     value={confirm}
                     onChange={(e) => { setConfirm(e.target.value); setError(""); }}
-                    placeholder="Parolni qayta kiriting"
+                    placeholder={t("auth.confirmPlaceholder")}
                     className="w-full px-4 py-3 pr-12 text-sm outline-none transition-all"
                     style={{
                       background: "var(--bg-primary)",
@@ -262,17 +253,17 @@ function PasswordForm() {
                 borderRadius: "var(--radius-md)",
               }}
             >
-              {loading ? "Yuklanmoqda..." : btnLabel}
+              {loading ? t("common.loading") : btnLabel}
             </button>
 
-            {/* Parolni unutdim — faqat login modeda */}
+            {/* Forgot password — login mode only */}
             {mode === "login" && (
               <a
                 href={`${apiUrl}/api/auth/google/reset`}
                 className="text-sm text-center transition-opacity hover:opacity-70"
                 style={{ color: "var(--text-muted)" }}
               >
-                Parolni unutdingizmi?
+                {t("auth.forgotPassword")}
               </a>
             )}
           </form>

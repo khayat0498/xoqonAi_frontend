@@ -3,9 +3,11 @@
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { useT } from "@/lib/i18n-context";
 
 function VerifyForm() {
   const router = useRouter();
+  const { t } = useT();
   const params = useSearchParams();
   const email = params.get("email") ?? "";
   const purpose = params.get("purpose") ?? "signup"; // signup | restore
@@ -27,7 +29,7 @@ function VerifyForm() {
   // Countdown timer
   useEffect(() => {
     if (resendTimer <= 0) return;
-    const interval = setInterval(() => setResendTimer((t) => t - 1), 1000);
+    const interval = setInterval(() => setResendTimer((v) => v - 1), 1000);
     return () => clearInterval(interval);
   }, [resendTimer]);
 
@@ -39,12 +41,10 @@ function VerifyForm() {
     setCode(newCode);
     setError("");
 
-    // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-submit when all filled
     if (newCode.every((d) => d !== "")) {
       handleVerify(newCode.join(""));
     }
@@ -81,21 +81,19 @@ function VerifyForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Kod noto'g'ri");
+        setError(data.error ?? t("auth.errors.invalidCode"));
         setCode(["", "", "", "", "", ""]);
         inputRefs.current[0]?.focus();
         return;
       }
 
       if (data.exists) {
-        // User exists — go to password (login or reset)
         router.push(`/auth/password?mode=${purpose === "restore" ? "reset" : "login"}&email=${encodeURIComponent(email)}`);
       } else {
-        // New user — go to set password (signup)
         router.push(`/auth/password?mode=signup&temp=${data.tempToken}`);
       }
     } catch {
-      setError("Server bilan aloqa yo'q");
+      setError(t("auth.errors.serverDown"));
     } finally {
       setLoading(false);
     }
@@ -116,10 +114,10 @@ function VerifyForm() {
         setError("");
       } else {
         const data = await res.json();
-        setError(data.error ?? "Xatolik yuz berdi");
+        setError(data.error ?? t("auth.errors.generic"));
       }
     } catch {
-      setError("Server bilan aloqa yo'q");
+      setError(t("auth.errors.serverDown"));
     }
   }
 
@@ -134,7 +132,7 @@ function VerifyForm() {
           style={{ color: "var(--text-muted)" }}
         >
           <ArrowLeft size={16} />
-          Orqaga
+          {t("common.back")}
         </button>
 
         {/* Card */}
@@ -150,11 +148,10 @@ function VerifyForm() {
           </div>
 
           <h2 className="text-lg font-bold mb-1" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-            Kodni kiriting
+            {t("auth.enterCode")}
           </h2>
-          <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
-            <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{email}</span> ga 6 xonali kod yuborildi
-          </p>
+          <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}
+            dangerouslySetInnerHTML={{ __html: t("auth.codeSent").replace("{email}", `<span style="color:var(--text-primary);font-weight:600">${email}</span>`) }} />
 
           {/* Code inputs */}
           <div className="flex gap-2 justify-center mb-4" onPaste={handlePaste}>
@@ -185,14 +182,14 @@ function VerifyForm() {
           )}
 
           {loading && (
-            <p className="text-xs text-center mb-4" style={{ color: "var(--text-muted)" }}>Tekshirilmoqda...</p>
+            <p className="text-xs text-center mb-4" style={{ color: "var(--text-muted)" }}>{t("auth.verifyingCode")}</p>
           )}
 
           {/* Resend */}
           <div className="text-center">
             {resendTimer > 0 ? (
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Qayta yuborish: {resendTimer}s
+                {t("auth.resendTimer").replace("{timer}", String(resendTimer))}
               </p>
             ) : (
               <button
@@ -200,7 +197,7 @@ function VerifyForm() {
                 className="text-xs font-semibold transition-opacity hover:opacity-70"
                 style={{ color: "var(--accent)" }}
               >
-                Kodni qayta yuborish
+                {t("auth.resendCode")}
               </button>
             )}
           </div>

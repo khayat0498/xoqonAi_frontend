@@ -70,6 +70,23 @@
     "verifyTitle": "Email tasdiqlash",
     "errorTitle": "Xatolik yuz berdi",
     "tryAgain": "Qayta urinib ko'ring",
+    "enterCode": "Kodni kiriting",
+    "codeSent": "{email} ga 6 xonali kod yuborildi",
+    "verifyingCode": "Tekshirilmoqda...",
+    "resendTimer": "Qayta yuborish: {timer}s",
+    "resendCode": "Kodni qayta yuborish",
+    "setPassword": "Parol o'rnating",
+    "newPasswordTitle": "Yangi parol",
+    "enterPasswordTitle": "Parolni kiriting",
+    "setPasswordSub": "Hisobingiz uchun parol o'rnating (kamida 8 ta belgi, katta-kichik harf va raqam)",
+    "resetPasswordSub": "Yangi parol o'rnating (kamida 8 ta belgi, katta-kichik harf va raqam)",
+    "loginPasswordSub": "Hisobingizga kirish uchun parolni kiriting",
+    "minCharsHint": "Kamida 8 ta belgi",
+    "confirmPlaceholder": "Parolni qayta kiriting",
+    "updatePassword": "Parolni yangilash",
+    "forgotPassword": "Parolni unutdingizmi?",
+    "googleFailed": "Google orqali kirish muvaffaqiyatsiz tugadi. Qayta urinib ko'ring.",
+    "loginAgain": "Qaytadan kirish",
     "errors": {
       "emailRequired": "Emailni kiriting",
       "emailInvalid": "Email formati noto'g'ri",
@@ -81,7 +98,11 @@
       "passwordRequired": "Parolni kiriting",
       "passwordTooShort": "Parol kamida 8 ta belgidan iborat bo'lishi kerak",
       "passwordMismatch": "Parollar mos kelmadi",
-      "wrongPassword": "Noto'g'ri parol"
+      "wrongPassword": "Noto'g'ri parol",
+      "passwordNoLower": "Parolda kichik harf bo'lishi kerak",
+      "passwordNoUpper": "Parolda katta harf bo'lishi kerak",
+      "passwordNoDigit": "Parolda raqam bo'lishi kerak",
+      "invalidCode": "Kod noto'g'ri"
     }
   },
   "settings": {

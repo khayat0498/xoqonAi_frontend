@@ -70,6 +70,23 @@
     "verifyTitle": "Подтверждение Email",
     "errorTitle": "Произошла ошибка",
     "tryAgain": "Попробуйте снова",
+    "enterCode": "Введите код",
+    "codeSent": "На {email} отправлен 6-значный код",
+    "verifyingCode": "Проверяется...",
+    "resendTimer": "Повторная отправка: {timer}с",
+    "resendCode": "Отправить код ещё раз",
+    "setPassword": "Установить пароль",
+    "newPasswordTitle": "Новый пароль",
+    "enterPasswordTitle": "Введите пароль",
+    "setPasswordSub": "Установите пароль для аккаунта (минимум 8 символов, заглавные/строчные буквы и цифра)",
+    "resetPasswordSub": "Установите новый пароль (минимум 8 символов, заглавные/строчные буквы и цифра)",
+    "loginPasswordSub": "Введите пароль для входа в аккаунт",
+    "minCharsHint": "Минимум 8 символов",
+    "confirmPlaceholder": "Повторите пароль",
+    "updatePassword": "Обновить пароль",
+    "forgotPassword": "Забыли пароль?",
+    "googleFailed": "Вход через Google не удался. Попробуйте снова.",
+    "loginAgain": "Войти снова",
     "errors": {
       "emailRequired": "Введите email",
       "emailInvalid": "Неверный формат email",
@@ -81,7 +98,11 @@
       "passwordRequired": "Введите пароль",
       "passwordTooShort": "Пароль должен содержать минимум 8 символов",
       "passwordMismatch": "Пароли не совпадают",
-      "wrongPassword": "Неверный пароль"
+      "wrongPassword": "Неверный пароль",
+      "passwordNoLower": "Пароль должен содержать строчную букву",
+      "passwordNoUpper": "Пароль должен содержать заглавную букву",
+      "passwordNoDigit": "Пароль должен содержать цифру",
+      "invalidCode": "Неверный код"
     }
   },
   "settings": {
