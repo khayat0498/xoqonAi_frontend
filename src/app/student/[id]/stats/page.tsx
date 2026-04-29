@@ -4,14 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, TrendingUp, CheckCircle2, BarChart2 } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
   return { Authorization: `Bearer ${getToken()}` };
 }
-
-const MONTHS = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
-const MONTH_SHORT = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
 
 type Stats = {
   total: number;
@@ -21,14 +19,14 @@ type Stats = {
   subjects: { name: string; count: number; avgScore: number }[];
 };
 
-function getPeriodOptions(period: "month" | "year") {
+function getPeriodOptions(period: "month" | "year", t: (k: string) => string) {
   const now = new Date();
   if (period === "month") {
     const opts = [];
     for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const label = `${MONTH_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+      const label = `${t(`studentStats.monthsShort.${d.getMonth()}`)} ${d.getFullYear()}`;
       opts.push({ value, label });
     }
     return opts;
@@ -39,6 +37,7 @@ function getPeriodOptions(period: "month" | "year") {
 }
 
 export default function StudentStatsPage() {
+  const { t } = useT();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
@@ -78,7 +77,7 @@ export default function StudentStatsPage() {
     }
   };
 
-  const periodOpts = getPeriodOptions(period);
+  const periodOpts = getPeriodOptions(period, t);
   const maxTimeline = Math.max(...(stats?.timeline.map(t => t.count) ?? [1]), 1);
   const maxGrade = Math.max(...Object.values(stats?.gradeDistribution ?? {}), 1);
   const totalGrades = Object.values(stats?.gradeDistribution ?? {}).reduce((a, b) => a + b, 0);
@@ -94,7 +93,7 @@ export default function StudentStatsPage() {
           <ArrowLeft size={16} />
         </button>
         <div className="flex-1 relative">
-          <h1 className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-display)" }}>Statistika</h1>
+          <h1 className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-display)" }}>{t("studentStats.title")}</h1>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{studentName}</p>
         </div>
       </div>
@@ -112,7 +111,7 @@ export default function StudentStatsPage() {
                     background: period === p ? "var(--accent)" : "transparent",
                     color: period === p ? "#fff" : "var(--text-muted)",
                   }}>
-                  {p === "month" ? "Oylik" : "Yillik"}
+                  {p === "month" ? t("studentStats.monthly") : t("studentStats.yearly")}
                 </button>
               ))}
             </div>
@@ -139,7 +138,7 @@ export default function StudentStatsPage() {
             ) : !stats || stats.total === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
                 <BarChart2 size={32} style={{ color: "var(--text-muted)" }} />
-                <p className="text-sm" style={{ color: "var(--text-muted)" }}>Bu davr uchun ma'lumot yo'q</p>
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("studentStats.noData")}</p>
               </div>
             ) : (
               <>
@@ -148,19 +147,19 @@ export default function StudentStatsPage() {
                   <div className="p-4 flex flex-col gap-1" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
                     <CheckCircle2 size={16} style={{ color: "var(--accent)" }} />
                     <p className="text-2xl font-bold mt-1" style={{ color: "var(--text-primary)" }}>{stats.total}</p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Tekshirishlar</p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t("studentStats.checks")}</p>
                   </div>
                   <div className="p-4 flex flex-col gap-1" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
                     <TrendingUp size={16} style={{ color: "var(--success)" }} />
                     <p className="text-2xl font-bold mt-1" style={{ color: "var(--text-primary)" }}>{stats.avgScore}%</p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>O'rtacha ball</p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t("studentStats.averageScore")}</p>
                   </div>
                 </div>
 
                 {/* Grade distribution */}
                 {totalGrades > 0 && (
                   <div className="p-4 flex flex-col gap-3" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
-                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Baholar taqsimoti</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>{t("studentStats.gradeDistribution")}</p>
                     {["5","4","3","2","1"].map(g => {
                       const count = stats.gradeDistribution[g] ?? 0;
                       const pct = totalGrades ? Math.round((count / totalGrades) * 100) : 0;
@@ -185,7 +184,7 @@ export default function StudentStatsPage() {
                 {stats.timeline.length > 0 && (
                   <div className="p-4 flex flex-col gap-3" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
                     <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-                      {period === "month" ? "Kunlik faollik" : "Oylik faollik"}
+                      {period === "month" ? t("studentStats.dailyActivity") : t("studentStats.monthlyActivity")}
                     </p>
                     <div className="flex items-end gap-1.5 h-24">
                       {stats.timeline.map((t, i) => (
@@ -206,13 +205,13 @@ export default function StudentStatsPage() {
                 {/* Subjects */}
                 {stats.subjects.length > 0 && (
                   <div className="flex flex-col gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-widest px-1" style={{ color: "var(--text-muted)" }}>Fanlar bo'yicha</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest px-1" style={{ color: "var(--text-muted)" }}>{t("studentStats.bySubjects")}</p>
                     {stats.subjects.map((s, i) => (
                       <div key={i} className="flex items-center gap-3 px-4 py-3"
                         style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{s.name}</p>
-                          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{s.count} ta tekshiruv</p>
+                          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{s.count} {t("studentStats.checksUnit")}</p>
                         </div>
                         <span className="text-sm font-bold shrink-0" style={{ color: "var(--accent)" }}>{s.avgScore}%</span>
                       </div>
