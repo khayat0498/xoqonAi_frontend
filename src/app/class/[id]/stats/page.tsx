@@ -4,13 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, TrendingUp, CheckCircle2, BarChart2, Users } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
   return { Authorization: `Bearer ${getToken()}` };
 }
-
-const MONTH_SHORT = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
 
 type Stats = {
   total: number;
@@ -21,25 +20,10 @@ type Stats = {
   students: { name: string; count: number; avgScore: number }[];
 };
 
-function getPeriodOptions(period: "month" | "year") {
-  const now = new Date();
-  if (period === "month") {
-    const opts = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const label = `${MONTH_SHORT[d.getMonth()]} ${d.getFullYear()}`;
-      opts.push({ value, label });
-    }
-    return opts;
-  }
-  const year = now.getFullYear();
-  return [year - 2, year - 1, year].map(y => ({ value: String(y), label: String(y) }));
-}
-
 export default function ClassStatsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useT();
 
   const [className, setClassName] = useState("");
   const [period, setPeriod] = useState<"month" | "year">("month");
@@ -49,6 +33,22 @@ export default function ClassStatsPage() {
   });
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
+
+  function getPeriodOptions(p: "month" | "year") {
+    const now = new Date();
+    if (p === "month") {
+      const opts = [];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const v = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const label = `${t(`studentStats.monthsShort.${d.getMonth()}`)} ${d.getFullYear()}`;
+        opts.push({ value: v, label });
+      }
+      return opts;
+    }
+    const year = now.getFullYear();
+    return [year - 2, year - 1, year].map(y => ({ value: String(y), label: String(y) }));
+  }
 
   useEffect(() => {
     fetch(`${API}/api/classes/${id}`, { headers: authHeaders() })
@@ -78,7 +78,7 @@ export default function ClassStatsPage() {
   };
 
   const periodOpts = getPeriodOptions(period);
-  const maxTimeline = Math.max(...(stats?.timeline.map(t => t.count) ?? [1]), 1);
+  const maxTimeline = Math.max(...(stats?.timeline.map(v => v.count) ?? [1]), 1);
   const maxGrade = Math.max(...Object.values(stats?.gradeDistribution ?? {}), 1);
   const totalGrades = Object.values(stats?.gradeDistribution ?? {}).reduce((a, b) => a + b, 0);
 
@@ -93,8 +93,8 @@ export default function ClassStatsPage() {
           <ArrowLeft size={16} />
         </button>
         <div className="flex-1 relative">
-          <h1 className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-display)" }}>Sinf statistikasi</h1>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{className} sinfi</p>
+          <h1 className="text-base font-semibold text-white" style={{ fontFamily: "var(--font-display)" }}>{t("classProfile.statsTitle")}</h1>
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{className} {t("home.classSuffix")}</p>
         </div>
       </div>
 
@@ -111,7 +111,7 @@ export default function ClassStatsPage() {
                     background: period === p ? "var(--accent)" : "transparent",
                     color: period === p ? "#fff" : "var(--text-muted)",
                   }}>
-                  {p === "month" ? "Oylik" : "Yillik"}
+                  {p === "month" ? t("studentStats.monthly") : t("studentStats.yearly")}
                 </button>
               ))}
             </div>
@@ -138,7 +138,7 @@ export default function ClassStatsPage() {
             ) : !stats || stats.total === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
                 <BarChart2 size={32} style={{ color: "var(--text-muted)" }} />
-                <p className="text-sm" style={{ color: "var(--text-muted)" }}>Bu davr uchun ma'lumot yo'q</p>
+                <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("studentStats.noData")}</p>
               </div>
             ) : (
               <>
@@ -147,19 +147,19 @@ export default function ClassStatsPage() {
                   <div className="p-4 flex flex-col gap-1" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
                     <CheckCircle2 size={16} style={{ color: "var(--accent)" }} />
                     <p className="text-2xl font-bold mt-1" style={{ color: "var(--text-primary)" }}>{stats.total}</p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Tekshirishlar</p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t("studentStats.checks")}</p>
                   </div>
                   <div className="p-4 flex flex-col gap-1" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
                     <TrendingUp size={16} style={{ color: "var(--success)" }} />
                     <p className="text-2xl font-bold mt-1" style={{ color: "var(--text-primary)" }}>{stats.avgScore}%</p>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>O'rtacha ball</p>
+                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t("studentStats.averageScore")}</p>
                   </div>
                 </div>
 
                 {/* Grade distribution */}
                 {totalGrades > 0 && (
                   <div className="p-4 flex flex-col gap-3" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
-                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Baholar taqsimoti</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>{t("studentStats.gradeDistribution")}</p>
                     {["5","4","3","2","1"].map(g => {
                       const count = stats.gradeDistribution[g] ?? 0;
                       const pct = totalGrades ? Math.round((count / totalGrades) * 100) : 0;
@@ -184,18 +184,18 @@ export default function ClassStatsPage() {
                 {stats.timeline.length > 0 && (
                   <div className="p-4 flex flex-col gap-3" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
                     <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-                      {period === "month" ? "Kunlik faollik" : "Oylik faollik"}
+                      {period === "month" ? t("studentStats.dailyActivity") : t("studentStats.monthlyActivity")}
                     </p>
                     <div className="flex items-end gap-1.5 h-24">
-                      {stats.timeline.map((t, i) => (
+                      {stats.timeline.map((v, i) => (
                         <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
                           <div className="w-full rounded-t-sm transition-all duration-500"
                             style={{
-                              height: `${Math.max((t.count / maxTimeline) * 80, t.count > 0 ? 8 : 2)}px`,
-                              background: t.count > 0 ? "var(--accent)" : "var(--bg-primary)",
-                              border: t.count === 0 ? "1px solid var(--border)" : "none",
+                              height: `${Math.max((v.count / maxTimeline) * 80, v.count > 0 ? 8 : 2)}px`,
+                              background: v.count > 0 ? "var(--accent)" : "var(--bg-primary)",
+                              border: v.count === 0 ? "1px solid var(--border)" : "none",
                             }} />
-                          <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>{t.label}</span>
+                          <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>{v.label}</span>
                         </div>
                       ))}
                     </div>
@@ -206,7 +206,7 @@ export default function ClassStatsPage() {
                 {stats.students?.length > 0 && (
                   <div className="flex flex-col gap-2">
                     <p className="text-xs font-semibold uppercase tracking-widest px-1 flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
-                      <Users size={11} /> O'quvchilar reytingi
+                      <Users size={11} /> {t("classProfile.studentsRating")}
                     </p>
                     {stats.students.map((s, i) => (
                       <div key={i} className="flex items-center gap-3 px-4 py-3"
@@ -216,7 +216,7 @@ export default function ClassStatsPage() {
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{s.name}</p>
-                          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{s.count} ta tekshiruv</p>
+                          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{s.count} {t("classProfile.checksUnit")}</p>
                         </div>
                         <span className="text-sm font-bold shrink-0" style={{ color: "var(--accent)" }}>{s.avgScore}%</span>
                       </div>
@@ -227,13 +227,13 @@ export default function ClassStatsPage() {
                 {/* Subjects */}
                 {stats.subjects.length > 0 && (
                   <div className="flex flex-col gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-widest px-1" style={{ color: "var(--text-muted)" }}>Fanlar bo'yicha</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest px-1" style={{ color: "var(--text-muted)" }}>{t("studentStats.bySubjects")}</p>
                     {stats.subjects.map((s, i) => (
                       <div key={i} className="flex items-center gap-3 px-4 py-3"
                         style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{s.name}</p>
-                          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{s.count} ta tekshiruv</p>
+                          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{s.count} {t("classProfile.checksUnit")}</p>
                         </div>
                         <span className="text-sm font-bold shrink-0" style={{ color: "var(--accent)" }}>{s.avgScore}%</span>
                       </div>

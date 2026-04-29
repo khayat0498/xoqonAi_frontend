@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Users, CheckCircle2, TrendingUp, Pencil, Trash2, X, Plus, Circle, CalendarDays, Send } from "lucide-react";
 import { loadClasses, saveClasses, loadStudents, loadTodos, saveTodos } from "@/lib/store";
 import type { ClassItem, Student, Todo } from "@/lib/store";
+import { useT } from "@/lib/i18n-context";
 
 const avatarColors = ["#1a5c6b","#6366F1","#e8732a","#2a9d6a","#3B82F6","#8B5CF6","#EC4899","#d4a017"];
 
@@ -14,15 +15,10 @@ function badgeFontSize(text: string) {
   return len === 1 ? 28 : len === 2 ? 20 : len === 3 ? 15 : 12;
 }
 
-function formatDateUz(dateStr: string) {
-  const [y, m, d] = dateStr.split("-");
-  const months = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
-  return `${parseInt(d)} ${months[parseInt(m) - 1]} ${y}`;
-}
-
 export default function ClassProfilePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useT();
 
   const [cls, setCls] = useState<ClassItem | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
@@ -48,8 +44,14 @@ export default function ClassProfilePage() {
     const found = classes.find((c) => c.id === id) ?? classes[0];
     setCls(found);
     setStudents(allStudents.filter((s) => found.studentIds.includes(s.id)));
-    setTodos(loadTodos().filter((t) => t.classId === id));
+    setTodos(loadTodos().filter((v) => v.classId === id));
   }, [id]);
+
+  function formatDate(dateStr: string) {
+    const [y, m, d] = dateStr.split("-");
+    const month = t(`studentStats.monthsShort.${parseInt(m) - 1}`);
+    return `${parseInt(d)} ${month} ${y}`;
+  }
 
   const saveEdit = () => {
     const name = editName.trim();
@@ -84,16 +86,16 @@ export default function ClassProfilePage() {
 
   const toggleTodo = (todoId: string) => {
     const all = loadTodos();
-    const updated = all.map((t) => t.id === todoId ? { ...t, done: !t.done } : t);
+    const updated = all.map((v) => v.id === todoId ? { ...v, done: !v.done } : v);
     saveTodos(updated);
-    setTodos(updated.filter((t) => t.classId === id));
+    setTodos(updated.filter((v) => v.classId === id));
   };
 
   const deleteTodo = (todoId: string) => {
     const all = loadTodos();
-    const updated = all.filter((t) => t.id !== todoId);
+    const updated = all.filter((v) => v.id !== todoId);
     saveTodos(updated);
-    setTodos(updated.filter((t) => t.classId === id));
+    setTodos(updated.filter((v) => v.classId === id));
   };
 
   if (!cls) return null;
@@ -119,7 +121,7 @@ export default function ClassProfilePage() {
           style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
           <ArrowLeft size={16} />
         </Link>
-        <h1 className="flex-1 text-base font-semibold text-white relative" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Sinf profili</h1>
+        <h1 className="flex-1 text-base font-semibold text-white relative" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("classProfile.title")}</h1>
         <button
           onClick={() => { setEditing(true); setEditName(cls.name); setEditIcon(cls.icon ?? ""); setEditTgGroup(cls.telegramGroupId ?? ""); }}
           className="w-8 h-8 rounded-xl flex items-center justify-center relative"
@@ -146,10 +148,10 @@ export default function ClassProfilePage() {
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-                  {cls.name} sinfi
+                  {cls.name} {t("home.classSuffix")}
                 </h2>
                 <p className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
-                  {students.length} o'quvchi · {cls.lastActivity}
+                  {students.length} {t("home.studentsUnit")} · {cls.lastActivity}
                   <span style={{ color: "var(--border)" }}>·</span>
                   {cls.telegramGroupId ? (
                     <span className="flex items-center gap-1" style={{ color: "#229ED9" }}>
@@ -169,7 +171,7 @@ export default function ClassProfilePage() {
                       style={{ width: `${activityPct}%`, background: "var(--accent)" }} />
                   </div>
                   <span className="text-xs shrink-0" style={{ color: "var(--text-muted)" }}>
-                    {activityPct}% faollik
+                    {activityPct}% {t("classProfile.activitySuffix")}
                   </span>
                 </div>
               </div>
@@ -184,16 +186,16 @@ export default function ClassProfilePage() {
             <Link href={`/class/${id}`}
               className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all hover:opacity-80"
               style={{ borderRadius: "var(--radius-sm)", background: "var(--accent)", color: "#fff" }}>
-              <Users size={15} /> O'quvchilar ro'yxati
+              <Users size={15} /> {t("classProfile.studentsList")}
             </Link>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-2.5">
             {[
-              { label: "O'quvchilar", value: students.length, icon: Users, color: "var(--text-secondary)", bg: "var(--accent-light)" },
-              { label: "Tekshirishlar", value: totalSubmissions, icon: CheckCircle2, color: "var(--text-secondary)", bg: "var(--accent-light)" },
-              { label: "Faollik", value: `${activityPct}%`, icon: TrendingUp, color: "var(--warning)", bg: "var(--warning-bg)" },
+              { label: t("home.students"), value: students.length, icon: Users, color: "var(--text-secondary)", bg: "var(--accent-light)" },
+              { label: t("studentStats.checks"), value: totalSubmissions, icon: CheckCircle2, color: "var(--text-secondary)", bg: "var(--accent-light)" },
+              { label: t("classProfile.activityLabel"), value: `${activityPct}%`, icon: TrendingUp, color: "var(--warning)", bg: "var(--warning-bg)" },
             ].map(({ label, value, icon: Icon, color, bg }, i) => (
               <div key={i} className="p-3 text-center" style={{ background: bg, borderRadius: "var(--radius-sm)" }}>
                 <Icon size={16} className="mx-auto mb-1" style={{ color }} />
@@ -203,10 +205,10 @@ export default function ClassProfilePage() {
             ))}
           </div>
 
-          {/* Vazifalar */}
+          {/* Todos */}
           <div className="overflow-hidden" style={{ background: "var(--bg-card)", backdropFilter: "blur(4px)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay)" }}>
             <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
-              <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Vazifalar</span>
+              <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t("classProfile.todos")}</span>
               <button
                 onClick={() => setShowTodo(true)}
                 className="w-7 h-7 flex items-center justify-center transition-all hover:opacity-80"
@@ -218,7 +220,7 @@ export default function ClassProfilePage() {
             {sortedTodos.length === 0 ? (
               <div className="px-4 py-6 flex flex-col items-center gap-2">
                 <CalendarDays size={24} style={{ color: "var(--border)" }} />
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>Hali vazifa qo'shilmagan</p>
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t("classProfile.noTodos")}</p>
               </div>
             ) : (
               <div className="p-2 flex flex-col gap-1">
@@ -237,7 +239,7 @@ export default function ClassProfilePage() {
                         textDecoration: todo.done ? "line-through" : "none",
                       }}>{todo.text}</p>
                       <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                        {formatDateUz(todo.date)}
+                        {formatDate(todo.date)}
                       </p>
                     </div>
                     <button onClick={() => deleteTodo(todo.id)}
@@ -255,9 +257,9 @@ export default function ClassProfilePage() {
           {students.length > 0 && (
             <div className="overflow-hidden" style={{ background: "var(--bg-card)", backdropFilter: "blur(4px)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay)" }}>
               <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
-                <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>O'quvchilar</span>
+                <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t("home.students")}</span>
                 <Link href={`/class/${id}`} className="text-xs font-medium" style={{ color: "var(--accent)" }}>
-                  Barchasi →
+                  {t("classProfile.seeAll")}
                 </Link>
               </div>
               <div className="p-2 flex flex-col gap-1">
@@ -302,7 +304,7 @@ export default function ClassProfilePage() {
           <div className="w-full max-w-sm p-5 animate-fade-in"
             style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)" }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Sinfni tahrirlash</h2>
+              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("classProfile.editClass")}</h2>
               <button onClick={() => setEditing(false)}
                 className="w-8 h-8 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
@@ -312,7 +314,7 @@ export default function ClassProfilePage() {
 
             <div className="flex items-end gap-3 mb-3">
               <div className="shrink-0 flex flex-col items-center gap-1.5">
-                <p className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>KO'RINISH</p>
+                <p className="text-[10px] font-medium" style={{ color: "var(--text-muted)" }}>{t("dashboard.appearance")}</p>
                 <div className="flex items-center justify-center font-bold"
                   style={{
                     borderRadius: "var(--radius-sm)",
@@ -325,17 +327,17 @@ export default function ClassProfilePage() {
               </div>
               <div className="flex-1 flex flex-col gap-2">
                 <div>
-                  <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Belgi (ixtiyoriy, max 4)</p>
+                  <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>{t("dashboard.iconLabel")}</p>
                   <input value={editIcon} onChange={(e) => setEditIcon(e.target.value.slice(0, 4))}
                     maxLength={4} placeholder={editName.charAt(0) || "9A"}
                     className="w-full px-3 py-2 text-sm outline-none font-bold text-center"
                     style={{ borderRadius: "var(--radius-sm)", background: "var(--accent-light)", border: "1px solid var(--accent)", color: "var(--accent)" }} />
                 </div>
                 <div>
-                  <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Sinf nomi</p>
+                  <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>{t("class.className")}</p>
                   <input autoFocus value={editName} onChange={(e) => setEditName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && saveEdit()}
-                    placeholder="Masalan: 9-A"
+                    placeholder={t("dashboard.classNameExample")}
                     className="w-full px-3 py-2 text-sm outline-none"
                     style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
                 </div>
@@ -343,7 +345,7 @@ export default function ClassProfilePage() {
             </div>
 
             <div className="mt-3">
-              <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Telegram guruh ID (ixtiyoriy)</p>
+              <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>{t("dashboard.telegramGroupIdLabel")}</p>
               <input value={editTgGroup} onChange={(e) => setEditTgGroup(e.target.value)}
                 placeholder="-100xxxxxxxxxx yoki @groupname"
                 className="w-full px-3 py-2 text-sm outline-none"
@@ -353,11 +355,11 @@ export default function ClassProfilePage() {
             <div className="flex gap-2 mt-4">
               <button onClick={() => setEditing(false)} className="flex-1 py-2.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                Bekor
+                {t("class.cancel")}
               </button>
               <button onClick={saveEdit} className="flex-1 py-2.5 text-sm font-medium"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--cta)", color: "#fff" }}>
-                Saqlash
+                {t("common.save")}
               </button>
             </div>
           </div>
@@ -372,7 +374,7 @@ export default function ClassProfilePage() {
           <div className="w-full max-w-sm p-5 animate-fade-in"
             style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)" }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Yangi vazifa</h2>
+              <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("classProfile.newTodo")}</h2>
               <button onClick={() => setShowTodo(false)}
                 className="w-8 h-8 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
@@ -382,19 +384,19 @@ export default function ClassProfilePage() {
 
             <div className="flex flex-col gap-3">
               <div>
-                <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>Vazifa matni</p>
+                <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>{t("classProfile.todoText")}</p>
                 <input
                   autoFocus
                   value={todoText}
                   onChange={(e) => setTodoText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addTodo()}
-                  placeholder="Masalan: 5-bob mashqlarini tekshirish"
+                  placeholder={t("classProfile.todoPlaceholder")}
                   className="w-full px-3 py-2.5 text-sm outline-none"
                   style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
                 />
               </div>
               <div>
-                <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>Sana</p>
+                <p className="text-xs mb-1.5" style={{ color: "var(--text-muted)" }}>{t("classProfile.date")}</p>
                 <input
                   type="date"
                   value={todoDate}
@@ -408,11 +410,11 @@ export default function ClassProfilePage() {
             <div className="flex gap-2 mt-4">
               <button onClick={() => setShowTodo(false)} className="flex-1 py-2.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                Bekor
+                {t("class.cancel")}
               </button>
               <button onClick={addTodo} className="flex-1 py-2.5 text-sm font-medium"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--cta)", color: "#fff" }}>
-                Qo'shish
+                {t("schedule.add")}
               </button>
             </div>
           </div>
@@ -427,24 +429,23 @@ export default function ClassProfilePage() {
           <div className="w-full max-w-xs p-5 animate-fade-in"
             style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)" }}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>Sinfni o'chirish</p>
+              <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("dashboard.deleteClassTitle")}</p>
               <button onClick={() => setShowDelete(false)}
                 className="w-8 h-8 flex items-center justify-center"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
                 <X size={15} />
               </button>
             </div>
-            <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
-              <b>{cls.name}</b> sinfi va barcha ma'lumotlari o'chadi.
-            </p>
+            <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}
+              dangerouslySetInnerHTML={{ __html: t("dashboard.deleteClassMsg").replace("{name}", `<b>${cls.name}</b>`) }} />
             <div className="flex gap-2">
               <button onClick={() => setShowDelete(false)} className="flex-1 py-2.5 text-sm"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
-                Bekor
+                {t("class.cancel")}
               </button>
               <button onClick={deleteClass} className="flex-1 py-2.5 text-sm font-medium"
                 style={{ borderRadius: "var(--radius-sm)", background: "var(--error)", color: "#fff" }}>
-                O'chirish
+                {t("common.delete")}
               </button>
             </div>
           </div>

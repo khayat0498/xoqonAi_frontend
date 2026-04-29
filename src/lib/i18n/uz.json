@@ -528,6 +528,23 @@
     "deleteStudentTitle": "O'quvchini o'chirish",
     "deleteStudentMsg": "{name} barcha sinflardan ham o'chiriladi."
   },
+  "classProfile": {
+    "title": "Sinf profili",
+    "statsTitle": "Sinf statistikasi",
+    "activitySuffix": "faollik",
+    "activityLabel": "Faollik",
+    "studentsList": "O'quvchilar ro'yxati",
+    "todos": "Vazifalar",
+    "noTodos": "Hali vazifa qo'shilmagan",
+    "seeAll": "Barchasi →",
+    "editClass": "Sinfni tahrirlash",
+    "newTodo": "Yangi vazifa",
+    "todoText": "Vazifa matni",
+    "todoPlaceholder": "Masalan: 5-bob mashqlarini tekshirish",
+    "date": "Sana",
+    "studentsRating": "O'quvchilar reytingi",
+    "checksUnit": "ta tekshiruv"
+  },
   "transfer": {
     "manageClasses": "Sinflarni boshqarish"
   },

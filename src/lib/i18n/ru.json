@@ -528,6 +528,23 @@
     "deleteStudentTitle": "Удалить ученика",
     "deleteStudentMsg": "{name} будет удалён из всех классов."
   },
+  "classProfile": {
+    "title": "Профиль класса",
+    "statsTitle": "Статистика класса",
+    "activitySuffix": "активность",
+    "activityLabel": "Активность",
+    "studentsList": "Список учеников",
+    "todos": "Задачи",
+    "noTodos": "Задачи ещё не добавлены",
+    "seeAll": "Все →",
+    "editClass": "Редактировать класс",
+    "newTodo": "Новая задача",
+    "todoText": "Текст задачи",
+    "todoPlaceholder": "Например: Проверить упражнения из главы 5",
+    "date": "Дата",
+    "studentsRating": "Рейтинг учеников",
+    "checksUnit": "проверок"
+  },
   "transfer": {
     "manageClasses": "Управление классами"
   },
