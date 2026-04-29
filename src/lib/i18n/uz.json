@@ -268,6 +268,24 @@
     "noPrompt": "Prompt yo'q",
     "back": "Orqaga"
   },
+  "submission": {
+    "notFound": "Topilmadi",
+    "imagesCount": "ta rasm",
+    "statusPending": "Tahlil kutilmoqda...",
+    "statusProcessing": "AI tahlil qilmoqda...",
+    "statusFailed": "Tahlil xatolik bilan tugadi",
+    "aiAnalysis": "AI Tahlili",
+    "errorsCount": "xato",
+    "saved": "Saqlandi",
+    "gradeHelp": "Umumiy baho ({score}/100) · tahrirlash mumkin",
+    "clarifyTitle": "AI aniqlashtirish so'ramoqda",
+    "reanalyzing": "Qayta tahlil...",
+    "reanalyzeWithAnswers": "Javoblar bilan qayta tahlil",
+    "chatExplain": "Batafsil tushuntirish — Chat",
+    "sent": "Yuborildi!",
+    "errorShort": "Xatolik",
+    "sendWithGrade": "{grade} baho bilan yuborish"
+  },
   "history": {
     "title": "Tarix",
     "noHistory": "Hozircha tekshirishlar yo'q",

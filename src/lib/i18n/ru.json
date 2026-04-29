@@ -268,6 +268,24 @@
     "noPrompt": "Нет промпта",
     "back": "Назад"
   },
+  "submission": {
+    "notFound": "Не найдено",
+    "imagesCount": "изобр.",
+    "statusPending": "Ожидание анализа...",
+    "statusProcessing": "ИИ анализирует...",
+    "statusFailed": "Анализ завершился с ошибкой",
+    "aiAnalysis": "Анализ ИИ",
+    "errorsCount": "ошибок",
+    "saved": "Сохранено",
+    "gradeHelp": "Общая оценка ({score}/100) · можно изменить",
+    "clarifyTitle": "ИИ просит уточнить",
+    "reanalyzing": "Повторный анализ...",
+    "reanalyzeWithAnswers": "Повторить анализ с ответами",
+    "chatExplain": "Подробное объяснение — Чат",
+    "sent": "Отправлено!",
+    "errorShort": "Ошибка",
+    "sendWithGrade": "Отправить с оценкой {grade}"
+  },
   "history": {
     "title": "История",
     "noHistory": "Пока нет проверок",

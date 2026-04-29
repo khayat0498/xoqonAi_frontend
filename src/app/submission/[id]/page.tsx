@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MessageCircle, Download, Send, RotateCcw, Check, X, ZoomIn, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -39,6 +40,7 @@ type Submission = {
 };
 
 export default function SubmissionPage() {
+  const { t } = useT();
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const backUrl = searchParams.get("from") ?? "/home";
@@ -156,7 +158,7 @@ export default function SubmissionPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ background: "var(--bg-primary)" }}>
-        <p style={{ color: "var(--text-muted)" }}>Yuklanmoqda...</p>
+        <p style={{ color: "var(--text-muted)" }}>{t("common.loading")}</p>
       </div>
     );
   }
@@ -164,8 +166,8 @@ export default function SubmissionPage() {
   if (!submission) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-3" style={{ background: "var(--bg-primary)" }}>
-        <p style={{ color: "var(--text-muted)" }}>Topilmadi</p>
-        <Link href={backUrl} className="text-sm font-medium" style={{ color: "var(--accent)" }}>Orqaga</Link>
+        <p style={{ color: "var(--text-muted)" }}>{t("submission.notFound")}</p>
+        <Link href={backUrl} className="text-sm font-medium" style={{ color: "var(--accent)" }}>{t("folder.back")}</Link>
       </div>
     );
   }
@@ -186,11 +188,11 @@ export default function SubmissionPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-            {submission.student?.name ?? "Noma'lum"}
+            {submission.student?.name ?? t("home.unknown")}
           </h1>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             {submission.subject ?? ""} · {new Date(submission.createdAt).toLocaleDateString("uz")}
-            {imageUrls.length > 1 && ` · ${imageUrls.length} ta rasm`}
+            {imageUrls.length > 1 && ` · ${imageUrls.length} ${t("submission.imagesCount")}`}
           </p>
         </div>
         <button onClick={retry} disabled={retrying || submission.status === "processing"}
@@ -283,9 +285,9 @@ export default function SubmissionPage() {
           {submission.status !== "done" && (
             <div className="p-4 text-center" style={{ background: "var(--bg-card)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                {submission.status === "pending" && "Tahlil kutilmoqda..."}
-                {submission.status === "processing" && "AI tahlil qilmoqda..."}
-                {submission.status === "failed" && "Tahlil xatolik bilan tugadi"}
+                {submission.status === "pending" && t("submission.statusPending")}
+                {submission.status === "processing" && t("submission.statusProcessing")}
+                {submission.status === "failed" && t("submission.statusFailed")}
               </p>
             </div>
           )}
@@ -297,9 +299,9 @@ export default function SubmissionPage() {
               <div className="absolute left-11 top-0 bottom-0 w-[2px]" style={{ background: "rgba(239,68,68,0.25)" }} />
               <div className="relative" style={{ marginLeft: "3rem" }}>
                 <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--notebook-line)" }}>
-                  <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>AI Tahlili</span>
+                  <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>{t("submission.aiAnalysis")}</span>
                   <span className="text-xs font-bold px-2 py-0.5" style={{ background: "var(--accent-light)", color: "var(--accent)", borderRadius: "var(--radius-sm)" }}>
-                    {analysis.errors?.length ?? 0} xato
+                    {analysis.errors?.length ?? 0} {t("submission.errorsCount")}
                   </span>
                 </div>
                 <div className="px-4 py-5 flex flex-col gap-4">
@@ -321,11 +323,11 @@ export default function SubmissionPage() {
                       <span className="text-5xl font-bold leading-none pb-0.5" style={{ color: "var(--grade-color)", opacity: 0.4 }}>5</span>
                       {gradeSaved && (
                         <span className="flex items-center gap-1 text-xs pb-1" style={{ color: "var(--success)" }}>
-                          <Check size={12} /> Saqlandi
+                          <Check size={12} /> {t("submission.saved")}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Umumiy baho ({analysis.score}/100) · tahrirlash mumkin</p>
+                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{t("submission.gradeHelp").replace("{score}", String(analysis.score))}</p>
                   </div>
 
                   {/* Xatolar */}
@@ -350,7 +352,7 @@ export default function SubmissionPage() {
                   {questions.length > 0 && (
                     <div className="pt-4 border-t flex flex-col gap-4" style={{ borderColor: "var(--notebook-line)" }}>
                       <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-                        AI aniqlashtirish so'ramoqda
+                        {t("submission.clarifyTitle")}
                       </p>
                       {questions.map((q, qi) => (
                         <div key={qi} className="flex flex-col gap-2">
@@ -385,8 +387,8 @@ export default function SubmissionPage() {
                           opacity: clarifying ? 0.7 : 1,
                         }}>
                         {clarifying
-                          ? <><RefreshCw size={15} className="animate-spin" /> Qayta tahlil...</>
-                          : <><RefreshCw size={15} /> Javoblar bilan qayta tahlil</>
+                          ? <><RefreshCw size={15} className="animate-spin" /> {t("submission.reanalyzing")}</>
+                          : <><RefreshCw size={15} /> {t("submission.reanalyzeWithAnswers")}</>
                         }
                       </button>
                     </div>
@@ -402,7 +404,7 @@ export default function SubmissionPage() {
               className="flex items-center justify-center gap-2 py-3.5 font-medium text-sm transition-all hover:opacity-80"
               style={{ background: "var(--accent)", color: "#fff", borderRadius: "var(--radius-sm)" }}>
               <MessageCircle size={16} />
-              Batafsil tushuntirish — Chat
+              {t("submission.chatExplain")}
             </Link>
           )}
 
@@ -419,11 +421,11 @@ export default function SubmissionPage() {
               {sending ? (
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : tgResult === "ok" ? (
-                <><Check size={16} /> Yuborildi!</>
+                <><Check size={16} /> {t("submission.sent")}</>
               ) : tgResult === "error" ? (
-                <><X size={16} /> Xatolik</>
+                <><X size={16} /> {t("submission.errorShort")}</>
               ) : (
-                <><Send size={16} /> {grade.trim() || "—"} baho bilan yuborish</>
+                <><Send size={16} /> {t("submission.sendWithGrade").replace("{grade}", grade.trim() || "—")}</>
               )}
             </button>
           )}
