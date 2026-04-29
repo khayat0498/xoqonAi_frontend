@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Clock, CheckCircle2, AlertCircle, ChevronRight, FileText, Pencil, X, Check } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 function authHeaders() {
@@ -23,6 +24,7 @@ type Submission = {
 };
 
 export default function AssignmentPage() {
+  const { t } = useT();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [assignment, setAssignment] = useState<Assignment | null>(null);
@@ -90,14 +92,14 @@ export default function AssignmentPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-screen" style={{ background: "var(--bg-primary)" }}>
-      <p style={{ color: "var(--text-muted)" }}>Yuklanmoqda...</p>
+      <p style={{ color: "var(--text-muted)" }}>{t("common.loading")}</p>
     </div>
   );
 
   if (!assignment) return (
     <div className="flex flex-col items-center justify-center h-screen gap-3" style={{ background: "var(--bg-primary)" }}>
-      <p style={{ color: "var(--text-muted)" }}>Topshiriq topilmadi</p>
-      <button onClick={() => router.back()} style={{ color: "var(--accent)" }} className="text-sm font-medium">Orqaga</button>
+      <p style={{ color: "var(--text-muted)" }}>{t("assignment.notFound")}</p>
+      <button onClick={() => router.back()} style={{ color: "var(--accent)" }} className="text-sm font-medium">{t("folder.back")}</button>
     </div>
   );
 
@@ -116,7 +118,7 @@ export default function AssignmentPage() {
             {assignment.name}
           </h1>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {submissions.length} ta · {done} bajarildi · {pending} kutilmoqda
+            {t("assignment.summary").replace("{total}", String(submissions.length)).replace("{done}", String(done)).replace("{pending}", String(pending))}
           </p>
         </div>
       </div>
@@ -128,13 +130,13 @@ export default function AssignmentPage() {
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay-sm)" }}>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-                Masala sharti
+                {t("assignment.problemCondition")}
               </span>
               {!editingCondition && (
                 <button onClick={() => setEditingCondition(true)}
                   className="flex items-center gap-1 text-xs font-medium"
                   style={{ color: "var(--accent)" }}>
-                  <Pencil size={12} /> Tahrirlash
+                  <Pencil size={12} /> {t("assignment.edit")}
                 </button>
               )}
             </div>
@@ -143,26 +145,26 @@ export default function AssignmentPage() {
               <>
                 <textarea autoFocus value={conditionText} onChange={e => setConditionText(e.target.value)}
                   rows={5}
-                  placeholder="Masala shartini yozing..."
+                  placeholder={t("assignment.conditionPlaceholder")}
                   className="w-full px-3 py-2.5 text-sm outline-none resize-none"
                   style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", lineHeight: 1.6 }} />
                 <div className="flex gap-2 justify-end">
                   <button onClick={() => { setEditingCondition(false); setConditionText(assignment.condition ?? ""); }}
                     className="px-3 py-1.5 text-sm"
                     style={{ color: "var(--text-muted)", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
-                    Bekor
+                    {t("assignment.cancel")}
                   </button>
                   <button onClick={saveCondition} disabled={savingCondition}
                     className="px-3 py-1.5 text-sm font-bold flex items-center gap-1.5"
                     style={{ background: conditionSaved ? "var(--success)" : "var(--cta)", color: "#fff", borderRadius: "var(--radius-sm)" }}>
-                    {conditionSaved ? <><Check size={14} /> Saqlandi</> : "Saqlash"}
+                    {conditionSaved ? <><Check size={14} /> {t("assignment.saved")}</> : t("assignment.save")}
                   </button>
                 </div>
               </>
             ) : (
               <p className="text-sm leading-relaxed whitespace-pre-wrap"
                 style={{ color: assignment.condition ? "var(--text-secondary)" : "var(--text-muted)", fontStyle: assignment.condition ? "normal" : "italic" }}>
-                {assignment.condition || "Masala sharti yo'q — tahrirlash tugmasini bosing"}
+                {assignment.condition || t("assignment.noConditionHint")}
               </p>
             )}
           </div>
@@ -173,9 +175,9 @@ export default function AssignmentPage() {
           {submissions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 opacity-60">
               <FileText size={40} style={{ color: "var(--text-muted)" }} />
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>Hali ishlar yo'q</p>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("assignment.noWorksYet")}</p>
               <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
-                Kamera tugmasidan rasm olib yuklang
+                {t("assignment.uploadFromCamera")}
               </p>
             </div>
           ) : submissions.map(sub => {
@@ -190,14 +192,14 @@ export default function AssignmentPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
-                    {sub.studentName ?? "O'quvchi"}
+                    {sub.studentName ?? t("assignment.studentDefault")}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
                     {sub.status === "done"
-                      ? `Ball: ${sub.score ?? "—"}`
+                      ? t("assignment.scoreLabel").replace("{score}", String(sub.score ?? "—"))
                       : sub.status === "failed"
-                      ? "Xatolik"
-                      : "Tahlil qilinmoqda..."}
+                      ? t("assignment.errorShort")
+                      : t("assignment.analyzing")}
                   </p>
                 </div>
                 <ChevronRight size={16} style={{ color: "var(--text-muted)", flexShrink: 0 }} />

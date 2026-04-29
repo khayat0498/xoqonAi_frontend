@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Send, ChevronDown, ChevronUp } from "lucide-react";
 import clsx from "clsx";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -17,6 +18,7 @@ type Message = {
 };
 
 export default function ChatPage() {
+  const { t } = useT();
   const { id: submissionId } = useParams<{ id: string }>();
   const [chatId, setChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -75,7 +77,7 @@ export default function ChatPage() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { id: String(Date.now() + 1), role: "assistant", content: "Xatolik yuz berdi. Qaytadan urinib ko'ring." },
+        { id: String(Date.now() + 1), role: "assistant", content: t("chat.errorOccurred") },
       ]);
     } finally {
       setSending(false);
@@ -85,7 +87,7 @@ export default function ChatPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ background: "var(--bg-primary)" }}>
-        <p style={{ color: "var(--text-muted)" }}>Yuklanmoqda...</p>
+        <p style={{ color: "var(--text-muted)" }}>{t("common.loading")}</p>
       </div>
     );
   }
@@ -106,10 +108,10 @@ export default function ChatPage() {
         </Link>
         <div>
           <h1 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
-            Chat
+            {t("chat.title")}
           </h1>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-            AI yordamchi
+            {t("chat.aiAssistant")}
           </p>
         </div>
       </div>
@@ -118,7 +120,7 @@ export default function ChatPage() {
       <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
         {messages.length === 0 && (
           <p className="text-center text-sm py-8" style={{ color: "var(--text-muted)" }}>
-            Savol yozing — AI javob beradi
+            {t("chat.askAi")}
           </p>
         )}
         {messages.map((msg) => (
@@ -150,7 +152,7 @@ export default function ChatPage() {
           <div className="flex gap-2 justify-start animate-fade-in">
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-1" style={{ background: "var(--accent)" }}>X</div>
             <div className="px-4 py-3 text-sm" style={{ background: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "var(--radius-md)", color: "var(--text-muted)" }}>
-              Yozmoqda...
+              {t("chat.typing")}
             </div>
           </div>
         )}
@@ -159,7 +161,7 @@ export default function ChatPage() {
 
       {/* Quick actions */}
       <div className="px-4 pb-2 flex gap-2 overflow-x-auto shrink-0">
-        {["Osonroq tushuntir", "Batafsil tushuntir", "Misol keltir"].map((action) => (
+        {[t("chat.askEasier"), t("chat.askDetailed"), t("chat.askExample")].map((action) => (
           <button
             key={action}
             onClick={() => send(action)}
@@ -189,7 +191,7 @@ export default function ChatPage() {
               send();
             }
           }}
-          placeholder="Savol yozing..."
+          placeholder={t("chat.inputPlaceholder")}
           rows={1}
           className="flex-1 resize-none outline-none text-sm px-4 py-2.5"
           style={{

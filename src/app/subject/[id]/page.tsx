@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Plus, X, ChevronRight, Check, Pencil, Trash2, MoreVertical, ClipboardList } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 function authHeaders() {
@@ -15,6 +16,7 @@ type Subject = { id: string; name: string; icon: string | null; prompt: string; 
 type Assignment = { id: string; name: string; condition: string; submissionCount: number; createdAt: string };
 
 export default function SubjectPage() {
+  const { t } = useT();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [subject, setSubject] = useState<Subject | null>(null);
@@ -93,14 +95,14 @@ export default function SubjectPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-screen" style={{ background: "var(--bg-primary)" }}>
-      <p style={{ color: "var(--text-muted)" }}>Yuklanmoqda...</p>
+      <p style={{ color: "var(--text-muted)" }}>{t("common.loading")}</p>
     </div>
   );
 
   if (!subject) return (
     <div className="flex flex-col items-center justify-center h-screen gap-3" style={{ background: "var(--bg-primary)" }}>
-      <p style={{ color: "var(--text-muted)" }}>Fan topilmadi</p>
-      <button onClick={() => router.back()} style={{ color: "var(--accent)" }} className="text-sm font-medium">Orqaga</button>
+      <p style={{ color: "var(--text-muted)" }}>{t("subject.notFound")}</p>
+      <button onClick={() => router.back()} style={{ color: "var(--accent)" }} className="text-sm font-medium">{t("folder.back")}</button>
     </div>
   );
 
@@ -119,12 +121,12 @@ export default function SubjectPage() {
           <h1 className="text-base font-bold truncate" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
             {subject.name}
           </h1>
-          <p className="text-xs" style={{ color: "var(--text-muted)" }}>{assignments.length} ta topshiriq</p>
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>{assignments.length} {t("subject.assignmentsCount")}</p>
         </div>
         <button onClick={() => setCreating(true)}
           className="flex items-center gap-1.5 text-sm px-3 py-2 font-bold text-white"
           style={{ background: "var(--cta)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}>
-          <Plus size={15} /> Topshiriq
+          <Plus size={15} /> {t("subject.newAssignment")}
         </button>
       </div>
 
@@ -135,13 +137,13 @@ export default function SubjectPage() {
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay-sm)" }}>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-                Fan prompti
+                {t("subject.subjectPrompt")}
               </span>
               {!editingPrompt && (
                 <button onClick={() => setEditingPrompt(true)}
                   className="flex items-center gap-1 text-xs font-medium"
                   style={{ color: "var(--accent)" }}>
-                  <Pencil size={12} /> Tahrirlash
+                  <Pencil size={12} /> {t("subject.edit")}
                 </button>
               )}
             </div>
@@ -153,7 +155,7 @@ export default function SubjectPage() {
                   value={promptText}
                   onChange={e => setPromptText(e.target.value)}
                   rows={8}
-                  placeholder="Bu fan uchun AI tahlil ko'rsatmalarini yozing..."
+                  placeholder={t("subject.promptPlaceholder")}
                   className="w-full px-3 py-2.5 text-sm outline-none resize-none"
                   style={{
                     background: "var(--bg-primary)",
@@ -168,18 +170,18 @@ export default function SubjectPage() {
                   <button onClick={() => { setEditingPrompt(false); setPromptText(subject.prompt ?? ""); }}
                     className="px-3 py-1.5 text-sm"
                     style={{ color: "var(--text-muted)", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
-                    Bekor
+                    {t("subject.cancel")}
                   </button>
                   <button onClick={savePrompt} disabled={savingPrompt}
                     className="px-3 py-1.5 text-sm font-bold flex items-center gap-1.5"
                     style={{ background: promptSaved ? "var(--success)" : "var(--cta)", color: "#fff", borderRadius: "var(--radius-sm)", opacity: savingPrompt ? 0.7 : 1 }}>
-                    {promptSaved ? <><Check size={14} /> Saqlandi</> : "Saqlash"}
+                    {promptSaved ? <><Check size={14} /> {t("subject.saved")}</> : t("subject.save")}
                   </button>
                 </div>
               </>
             ) : (
               <p className="text-sm leading-relaxed" style={{ color: subject.prompt ? "var(--text-secondary)" : "var(--text-muted)", fontStyle: subject.prompt ? "normal" : "italic" }}>
-                {subject.prompt || "Prompt yo'q — tahrirlash tugmasini bosing"}
+                {subject.prompt || t("subject.noPromptHint")}
               </p>
             )}
           </div>
@@ -190,9 +192,9 @@ export default function SubjectPage() {
           {assignments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 opacity-60">
               <ClipboardList size={40} style={{ color: "var(--text-muted)" }} />
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>Hali topshiriq yo'q</p>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("subject.noAssignmentsYet")}</p>
               <button onClick={() => setCreating(true)} className="text-sm font-medium" style={{ color: "var(--accent)" }}>
-                + Topshiriq qo'shish
+                {t("subject.addAssignment")}
               </button>
             </div>
           ) : assignments.map(asg => (
@@ -206,8 +208,8 @@ export default function SubjectPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>{asg.name}</p>
                   <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                    {asg.submissionCount} ta o'quvchi
-                    {asg.condition ? " · Masala bor" : ""}
+                    {asg.submissionCount} {t("subject.studentsCount")}
+                    {asg.condition ? ` · ${t("subject.hasProblem")}` : ""}
                   </p>
                 </div>
                 <ChevronRight size={16} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
@@ -225,7 +227,7 @@ export default function SubjectPage() {
                     <button onClick={() => deleteAssignment(asg.id)}
                       className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm hover:bg-[var(--surface-hover)]"
                       style={{ color: "var(--error)" }}>
-                      <Trash2 size={14} /> O'chirish
+                      <Trash2 size={14} /> {t("subject.delete")}
                     </button>
                   </div>
                 </>
@@ -243,7 +245,7 @@ export default function SubjectPage() {
           <div className="w-full max-w-sm animate-fade-in"
             style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)", overflow: "hidden" }}>
             <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
-              <span className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Yangi topshiriq</span>
+              <span className="text-base font-bold" style={{ color: "var(--text-primary)" }}>{t("subject.newAssignmentTitle")}</span>
               <button onClick={() => setCreating(false)} className="w-8 h-8 flex items-center justify-center"
                 style={{ color: "var(--text-muted)", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
                 <X size={16} />
@@ -251,18 +253,18 @@ export default function SubjectPage() {
             </div>
             <div className="px-5 py-4 flex flex-col gap-3">
               <input autoFocus value={newName} onChange={e => setNewName(e.target.value)}
-                placeholder="Topshiriq nomi (1-variant, №5 masala...)"
+                placeholder={t("subject.namePlaceholder")}
                 className="clay-input w-full px-4 py-3 text-sm outline-none"
                 style={{ color: "var(--text-primary)" }} />
               <textarea value={newCondition} onChange={e => setNewCondition(e.target.value)}
-                placeholder="Masala sharti (ixtiyoriy)"
+                placeholder={t("subject.conditionPlaceholder")}
                 rows={4}
                 className="w-full px-3 py-2.5 text-sm outline-none resize-none"
                 style={{ background: "var(--bg-primary)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)", lineHeight: 1.6 }} />
               <button onClick={createAssignment} disabled={saving || !newName.trim()}
                 className="w-full py-3 text-sm font-bold text-white"
                 style={{ background: "var(--cta)", borderRadius: "var(--radius-sm)", opacity: saving || !newName.trim() ? 0.6 : 1 }}>
-                {saving ? "Saqlanmoqda..." : "Yaratish"}
+                {saving ? t("subject.saving") : t("subject.create")}
               </button>
             </div>
           </div>
