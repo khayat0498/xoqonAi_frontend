@@ -134,7 +134,7 @@ export default function FolderPage() {
                 ) : (
                   <div className="flex items-center gap-3 px-4 py-3"
                     style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}>
-                    <Link href={`/subject/${subject.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                    <Link href={`/subject/${subject.id}`} prefetch={false} className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-10 h-10 flex items-center justify-center text-xl shrink-0"
                         style={{ background: "var(--accent-light)", borderRadius: "var(--radius-sm)" }}>
                         {subject.icon || "📖"}

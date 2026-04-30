@@ -183,7 +183,7 @@ export default function ClassProfilePage() {
               </button>
             </div>
 
-            <Link href={`/class/${id}`}
+            <Link href={`/class/${id}`} prefetch={false}
               className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all hover:opacity-80"
               style={{ borderRadius: "var(--radius-sm)", background: "var(--accent)", color: "#fff" }}>
               <Users size={15} /> {t("classProfile.studentsList")}
@@ -258,7 +258,7 @@ export default function ClassProfilePage() {
             <div className="overflow-hidden" style={{ background: "var(--bg-card)", backdropFilter: "blur(4px)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-clay)" }}>
               <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
                 <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t("home.students")}</span>
-                <Link href={`/class/${id}`} className="text-xs font-medium" style={{ color: "var(--accent)" }}>
+                <Link href={`/class/${id}`} prefetch={false} className="text-xs font-medium" style={{ color: "var(--accent)" }}>
                   {t("classProfile.seeAll")}
                 </Link>
               </div>
@@ -267,7 +267,7 @@ export default function ClassProfilePage() {
                   const color = avatarColors[(parseInt(s.id) - 1) % avatarColors.length];
                   const initials = s.name.split(" ").map((n) => n[0]).join("").slice(0, 2);
                   return (
-                    <Link key={s.id} href={`/student/${s.id}`}
+                    <Link key={s.id} href={`/student/${s.id}`} prefetch={false}
                       className="flex items-center gap-3 px-3 py-2.5 transition-all hover:opacity-80"
                       style={{ background: "var(--bg-primary)", borderRadius: "var(--radius-sm)" }}>
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"

@@ -183,7 +183,7 @@ export default function AssignmentPage() {
           ) : submissions.map(sub => {
             const { color, bg } = scoreColor(sub);
             return (
-              <Link key={sub.id} href={`/submission/${sub.id}`}
+              <Link key={sub.id} href={`/submission/${sub.id}`} prefetch={false}
                 className="flex items-center gap-3 px-4 py-3"
                 style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}>
                 <div className="w-10 h-10 flex items-center justify-center shrink-0 text-sm font-bold"

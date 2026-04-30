@@ -173,7 +173,7 @@ export default function StudentProfilePage() {
           ) : (
             <div className="flex flex-col gap-2">
               {submissions.map(sub => (
-                <Link key={sub.id} href={`/submission/${sub.id}?from=/student/${id}${backUrl !== "/home" ? `?from=${encodeURIComponent(backUrl)}` : ""}`}
+                <Link key={sub.id} href={`/submission/${sub.id}?from=/student/${id}${backUrl !== "/home" ? `?from=${encodeURIComponent(backUrl)}` : ""}`} prefetch={false}
                   className="px-4 py-3 flex items-center gap-3"
                   style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}>
                   <div className="flex-1 min-w-0">

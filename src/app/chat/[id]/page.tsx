@@ -101,6 +101,7 @@ export default function ChatPage() {
       >
         <Link
           href={`/submission/${submissionId}`}
+          prefetch={false}
           className="w-8 h-8 flex items-center justify-center transition-all hover:opacity-70"
           style={{ background: "var(--bg-primary)", color: "var(--text-secondary)", borderRadius: "var(--radius-sm)" }}
         >

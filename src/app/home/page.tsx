@@ -907,7 +907,7 @@ function HomePageInner() {
                               {nameError && <p className="text-[11px] font-semibold" style={{ color: "var(--error)" }}>{nameError}</p>}
                             </div>
                           ) : (
-                            <Link href={`/folder/${folder.id}`} className="flex flex-col items-center gap-2 w-full">
+                            <Link href={`/folder/${folder.id}`} prefetch={false} className="flex flex-col items-center gap-2 w-full">
                               <span className="text-3xl">{folder.icon || "📁"}</span>
                               <span className="text-sm font-semibold text-center truncate w-full" style={{ color: "var(--text-primary)" }}>{folder.name}</span>
                               <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>{folder.submissionCount ?? 0} {t("home.filesUnitCount")}</span>
@@ -975,7 +975,7 @@ function HomePageInner() {
                           ) : (
                             <>
                               <span className="text-xl">{folder.icon || "📁"}</span>
-                              <Link href={`/folder/${folder.id}`} className="flex-1 min-w-0">
+                              <Link href={`/folder/${folder.id}`} prefetch={false} className="flex-1 min-w-0">
                                 <span className="text-sm font-semibold truncate block" style={{ color: "var(--text-primary)" }}>{folder.name}</span>
                               </Link>
                             </>
@@ -1084,7 +1084,7 @@ function HomePageInner() {
                             {menuOpenFile === file.id && (
                               <div className="absolute right-0 top-9 z-50 animate-fade-in py-1"
                                 style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay)", minWidth: 140 }}>
-                                <Link href={`/submission/${file.id}`} onClick={() => setMenuOpenFile(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
+                                <Link href={`/submission/${file.id}`} prefetch={false} onClick={() => setMenuOpenFile(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
                                     <Eye size={13} /> {t("home.view")}
                                   </Link>
                                 <button onClick={() => { handleDeleteFile(file.id); setMenuOpenFile(null); }}
@@ -1094,7 +1094,7 @@ function HomePageInner() {
                               </div>
                             )}
                           </div>
-                          <Link href={`/submission/${file.id}`} className="flex flex-col gap-2.5">
+                          <Link href={`/submission/${file.id}`} prefetch={false} className="flex flex-col gap-2.5">
                             <div className="flex items-center gap-2">
                               <div className="w-9 h-9 flex items-center justify-center shrink-0" style={{ background: `${gColor}15`, borderRadius: "var(--radius-sm)" }}>
                                 <FileText size={16} style={{ color: gColor }} />
@@ -1124,7 +1124,7 @@ function HomePageInner() {
                           className="flex items-center gap-3 px-4 py-3 transition-all"
                           style={{ background: "var(--bg-card)", backdropFilter: "blur(8px)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}
                         >
-                          <Link href={`/submission/${file.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                          <Link href={`/submission/${file.id}`} prefetch={false} className="flex items-center gap-3 flex-1 min-w-0">
                             <div className="w-10 h-10 flex items-center justify-center shrink-0" style={{ background: `${gColor}15`, borderRadius: "var(--radius-sm)" }}>
                               <FileText size={18} style={{ color: gColor }} />
                             </div>
@@ -1149,7 +1149,7 @@ function HomePageInner() {
                             {menuOpenFile === file.id && (
                               <div className="absolute right-0 top-9 z-50 animate-fade-in py-1"
                                 style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay)", minWidth: 140 }}>
-                                <Link href={`/submission/${file.id}`} onClick={() => setMenuOpenFile(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
+                                <Link href={`/submission/${file.id}`} prefetch={false} onClick={() => setMenuOpenFile(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
                                     <Eye size={13} /> {t("home.view")}
                                   </Link>
                                 <button onClick={() => { handleDeleteFile(file.id); setMenuOpenFile(null); }}
@@ -1275,13 +1275,13 @@ function HomePageInner() {
                             className="absolute right-0 top-9 z-50 animate-fade-in py-1"
                             style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay)", minWidth: 150, backdropFilter: "blur(16px)" }}
                           >
-                            <Link href={`/class/${cls.id}`} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
+                            <Link href={`/class/${cls.id}`} prefetch={false} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
                               <Eye size={13} /> {t("home.view")}
                             </Link>
                             <button onClick={() => { setEditingClass(cls.id); setEditClassName(cls.name); setNameError(""); setMenuOpenClass(null); }} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
                               <Pencil size={13} /> Tahrirlash
                             </button>
-                            <Link href={`/class/${cls.id}`} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
+                            <Link href={`/class/${cls.id}`} prefetch={false} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
                               <ListOrdered size={13} /> {t("home.list")}
                             </Link>
                             <button onClick={() => { handleDeleteClass(cls.id); setMenuOpenClass(null); }} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--error)" }}>
@@ -1316,7 +1316,7 @@ function HomePageInner() {
                         </div>
                       ) : (
                         <>
-                          <Link href={`/class/${cls.id}`} className="flex flex-col items-center gap-2.5 w-full">
+                          <Link href={`/class/${cls.id}`} prefetch={false} className="flex flex-col items-center gap-2.5 w-full">
                             <div
                               className="w-12 h-12 flex items-center justify-center text-xl"
                               style={{ background: "var(--accent-light)", borderRadius: "var(--radius-sm)", boxShadow: "inset -1px -1px 3px rgba(0,0,0,0.05), inset 1px 1px 3px rgba(255,255,255,0.5)" }}
@@ -1335,6 +1335,7 @@ function HomePageInner() {
                           </Link>
                           <Link
                             href={`/class/${cls.id}`}
+                            prefetch={false}
                             onClick={(e) => e.stopPropagation()}
                             className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold transition-all hover:opacity-80 mt-1"
                             style={{ background: "var(--cta)", color: "#fff", borderRadius: "var(--radius-sm)" }}
@@ -1385,7 +1386,7 @@ function HomePageInner() {
                         </>
                       ) : (
                         <>
-                          <Link href={`/class/${cls.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                          <Link href={`/class/${cls.id}`} prefetch={false} className="flex items-center gap-3 flex-1 min-w-0">
                             <div
                               className="w-10 h-10 flex items-center justify-center text-lg shrink-0"
                               style={{ background: "var(--accent-light)", borderRadius: "var(--radius-sm)", boxShadow: "inset -1px -1px 3px rgba(0,0,0,0.05), inset 1px 1px 3px rgba(255,255,255,0.5)" }}
@@ -1402,6 +1403,7 @@ function HomePageInner() {
                           </span>
                           <Link
                             href={`/class/${cls.id}`}
+                            prefetch={false}
                             onClick={(e) => e.stopPropagation()}
                             className="w-8 h-8 flex items-center justify-center shrink-0 hover:opacity-80 transition-all"
                             style={{ background: "var(--cta)", borderRadius: "var(--radius-sm)", color: "#fff" }}
@@ -1424,13 +1426,13 @@ function HomePageInner() {
                             className="absolute right-0 top-9 z-50 animate-fade-in py-1"
                             style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay)", minWidth: 150 }}
                           >
-                            <Link href={`/class/${cls.id}`} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
+                            <Link href={`/class/${cls.id}`} prefetch={false} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
                               <Eye size={13} /> {t("home.view")}
                             </Link>
                             <button onClick={() => { setEditingClass(cls.id); setEditClassName(cls.name); setNameError(""); setMenuOpenClass(null); }} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
                               <Pencil size={13} /> Tahrirlash
                             </button>
-                            <Link href={`/class/${cls.id}`} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
+                            <Link href={`/class/${cls.id}`} prefetch={false} onClick={() => setMenuOpenClass(null)} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--text-primary)" }}>
                               <ListOrdered size={13} /> {t("home.list")}
                             </Link>
                             <button onClick={() => { handleDeleteClass(cls.id); setMenuOpenClass(null); }} className="w-full text-left px-4 py-2.5 flex items-center gap-2.5 text-sm transition-all hover:bg-[var(--surface-hover)]" style={{ color: "var(--error)" }}>
@@ -1540,7 +1542,7 @@ function HomePageInner() {
                             boxShadow: "var(--shadow-clay-sm)",
                           }}
                         >
-                          <Link href={`/student/${student.id}`} className="flex flex-col items-center gap-2 w-full">
+                          <Link href={`/student/${student.id}`} prefetch={false} className="flex flex-col items-center gap-2 w-full">
                             <div className="relative">
                               <div
                                 className="w-14 h-14 rounded-full flex items-center justify-center text-white text-base font-bold"
@@ -1585,6 +1587,7 @@ function HomePageInner() {
                             </button>
                             <Link
                               href={`/student/${student.id}`}
+                              prefetch={false}
                               className="w-8 h-8 flex items-center justify-center transition-all hover:scale-110"
                               title={t("home.view")}
                               style={{
@@ -1635,7 +1638,7 @@ function HomePageInner() {
                             boxShadow: "var(--shadow-clay-sm)",
                           }}
                         >
-                          <Link href={`/student/${student.id}`} className="shrink-0">
+                          <Link href={`/student/${student.id}`} prefetch={false} className="shrink-0">
                             <div className="relative">
                               <div
                                 className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold"
@@ -1658,7 +1661,7 @@ function HomePageInner() {
                               </div>
                             </div>
                           </Link>
-                          <Link href={`/student/${student.id}`} className="flex-1 min-w-0">
+                          <Link href={`/student/${student.id}`} prefetch={false} className="flex-1 min-w-0">
                             <p className="text-[0.95rem] font-semibold truncate" style={{ color: "var(--text-primary)" }}>{student.name}</p>
                             <div className="flex items-center gap-3 mt-0.5">
                               <span className="text-xs" style={{ color: "var(--text-muted)" }}>
@@ -1682,6 +1685,7 @@ function HomePageInner() {
                             </button>
                             <Link
                               href={`/student/${student.id}`}
+                              prefetch={false}
                               className="w-9 h-9 flex items-center justify-center transition-all hover:scale-105"
                               title={t("home.view")}
                               style={{
@@ -1814,7 +1818,7 @@ function HomePageInner() {
                 <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("home.noResultsYet")}</p>
               </div>
             ) : notifications.map((n) => (
-              <Link key={n.id} href={`/submission/${n.id}`}
+              <Link key={n.id} href={`/submission/${n.id}`} prefetch={false}
                 className="flex items-center gap-4 px-4 py-4"
                 style={{ borderBottom: "1px solid var(--border)" }}
                 onClick={() => setNotifOpen(false)}>

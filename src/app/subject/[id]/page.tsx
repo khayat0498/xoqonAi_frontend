@@ -200,7 +200,7 @@ export default function SubjectPage() {
           ) : assignments.map(asg => (
             <div key={asg.id} className="relative flex items-center gap-3 px-4 py-3"
               style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-clay-sm)" }}>
-              <Link href={`/assignment/${asg.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+              <Link href={`/assignment/${asg.id}`} prefetch={false} className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="w-10 h-10 flex items-center justify-center shrink-0"
                   style={{ background: "rgba(104,117,245,0.1)", borderRadius: "var(--radius-sm)" }}>
                   <ClipboardList size={18} style={{ color: "var(--cta)" }} />

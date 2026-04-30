@@ -400,7 +400,7 @@ export default function SubmissionPage() {
 
           {/* Chat tugmasi — faqat premium / pay_per_use */}
           {(planKey === "premium" || planKey === "pay_per_use") && (
-            <Link href={`/chat/${submission.id}`}
+            <Link href={`/chat/${submission.id}`} prefetch={false}
               className="flex items-center justify-center gap-2 py-3.5 font-medium text-sm transition-all hover:opacity-80"
               style={{ background: "var(--accent)", color: "#fff", borderRadius: "var(--radius-sm)" }}>
               <MessageCircle size={16} />

@@ -199,6 +199,7 @@ export default function HistoryPage() {
                       <Link
                         key={item.id}
                         href={`/submission/${item.id}`}
+                        prefetch={false}
                         className="flex items-center gap-3 px-4 py-3 transition-all hover:opacity-80 animate-slide-in"
                         style={{
                           background: "var(--bg-card)",

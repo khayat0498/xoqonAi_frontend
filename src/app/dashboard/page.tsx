@@ -248,7 +248,7 @@ export default function DashboardPage() {
                     style={{ background: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: "var(--radius-md)", animationDelay: `${i * 40}ms`, boxShadow: "var(--shadow-card)" }}>
                     {/* Mobile */}
                     <div className="md:hidden px-4 py-3.5 flex items-center gap-3">
-                      <Link href={`/class/${cls.id}/profile`} className="flex items-center gap-3 flex-1 min-w-0">
+                      <Link href={`/class/${cls.id}/profile`} prefetch={false} className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="flex items-center justify-center font-bold shrink-0"
                           style={{ background: "var(--accent-light)", color: "var(--accent)", minWidth: badge.minWidth, height: badge.height, fontSize: badge.fontSize, padding: "0 8px", borderRadius: "var(--radius-sm)" }}>
                           {badge.text}
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                             <span style={{ position: "absolute", top: "50%", left: "3px", right: "3px", height: "2px", background: "var(--text-muted)", transform: "rotate(-35deg)", opacity: 0.5 }} />
                           )}
                         </button>
-                        <Link href={`/class/${cls.id}`} className="px-3 py-2 text-xs font-medium"
+                        <Link href={`/class/${cls.id}`} prefetch={false} className="px-3 py-2 text-xs font-medium"
                           style={{ borderRadius: "var(--radius-sm)", background: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-secondary)" }}>
                           {t("home.list")}
                         </Link>
@@ -289,7 +289,7 @@ export default function DashboardPage() {
                     </div>
                     {/* Desktop */}
                     <div className="hidden md:flex flex-col p-5">
-                      <Link href={`/class/${cls.id}/profile`} className="flex flex-col items-center text-center gap-3 flex-1 mb-4">
+                      <Link href={`/class/${cls.id}/profile`} prefetch={false} className="flex flex-col items-center text-center gap-3 flex-1 mb-4">
                         <div className="w-16 h-16 flex items-center justify-center font-bold"
                           style={{ background: "var(--accent-light)", color: "var(--accent)", fontSize: badge.fontSize * 1.6, borderRadius: "var(--radius-md)" }}>
                           {badge.text}
@@ -302,7 +302,7 @@ export default function DashboardPage() {
                         </div>
                       </Link>
                       <div className="flex items-center gap-2 mt-auto">
-                        <Link href={`/class/${cls.id}`}
+                        <Link href={`/class/${cls.id}`} prefetch={false}
                           className="flex-1 py-2 text-xs font-medium text-center transition-all hover:opacity-80"
                           style={{ background: "var(--accent)", color: "#fff", borderRadius: "var(--radius-sm)" }}>
                           {t("home.list")}
@@ -366,7 +366,7 @@ export default function DashboardPage() {
 
                       {/* Mobile: list row */}
                       <div className="md:hidden px-4 py-3 flex items-center gap-3">
-                        <Link href={`/student/${s.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-all">
+                        <Link href={`/student/${s.id}`} prefetch={false} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-all">
                           <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                             style={{ background: color }}>
                             {initials}
@@ -415,7 +415,7 @@ export default function DashboardPage() {
 
                       {/* Desktop: card */}
                       <div className="hidden md:flex flex-col p-5">
-                        <Link href={`/student/${s.id}`} className="flex flex-col items-center text-center gap-2.5 flex-1 mb-4 hover:opacity-80 transition-all">
+                        <Link href={`/student/${s.id}`} prefetch={false} className="flex flex-col items-center text-center gap-2.5 flex-1 mb-4 hover:opacity-80 transition-all">
                           <div className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold"
                             style={{ background: color }}>
                             {initials}
@@ -441,7 +441,7 @@ export default function DashboardPage() {
                           </div>
                         </Link>
                         <div className="flex items-center gap-2 mt-auto">
-                          <Link href={`/student/${s.id}`}
+                          <Link href={`/student/${s.id}`} prefetch={false}
                             className="flex-1 py-2 text-xs font-medium text-center transition-all hover:opacity-80"
                             style={{ background: "var(--accent)", color: "#fff", borderRadius: "var(--radius-sm)" }}>
                             {t("dashboard.profileBtn")}
