@@ -40,7 +40,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
 
         {/* Logo */}
-        <Link href="/home" className="flex items-center gap-2 shrink-0" style={{ fontFamily: "'Merienda', cursive" }}>
+        <Link href="/home" prefetch={false} className="flex items-center gap-2 shrink-0" style={{ fontFamily: "'Merienda', cursive" }}>
           <span
             className="flex items-center justify-center font-bold"
             style={{
@@ -65,6 +65,7 @@ export default function Navbar() {
               <Link
                 key={href}
                 href={href}
+                prefetch={false}
                 className={clsx(
                   "px-4 py-2 text-sm font-medium transition-all",
                   active ? "font-semibold" : "hover:opacity-70"

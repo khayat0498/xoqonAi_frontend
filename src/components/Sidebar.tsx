@@ -159,6 +159,7 @@ export default function Sidebar() {
             <Link
               key={href}
               href={href}
+              prefetch={false}
               className={clsx(
                 "flex items-center gap-[11px] py-[10px] transition-all duration-200 relative",
                 collapsed ? "px-[14px] justify-center" : "px-[14px]",
@@ -205,6 +206,7 @@ export default function Sidebar() {
           <Link
             key={href}
             href={href}
+            prefetch={false}
             className={clsx(
               "flex items-center gap-[11px] py-[10px] rounded-[var(--radius-sm)] transition-all hover:bg-[var(--sidebar-hover)]",
               collapsed ? "px-[14px] justify-center" : "px-[14px]"
@@ -246,6 +248,7 @@ export default function Sidebar() {
         {/* Settings */}
         <Link
           href="/settings"
+          prefetch={false}
           className={clsx(
             "flex items-center gap-[11px] py-[10px] rounded-[var(--radius-sm)] transition-all hover:bg-[var(--sidebar-hover)]",
             collapsed ? "px-[14px] justify-center" : "px-[14px]"
@@ -317,6 +320,7 @@ export default function Sidebar() {
       {!collapsed && planKey === 'pay_per_use' && balanceUzs !== null && (
         <Link
           href="/billing"
+          prefetch={false}
           className="mx-3 mb-3 p-3 rounded-xl block transition-all hover:opacity-80"
           style={{ background: "var(--bg-primary)", border: "1px solid var(--border)" }}
         >
@@ -338,6 +342,7 @@ export default function Sidebar() {
       {!collapsed && planKey !== 'pay_per_use' && used !== null && limit < 99999 && (
         <Link
           href="/billing"
+          prefetch={false}
           className="mx-3 mb-3 p-3 rounded-xl block transition-all hover:opacity-80"
           style={{ background: "var(--bg-primary)", border: "1px solid var(--border)" }}
         >
