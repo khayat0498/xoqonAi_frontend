@@ -291,10 +291,10 @@ export default function SchedulePage() {
 
       {/* Add modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 pb-24 sm:pb-4"
           style={{ background: "#00000050" }}
           onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="w-full max-w-sm p-5 animate-fade-in"
+          <div className="w-full max-w-sm p-5 animate-fade-in max-h-[calc(100dvh-120px)] overflow-y-auto"
             style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("schedule.newPlan")}</h2>
