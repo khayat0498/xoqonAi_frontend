@@ -1099,14 +1099,14 @@ function HomePageInner() {
                               <div className="w-9 h-9 flex items-center justify-center shrink-0" style={{ background: `${gColor}15`, borderRadius: "var(--radius-sm)" }}>
                                 <FileText size={16} style={{ color: gColor }} />
                               </div>
-                              <span className="text-[11px] font-bold px-2 py-0.5" style={{ color: gColor, background: `${gColor}12`, borderRadius: 6 }}>{file.grade ?? "—"}</span>
+                              <span className="text-[11px] font-bold px-2 py-0.5" style={{ color: gColor, background: `${gColor}12`, borderRadius: 6 }}>{file.grade && file.grade !== "-" ? file.grade : (file.score != null ? (file.score >= 86 ? "5" : file.score >= 71 ? "4" : file.score >= 56 ? "3" : file.score >= 41 ? "2" : "1") : "—")}</span>
                             </div>
                             <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{file.studentName ?? t("home.unknown")}</p>
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-medium" style={{ color: "var(--accent)" }}>{file.subject}</span>
                               <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{file.createdAt?.slice(0, 10)}</span>
                             </div>
-                            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{file.folderId ? (folderList.find(f => f.id === file.folderId)?.name ?? "—") : "—"}</span>
+                            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{file.folderId ? (folderList.find(f => f.id === file.folderId)?.name ?? "") : ""}</span>
                           </Link>
                         </div>
                       );
@@ -1132,12 +1132,12 @@ function HomePageInner() {
                               <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{file.studentName ?? t("home.unknown")}</p>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[11px]" style={{ color: "var(--accent)" }}>{file.subject}</span>
-                                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{file.folderId ? (folderList.find(f => f.id === file.folderId)?.name ?? "—") : "—"}</span>
+                                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{file.folderId ? (folderList.find(f => f.id === file.folderId)?.name ?? "") : ""}</span>
                               </div>
                             </div>
                           </Link>
                           <div className="flex flex-col items-end gap-1 shrink-0 mr-1">
-                            <span className="text-xs font-bold px-2 py-0.5" style={{ color: gColor, background: `${gColor}12`, borderRadius: 6 }}>{file.grade ?? "—"}</span>
+                            <span className="text-xs font-bold px-2 py-0.5" style={{ color: gColor, background: `${gColor}12`, borderRadius: 6 }}>{file.grade && file.grade !== "-" ? file.grade : (file.score != null ? (file.score >= 86 ? "5" : file.score >= 71 ? "4" : file.score >= 56 ? "3" : file.score >= 41 ? "2" : "1") : "—")}</span>
                             <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{file.createdAt?.slice(0, 10)}</span>
                           </div>
                           {/* ⋮ menu */}
