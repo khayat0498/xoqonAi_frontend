@@ -15,7 +15,7 @@ type UserItem = {
   id: string;
   name: string;
   email: string;
-  role: "teacher" | "student" | "admin";
+  role: "teacher" | "student" | "admin" | "direktor" | "xodim";
   avatarUrl: string | null;
   emailVerified: boolean;
   blocked?: boolean;
@@ -33,7 +33,11 @@ const roleColors: Record<string, { color: string; bg: string; label: string }> =
   admin: { color: "#8B5CF6", bg: "#F5F3FF", label: "Admin" },
   teacher: { color: "var(--accent)", bg: "var(--accent-light)", label: "O'qituvchi" },
   student: { color: "var(--success)", bg: "var(--success-bg)", label: "O'quvchi" },
+  direktor: { color: "#DC2626", bg: "#FEE2E2", label: "Direktor" },
+  xodim: { color: "#EA580C", bg: "#FFEDD5", label: "Xodim" },
 };
+
+const FALLBACK_ROLE = { color: "var(--text-muted)", bg: "var(--bg-primary)", label: "Foydalanuvchi" };
 
 export default function AdminUsersPage() {
   const { user: me } = useUser();
@@ -213,7 +217,7 @@ export default function AdminUsersPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {users.map((user) => {
-            const rc = roleColors[user.role];
+            const rc = roleColors[user.role] ?? FALLBACK_ROLE;
             const isMe = user.id === me?.id;
             const expanded = expandedId === user.id;
             const blockLoading = actionLoading === user.id + "_block";
