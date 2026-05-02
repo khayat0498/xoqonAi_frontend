@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MessageCircle, Download, Send, RotateCcw, Check, X, ZoomIn, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { getToken } from "@/lib/auth";
 import { useT } from "@/lib/i18n-context";
+import { useUserWS } from "@/lib/user-ws";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -61,22 +62,42 @@ export default function SubmissionPage() {
 
   const gradeInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const { lastEvent } = useUserWS();
+
+  const fetchSubmission = useCallback(async () => {
     const token = getToken();
     if (!token) return;
-    Promise.all([
-      fetch(`${API}/api/submissions/${id}`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
-      fetch(`${API}/api/billing/my-plan`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : { planKey: "free" }),
-    ]).then(([data, plan]) => {
+    try {
+      const res = await fetch(`${API}/api/submissions/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
       setSubmission(data);
       const savedGrade = data.analysis?.grade;
       const aiGrade = (savedGrade && savedGrade !== "-")
         ? savedGrade
         : (data.analysis?.score != null ? scoreToGrade(data.analysis.score) : "");
       setGrade(aiGrade);
-      setPlanKey(plan.planKey ?? "free");
-    }).catch(() => {}).finally(() => setLoading(false));
+    } catch {}
   }, [id]);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+    Promise.all([
+      fetchSubmission(),
+      fetch(`${API}/api/billing/my-plan`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : { planKey: "free" }).then((p) => setPlanKey(p.planKey ?? "free")),
+    ]).finally(() => setLoading(false));
+  }, [fetchSubmission]);
+
+  // Real-time: AI tahlili tugagach (yoki processing'ga o'tgach) sahifa avtomatik yangilanadi
+  useEffect(() => {
+    if (!lastEvent) return;
+    if (lastEvent.type === "submission_done" && lastEvent.data.id === id) {
+      fetchSubmission();
+    }
+    if (lastEvent.type === "submission_processing" && lastEvent.data.id === id) {
+      setSubmission((s) => s ? { ...s, status: "processing", analysis: null } : s);
+    }
+  }, [lastEvent, id, fetchSubmission]);
 
   // Rasmlar ro'yxati: filePaths bo'lsa ulardan, yo'q bo'lsa imageUrl dan
   function getImageUrls(sub: Submission): string[] {
