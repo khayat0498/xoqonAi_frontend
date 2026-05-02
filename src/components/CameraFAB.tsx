@@ -7,34 +7,6 @@ import { getToken } from "@/lib/auth";
 import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
-const getCV = () => (window as any).cv;
-
-const AW = 320, AH = 240;
-const MIN_AREA_PERCENT = 5;
-const MAX_AREA_PERCENT = 95;
-type Point = { x: number; y: number };
-
-function useOpenCV() {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    const poll = setInterval(() => {
-      if ((window as any).cv?.getBuildInformation) { clearInterval(poll); setReady(true); }
-    }, 100);
-    if (!document.getElementById("opencv-script")) {
-      const s = document.createElement("script");
-      s.id = "opencv-script"; s.src = "/opencv.js"; s.async = true;
-      document.body.appendChild(s);
-    }
-    return () => clearInterval(poll);
-  }, []);
-  return ready;
-}
-
-function orderCorners(points: Point[]): Point[] {
-  const cx = points.reduce((s, p) => s + p.x, 0) / 4;
-  const cy = points.reduce((s, p) => s + p.y, 0) / 4;
-  return [...points].sort((a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx));
-}
 
 function enhanceImage(canvas: HTMLCanvasElement): HTMLCanvasElement {
   const out = document.createElement("canvas");
@@ -57,7 +29,6 @@ type Folder  = { id: string; name: string; icon?: string | null; subjectId?: str
 export default function CameraFAB() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const cvReady = useOpenCV();
   const { t } = useT();
 
   const urlStudentId   = searchParams.get("studentId");
@@ -90,7 +61,6 @@ export default function CameraFAB() {
   const [savingFolder, setSavingFolder]     = useState(false);
 
   // ── Camera ──
-  const [detected, setDetected]     = useState(false);
   const [snapping, setSnapping]     = useState(false);
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
   const [previewIndex, setPreviewIndex]     = useState<number | null>(null);
@@ -98,12 +68,8 @@ export default function CameraFAB() {
   const [sendError, setSendError]   = useState("");
 
   const videoRef          = useRef<HTMLVideoElement>(null);
-  const overlayRef        = useRef<HTMLCanvasElement>(null);
   const galleryInputRef   = useRef<HTMLInputElement>(null);
-  const contourRef        = useRef<any>(null);
   const streamRef         = useRef<MediaStream | null>(null);
-  const intervalRef       = useRef<ReturnType<typeof setInterval> | null>(null);
-  const analysisCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // URL camera=1 → to'g'ridan kameraga o't
   useEffect(() => {
@@ -115,9 +81,7 @@ export default function CameraFAB() {
   }, [urlCamera]);
 
   const stopCamera = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    if (contourRef.current) { contourRef.current.delete(); contourRef.current = null; }
     streamRef.current = null;
   }, []);
 
@@ -128,7 +92,7 @@ export default function CameraFAB() {
     setSelectedSubject(null); setSelectedFolder(null);
     setFolderCondition(""); setConditionError(false);
     setCreatingFolder(false); setNewFolderName("");
-    setCapturedImages([]); setSendError(""); setDetected(false);
+    setCapturedImages([]); setSendError("");
     setPreviewIndex(null);
     document.body.classList.remove("modal-open");
     if (urlCamera === "1") router.replace(urlReturnTo ?? "/home");
@@ -200,90 +164,21 @@ export default function CameraFAB() {
     document.body.classList.add("modal-open");
   }
 
-  // ── Camera overlay ──
-  function drawDefaultBorder() {
-    const ov = overlayRef.current;
-    if (!ov) return;
-    const ctx = ov.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, ov.width, ov.height);
-    const pad = 24;
-    const x = pad, y = pad, w = ov.width - pad * 2, h = ov.height - pad * 2;
-    ctx.strokeStyle = "#22c55e"; ctx.lineWidth = 3;
-    ctx.shadowColor = "#22c55e"; ctx.shadowBlur = 16;
-    ctx.fillStyle = "rgba(34,197,94,0.05)";
-    ctx.beginPath(); ctx.roundRect(x, y, w, h, 12); ctx.fill(); ctx.stroke();
-    [[x,y],[x+w,y],[x+w,y+h],[x,y+h]].forEach(([px,py]) => {
-      ctx.shadowBlur = 0; ctx.fillStyle = "#22c55e";
-      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#fff";
-      ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI * 2); ctx.fill();
-    });
-  }
-
-  function analyze() {
-    const cv = getCV();
-    const video = videoRef.current, overlay = overlayRef.current, ac = analysisCanvasRef.current;
-    if (!video || !overlay || !ac || video.readyState < 2) return;
-    const rect = video.getBoundingClientRect();
-    if (overlay.width !== Math.round(rect.width)) overlay.width = Math.round(rect.width);
-    if (overlay.height !== Math.round(rect.height)) overlay.height = Math.round(rect.height);
-    const ctx = ac.getContext("2d", { willReadFrequently: true })!;
-    ctx.drawImage(video, 0, 0, AW, AH);
-    const src = cv.imread(ac);
-    const gray = new cv.Mat(); cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    const blurred = new cv.Mat(); cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-    const thresh = new cv.Mat();
-    cv.adaptiveThreshold(blurred, thresh, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 21, 4);
-    const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
-    const morphed = new cv.Mat(); cv.morphologyEx(thresh, morphed, cv.MORPH_CLOSE, kernel);
-    const contours = new cv.MatVector(), hierarchy = new cv.Mat();
-    cv.findContours(morphed, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-    let maxArea = 0, best: any = null;
-    const frameArea = AW * AH;
-    for (let i = 0; i < contours.size(); i++) {
-      const c = contours.get(i);
-      const area = cv.contourArea(c);
-      const pct = (area / frameArea) * 100;
-      if (pct >= MIN_AREA_PERCENT && pct <= MAX_AREA_PERCENT && area > maxArea) {
-        const peri = cv.arcLength(c, true);
-        const approx = new cv.Mat();
-        cv.approxPolyDP(c, approx, 0.01 * peri, true);
-        if (approx.rows >= 3 && approx.rows <= 8) { maxArea = area; if (best) best.delete(); best = approx.clone(); }
-        approx.delete();
-      }
-      c.delete();
-    }
-    if (best && best.rows !== 4) {
-      const r = cv.boundingRect(best);
-      const rect4 = cv.matFromArray(4, 1, cv.CV_32SC2, [r.x, r.y, r.x+r.width, r.y, r.x+r.width, r.y+r.height, r.x, r.y+r.height]);
-      best.delete(); best = rect4;
-    }
-    if (contourRef.current) contourRef.current.delete();
-    contourRef.current = best;
-    setDetected(!!best);
-    src.delete(); gray.delete(); blurred.delete(); thresh.delete(); kernel.delete(); morphed.delete(); contours.delete(); hierarchy.delete();
-  }
-
+  // ── Camera lifecycle ──
   useEffect(() => {
-    if (step !== "cam" || !cvReady) return;
+    if (step !== "cam") return;
     const video = videoRef.current;
     if (!video) return;
-    if (!analysisCanvasRef.current) {
-      const ac = document.createElement("canvas"); ac.width = AW; ac.height = AH;
-      analysisCanvasRef.current = ac;
-    }
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }
     }).then(stream => {
-      streamRef.current = stream; video.srcObject = stream;
-      const start = () => { video.play().then(() => { intervalRef.current = setInterval(analyze, 150); }); };
-      if (video.readyState >= 2) start();
-      else video.addEventListener("loadedmetadata", start, { once: true });
+      streamRef.current = stream;
+      video.srcObject = stream;
+      video.play().catch(() => {});
     }).catch(err => { console.error("Kamera xatosi:", err.message); });
     return () => stopCamera();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, cvReady]);
+  }, [step]);
 
   async function captureAndCorrect() {
     const video = videoRef.current;
@@ -293,30 +188,7 @@ export default function CameraFAB() {
       const fc = document.createElement("canvas");
       fc.width = video.videoWidth; fc.height = video.videoHeight;
       fc.getContext("2d")!.drawImage(video, 0, 0);
-      let dataUrl: string;
-      if (contourRef.current) {
-        const cv = getCV();
-        const srcMat = cv.imread(fc);
-        const raw: Point[] = [];
-        for (let i = 0; i < contourRef.current.rows; i++)
-          raw.push({ x: contourRef.current.data32S[i*2], y: contourRef.current.data32S[i*2+1] });
-        const rx = video.videoWidth / AW, ry = video.videoHeight / AH;
-        const corners = raw.map(c => ({ x: c.x * rx, y: c.y * ry }));
-        const [tl, tr, br, bl] = orderCorners(corners);
-        const w = Math.max(Math.hypot(tr.x-tl.x, tr.y-tl.y), Math.hypot(br.x-bl.x, br.y-bl.y));
-        const h = Math.max(Math.hypot(bl.x-tl.x, bl.y-tl.y), Math.hypot(br.x-tr.x, br.y-tr.y));
-        const srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [tl.x,tl.y, tr.x,tr.y, br.x,br.y, bl.x,bl.y]);
-        const dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [0,0, w,0, w,h, 0,h]);
-        const M = cv.getPerspectiveTransform(srcPts, dstPts);
-        const warped = new cv.Mat();
-        cv.warpPerspective(srcMat, warped, M, new cv.Size(w, h));
-        const wc = document.createElement("canvas");
-        cv.imshow(wc, warped);
-        [srcMat, warped, M, srcPts, dstPts].forEach(m => m.delete());
-        dataUrl = enhanceImage(wc).toDataURL("image/jpeg", 0.95);
-      } else {
-        dataUrl = enhanceImage(fc).toDataURL("image/jpeg", 0.95);
-      }
+      const dataUrl = enhanceImage(fc).toDataURL("image/jpeg", 0.95);
       setCapturedImages(prev => [...prev, dataUrl]);
     } finally {
       setSnapping(false);
@@ -607,7 +479,6 @@ export default function CameraFAB() {
 
           <div className="flex-1 relative overflow-hidden">
             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-            <canvas ref={overlayRef} className="absolute inset-0 w-full h-full pointer-events-none" />
           </div>
 
           {capturedImages.length > 0 && (
