@@ -4,12 +4,24 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { getToken, removeToken } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
+export type UserRole = "teacher" | "student" | "admin" | "direktor" | "xodim";
+
+export type Tenant = {
+  id: string;
+  name: string;
+  status: "pending" | "active" | "rejected" | "suspended";
+  inviteCode: string;
+  balanceUzs: number;
+};
+
 type User = {
   id: string;
   email: string;
   name: string;
   avatarUrl: string | null;
-  role: "teacher" | "student" | "admin";
+  role: UserRole;
+  tenantId: string | null;
+  tenant: Tenant | null;
   createdAt: string;
 };
 

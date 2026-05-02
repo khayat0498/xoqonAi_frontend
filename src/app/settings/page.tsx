@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, User, Bell, Globe, Moon, Sun, Shield, LogOut, Trash2, Lock, ChevronRight, Pencil, CreditCard, Layers, MessageSquare, HelpCircle, History } from "lucide-react";
+import { ArrowLeft, User, Bell, Globe, Moon, Sun, Shield, LogOut, Trash2, Lock, ChevronRight, Pencil, CreditCard, Layers, MessageSquare, HelpCircle, History, Building2, LogIn, Unlink } from "lucide-react";
 import { removeToken, getToken } from "@/lib/auth";
 import { useUser } from "@/lib/user-context";
 import { useUserWS } from "@/lib/user-ws";
@@ -119,6 +119,13 @@ export default function SettingsPage() {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState("");
 
+  // Tenant join/leave
+  const [tenantModal, setTenantModal] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [tenantPreview, setTenantPreview] = useState<{ id: string; name: string } | null>(null);
+  const [tenantLoading, setTenantLoading] = useState(false);
+  const [tenantError, setTenantError] = useState("");
+
   useEffect(() => {
     const token = getToken();
     if (!token) return;
@@ -217,6 +224,57 @@ export default function SettingsPage() {
     if (!file) return;
     await uploadAvatar(file);
     e.target.value = "";
+  };
+
+  // ── Tenant: invite kod tekshirish (preview) ──
+  const previewTenant = async () => {
+    setTenantError("");
+    setTenantPreview(null);
+    const code = inviteCode.trim();
+    if (!code) return setTenantError("Kodni kiriting");
+
+    setTenantLoading(true);
+    try {
+      const res = await fetch(`${API}/api/tenant/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ inviteCode: code }),
+      });
+      const d = await res.json();
+      if (!res.ok) return setTenantError(d.error ?? "Kod topilmadi");
+      setTenantPreview(d.tenant);
+    } finally {
+      setTenantLoading(false);
+    }
+  };
+
+  // ── Tenant: ulanish ──
+  const joinTenant = async () => {
+    setTenantError("");
+    if (!tenantPreview) return;
+    setTenantLoading(true);
+    try {
+      const res = await fetch(`${API}/api/tenant/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ inviteCode: inviteCode.trim() }),
+      });
+      const d = await res.json();
+      if (!res.ok) return setTenantError(d.error ?? "Xatolik");
+      window.location.reload();
+    } finally {
+      setTenantLoading(false);
+    }
+  };
+
+  // ── Tenant: chiqish ──
+  const leaveTenant = async () => {
+    if (!confirm("Tashkilotni tark etishni tasdiqlaysizmi? Balansingiz saqlanadi.")) return;
+    const res = await fetch(`${API}/api/tenant/leave`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    if (res.ok) window.location.reload();
   };
 
   return (
@@ -340,6 +398,42 @@ export default function SettingsPage() {
               <Row icon={Shield} label={t("settings.twoFA")} sub={t("settings.twoFASub")} last />
             </Section>
 
+            {/* Tashkilot — admin/direktor uchun ko'rinmaydi */}
+            {user && user.role !== "admin" && user.role !== "direktor" && (
+              <Section title="Tashkilot">
+                {user.tenant ? (
+                  <>
+                    <Row
+                      icon={Building2}
+                      label={user.tenant.name}
+                      sub={user.tenant.status === "active" ? "Ulangan" : "Faol emas"}
+                    />
+                    <Row
+                      icon={Unlink}
+                      label="Tashkilotdan chiqish"
+                      sub="Balansingiz saqlanadi"
+                      danger
+                      onClick={leaveTenant}
+                      last
+                    />
+                  </>
+                ) : (
+                  <Row
+                    icon={LogIn}
+                    label="Tashkilotga ulanish"
+                    sub="Direktoringiz bergan kod orqali"
+                    onClick={() => {
+                      setInviteCode("");
+                      setTenantPreview(null);
+                      setTenantError("");
+                      setTenantModal(true);
+                    }}
+                    last
+                  />
+                )}
+              </Section>
+            )}
+
             {/* Hisob */}
             <Section title={t("settings.account")}>
               <Row icon={LogOut} label={t("settings.logout")} danger onClick={handleLogout} />
@@ -453,6 +547,81 @@ export default function SettingsPage() {
             >
               {passwordSaving ? t("settings.saving") : t("settings.change")}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tashkilotga ulanish modal */}
+      {tenantModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.72)" }} onClick={() => setTenantModal(false)}>
+          <div
+            className="w-full max-w-lg p-5 pb-10 flex flex-col gap-4"
+            style={{ background: "var(--bg-card)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
+            <div className="flex items-center justify-between">
+              <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Tashkilotga ulanish</p>
+              <button onClick={() => setTenantModal(false)} className="w-7 h-7 flex items-center justify-center rounded-full" style={{ background: "var(--bg-primary)", color: "var(--text-muted)", fontSize: 16 }}>×</button>
+            </div>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Direktoringiz bergan kodni kiriting (masalan: <span className="font-mono">TASHKILOT-X9K2A4</span>)
+            </p>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Invite kod</label>
+              <input
+                autoFocus
+                value={inviteCode}
+                onChange={(e) => { setInviteCode(e.target.value.toUpperCase()); setTenantPreview(null); setTenantError(""); }}
+                placeholder="TASHKILOT-XXXXXX"
+                className="w-full px-3 py-2.5 text-sm font-mono outline-none uppercase tracking-wider"
+                style={{ background: "var(--bg-primary)", border: "1.5px solid var(--border)", borderRadius: "var(--radius-sm)", color: "var(--text-primary)" }}
+              />
+            </div>
+
+            {tenantError && <p className="text-xs font-medium" style={{ color: "var(--error)" }}>{tenantError}</p>}
+
+            {tenantPreview ? (
+              <div className="p-4 rounded-xl flex items-center gap-3" style={{ background: "var(--accent-light)", border: "1px solid var(--accent)" }}>
+                <Building2 size={20} style={{ color: "var(--accent)" }} />
+                <div className="flex-1">
+                  <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{tenantPreview.name}</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Ulanishni tasdiqlaysizmi?</p>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex gap-2">
+              {!tenantPreview ? (
+                <button
+                  onClick={previewTenant}
+                  disabled={tenantLoading || !inviteCode.trim()}
+                  className="flex-1 py-3 text-sm font-bold rounded-xl transition-all"
+                  style={{ background: "var(--accent)", color: "#fff", opacity: tenantLoading || !inviteCode.trim() ? 0.6 : 1 }}
+                >
+                  {tenantLoading ? "Tekshirilmoqda..." : "Tekshirish"}
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { setTenantPreview(null); setInviteCode(""); }}
+                    className="px-4 py-3 text-sm font-medium rounded-xl"
+                    style={{ background: "var(--bg-primary)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
+                  >
+                    Bekor qilish
+                  </button>
+                  <button
+                    onClick={joinTenant}
+                    disabled={tenantLoading}
+                    className="flex-1 py-3 text-sm font-bold rounded-xl transition-all"
+                    style={{ background: "var(--accent)", color: "#fff", opacity: tenantLoading ? 0.6 : 1 }}
+                  >
+                    {tenantLoading ? "Ulanmoqda..." : "Tasdiqlash"}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

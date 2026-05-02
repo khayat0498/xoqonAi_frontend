@@ -286,6 +286,20 @@ export default function LoginPage() {
             {" "}{t("auth.termsSuffix")}
           </p>
         </div>
+
+        {/* Tashkilot uchun ro'yxat */}
+        <a
+          href="/auth/register-tenant"
+          className="mt-4 flex items-center justify-center gap-2 py-3 px-4 text-sm font-semibold transition-all hover:opacity-90"
+          style={{
+            background: "transparent",
+            color: "var(--text-secondary)",
+            border: "1px dashed var(--border)",
+            borderRadius: "var(--radius-md)",
+          }}
+        >
+          🏛️ Tashkilot uchun ro'yxatdan o'tish
+        </a>
       </div>
     </div>
   );

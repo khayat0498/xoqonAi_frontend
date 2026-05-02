@@ -9,6 +9,7 @@ import {
   ChevronLeft, ChevronRight, BarChart3, AlertCircle,
   CalendarDays, Moon, Sun, Pencil, User, LogOut,
   CreditCard, HelpCircle, MessageSquare, Layers,
+  Building2, Users as UsersIcon, Wallet, ShieldCheck, Clock,
 } from "lucide-react";
 import { useUser } from "@/lib/user-context";
 import { useTheme } from "@/lib/theme-context";
@@ -29,6 +30,13 @@ const teacherLinks = [
   { href: "/home?tab=jildlar", labelKey: "nav.folders",  icon: FolderOpen },
   { href: "/schedule",         labelKey: "nav.schedule", icon: CalendarDays },
   { href: "/dashboard/stats",  labelKey: "nav.stats",    icon: BarChart3 },
+];
+
+// Direktor: o'qituvchi ishlari yo'q, faqat tashkilot boshqaruvi
+const direktorLinks = [
+  { href: "/direktor",            labelKey: "nav.tenantDashboard", icon: Building2 },
+  { href: "/direktor/xodimlar",   labelKey: "nav.tenantMembers",   icon: UsersIcon },
+  { href: "/direktor/balance",    labelKey: "nav.tenantBalance",   icon: Wallet },
 ];
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -81,7 +89,18 @@ export default function Sidebar() {
     }
   }, [lastEvent]);
 
-  const links = user?.role === "student" ? studentLinks : teacherLinks;
+  // Role bo'yicha asosiy navigatsiya:
+  // - direktor: faqat tashkilot boshqaruvi (o'qituvchi ishlari yo'q)
+  // - xodim: teacher singari ishlaydi
+  // - student: alohida ro'yxat
+  // - boshqa: teacher
+  const links =
+    user?.role === "direktor" ? direktorLinks
+    : user?.role === "student" ? studentLinks
+    : teacherLinks;
+  const isXodim = user?.role === "xodim";
+  const isDirektor = user?.role === "direktor";
+  const isAdmin = user?.role === "admin";
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -197,9 +216,10 @@ export default function Sidebar() {
       )}
       <nav className="px-[10px] flex flex-col gap-1">
         {[
+          ...(isAdmin ? [{ href: "/admin/tenants", labelKey: "nav.adminTenants", icon: ShieldCheck }] : []),
           { href: "/history", labelKey: "nav.usage", icon: History },
-          { href: "/billing", labelKey: "nav.billing", icon: CreditCard },
-          { href: "/plans", labelKey: "nav.plans", icon: Layers },
+          ...(isDirektor || isXodim ? [] : [{ href: "/billing", labelKey: "nav.billing", icon: CreditCard }]),
+          ...(isDirektor || isXodim ? [] : [{ href: "/plans", labelKey: "nav.plans", icon: Layers }]),
           { href: "/contact", labelKey: "nav.contact", icon: MessageSquare },
           { href: "/faq", labelKey: "nav.faq", icon: HelpCircle },
         ].map(({ href, labelKey, icon: Icon }) => (
@@ -304,17 +324,55 @@ export default function Sidebar() {
                   <p className="text-[0.82rem] font-semibold truncate" style={{ color: "var(--text-primary)" }}>
                     {user?.name ?? ""}
                   </p>
-                  <p className="text-[0.68rem] font-bold uppercase tracking-wide" style={{
-                    color: planKey === "premium" ? "var(--warning)" : planKey === "pro" ? "var(--accent)" : planKey === "pay_per_use" ? "var(--success)" : "var(--text-muted)"
-                  }}>
-                    {planKey === "premium" ? "Premium" : planKey === "pro" ? "Pro" : planKey === "pay_per_use" ? "Pay per use" : "Free"}
-                  </p>
+                  {isAdmin ? (
+                    <p className="text-[0.68rem] font-bold uppercase tracking-wide truncate" style={{ color: "var(--cta)" }}>
+                      Admin
+                    </p>
+                  ) : isDirektor ? (
+                    <p className="text-[0.68rem] font-bold uppercase tracking-wide truncate" style={{ color: "var(--accent)" }}>
+                      Direktor · {user?.tenant?.name ?? ""}
+                    </p>
+                  ) : isXodim ? (
+                    <p className="text-[0.68rem] font-bold uppercase tracking-wide truncate" style={{ color: "var(--accent)" }}>
+                      {user?.tenant?.name ?? "Xodim"}
+                    </p>
+                  ) : (
+                    <p className="text-[0.68rem] font-bold uppercase tracking-wide" style={{
+                      color: planKey === "premium" ? "var(--warning)" : planKey === "pro" ? "var(--accent)" : planKey === "pay_per_use" ? "var(--success)" : "var(--text-muted)"
+                    }}>
+                      {planKey === "premium" ? "Premium" : planKey === "pro" ? "Pro" : planKey === "pay_per_use" ? "Pay per use" : "Free"}
+                    </p>
+                  )}
                 </>
               )}
             </div>
           )}
         </div>
       </div>
+
+      {/* Tenant balance bar (Direktor) */}
+      {!collapsed && isDirektor && user?.tenant && (
+        <Link
+          href="/direktor/balance"
+          prefetch={false}
+          className="mx-3 mb-3 p-3 rounded-xl block transition-all hover:opacity-80"
+          style={{ background: "var(--bg-primary)", border: "1px solid var(--border)" }}
+        >
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[0.67rem] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+              Tashkilot balansi
+            </span>
+            <span className="text-[0.75rem] font-bold tabular-nums" style={{ color: "var(--accent)" }}>
+              {new Intl.NumberFormat('uz-UZ').format(user.tenant.balanceUzs)} UZS
+            </span>
+          </div>
+          {user.tenant.status !== "active" && (
+            <div className="text-[0.7rem] flex items-center gap-1" style={{ color: "var(--warning)" }}>
+              <Clock size={11} /> {user.tenant.status === "pending" ? "Tasdiqlash kutilmoqda" : user.tenant.status}
+            </div>
+          )}
+        </Link>
+      )}
 
       {/* Balance bar (Pay-per-use) */}
       {!collapsed && planKey === 'pay_per_use' && balanceUzs !== null && (
