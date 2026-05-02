@@ -14,7 +14,8 @@ function authHeaders() {
 
 const avatarColors = ["#1a5c6b","#6366F1","#e8732a","#2a9d6a","#3B82F6","#8B5CF6","#EC4899","#d4a017"];
 
-type Student = { id: string; name: string; telegramId: string | null; classCount: number; createdAt: string };
+type StudentClass = { id: string; name: string; icon: string | null };
+type Student = { id: string; name: string; telegramId: string | null; classCount: number; classes?: StudentClass[]; createdAt: string };
 type Submission = { id: string; subject: string | null; status: string; score: number | null; createdAt: string };
 
 export default function StudentProfilePage() {
@@ -139,7 +140,11 @@ export default function StudentProfilePage() {
                 {student.name}
               </h2>
               <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                {student.classCount > 0 ? `${student.classCount} ${t("student.classesCount")}` : t("student.noClasses")}
+                {student.classes && student.classes.length > 0
+                  ? student.classes.map((c) => `${c.icon ?? ""} ${c.name}`.trim()).join(", ")
+                  : student.classCount > 0
+                    ? `${student.classCount} ${t("student.classesCount")}`
+                    : t("student.noClasses")}
               </p>
               {student.telegramId && (
                 <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
