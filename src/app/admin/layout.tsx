@@ -4,17 +4,20 @@ import { useUser, UserProvider } from "@/lib/user-context";
 import { ThemeProvider } from "@/lib/theme-context";
 import { AdminWSProvider, useAdminWS } from "@/lib/admin-ws";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LayoutDashboard, Users, FileText, ShieldCheck, Wifi, WifiOff, Package, CreditCard, Building2 } from "lucide-react";
+import { getToken } from "@/lib/auth";
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/admin/users", label: "Foydalanuvchilar", icon: Users },
-  { href: "/admin/tenants", label: "Tashkilotlar", icon: Building2 },
-  { href: "/admin/requests", label: "So'rovlar", icon: FileText },
-  { href: "/admin/plans", label: "Tariflar", icon: Package },
-  { href: "/admin/billing", label: "Billing", icon: CreditCard },
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true, badgeKey: null },
+  { href: "/admin/users", label: "Foydalanuvchilar", icon: Users, badgeKey: null },
+  { href: "/admin/tenants", label: "Tashkilotlar", icon: Building2, badgeKey: "pendingTenants" as const },
+  { href: "/admin/requests", label: "So'rovlar", icon: FileText, badgeKey: null },
+  { href: "/admin/plans", label: "Tariflar", icon: Package, badgeKey: null },
+  { href: "/admin/billing", label: "Billing", icon: CreditCard, badgeKey: null },
 ];
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
@@ -22,12 +25,33 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   const { connected } = useAdminWS();
   const router = useRouter();
   const pathname = usePathname();
+  const [badges, setBadges] = useState<{ pendingTenants: number }>({ pendingTenants: 0 });
 
   useEffect(() => {
     if (!loading && user?.role !== "admin") {
       router.replace("/dashboard");
     }
   }, [user, loading, router]);
+
+  // Pending tenant sonini fetch qilamiz va 30 soniyada yangilab turamiz
+  useEffect(() => {
+    if (user?.role !== "admin") return;
+    const fetchBadges = async () => {
+      const token = getToken();
+      if (!token) return;
+      try {
+        const res = await fetch(`${API}/api/admin/tenants?status=pending`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const d = await res.json();
+        setBadges({ pendingTenants: d.tenants?.length ?? 0 });
+      } catch {}
+    };
+    fetchBadges();
+    const interval = setInterval(fetchBadges, 30000);
+    return () => clearInterval(interval);
+  }, [user?.role, pathname]);
 
   if (loading) {
     return (
@@ -85,8 +109,9 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
         className="flex gap-1 px-4 pt-3 pb-0 shrink-0 overflow-x-auto"
         style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-card)" }}
       >
-        {NAV.map(({ href, label, icon: Icon, exact }) => {
+        {NAV.map(({ href, label, icon: Icon, exact, badgeKey }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
+          const badgeCount = badgeKey ? badges[badgeKey] : 0;
           return (
             <Link
               key={href}
@@ -100,6 +125,14 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
             >
               <Icon size={14} />
               {label}
+              {badgeCount > 0 && (
+                <span
+                  className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold tabular-nums"
+                  style={{ background: "var(--warning)", color: "#fff" }}
+                >
+                  {badgeCount}
+                </span>
+              )}
             </Link>
           );
         })}
