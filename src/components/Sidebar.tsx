@@ -61,31 +61,64 @@ export default function Sidebar() {
     const token = getToken();
     if (!token) return;
     const h = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-    fetch(`${API}/api/billing/my-plan`, { headers: h })
-      .then((r) => r.json())
-      .then((d) => setPlanKey(d.planKey ?? "free"))
-      .catch(() => {});
-    fetch(`${API}/api/submissions/usage/me`, { headers: h })
-      .then((r) => r.json())
-      .then((d) => { setUsed(d.used ?? 0); setLimit(d.limit ?? 60); })
-      .catch(() => {});
-    fetch(`${API}/api/balance/me`, { headers: h })
-      .then((r) => r.json())
-      .then((d) => setBalanceUzs(d.balanceUzs ?? null))
-      .catch(() => {});
+
+    // Sidebar metadata uchun kesh — 60 sekund ichida qaytadan fetch qilmaymiz
+    const SIDEBAR_CACHE_KEY = "xoqon_sidebar_cache";
+    const SIDEBAR_CACHE_TS = "xoqon_sidebar_cache_ts";
+    const TTL = 60_000;
+
+    try {
+      const ts = Number(localStorage.getItem(SIDEBAR_CACHE_TS) ?? 0);
+      const cached = localStorage.getItem(SIDEBAR_CACHE_KEY);
+      if (cached) {
+        const c = JSON.parse(cached);
+        setPlanKey(c.planKey ?? "free");
+        setUsed(c.used ?? 0);
+        setLimit(c.limit ?? 60);
+        setBalanceUzs(c.balanceUzs ?? null);
+        if (ts > 0 && Date.now() - ts < TTL) return; // kesh yangi — fetch qilmaymiz
+      }
+    } catch {}
+
+    Promise.all([
+      fetch(`${API}/api/billing/my-plan`, { headers: h }).then(r => r.json()).catch(() => null),
+      fetch(`${API}/api/submissions/usage/me`, { headers: h }).then(r => r.json()).catch(() => null),
+      fetch(`${API}/api/balance/me`, { headers: h }).then(r => r.json()).catch(() => null),
+    ]).then(([plan, usage, balance]) => {
+      const newPlan = plan?.planKey ?? "free";
+      const newUsed = usage?.used ?? 0;
+      const newLimit = usage?.limit ?? 60;
+      const newBalance = balance?.balanceUzs ?? null;
+      setPlanKey(newPlan);
+      setUsed(newUsed);
+      setLimit(newLimit);
+      setBalanceUzs(newBalance);
+      try {
+        localStorage.setItem(SIDEBAR_CACHE_KEY, JSON.stringify({ planKey: newPlan, used: newUsed, limit: newLimit, balanceUzs: newBalance }));
+        localStorage.setItem(SIDEBAR_CACHE_TS, String(Date.now()));
+      } catch {}
+    });
   }, []);
 
   useEffect(() => {
     if (!lastEvent) return;
+    let updated = false;
     if (lastEvent.type === "usage_updated") {
       setUsed(lastEvent.data.used);
       setLimit(lastEvent.data.limit);
+      updated = true;
     }
     if (lastEvent.type === "plan_updated") {
       setPlanKey(lastEvent.data.planKey);
+      updated = true;
     }
     if (lastEvent.type === "balance_updated") {
       setBalanceUzs(lastEvent.data.balanceUzs);
+      updated = true;
+    }
+    // Kesh'ni yangilab qo'yamiz — keyingi mount'da yangi qiymatlar ko'rinadi
+    if (updated) {
+      try { localStorage.removeItem("xoqon_sidebar_cache_ts"); } catch {}
     }
   }, [lastEvent]);
 

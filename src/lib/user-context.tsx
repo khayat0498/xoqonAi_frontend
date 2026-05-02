@@ -39,6 +39,8 @@ const UserContext = createContext<UserContextType>({
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const USER_CACHE_KEY = "xoqon_user_cache";
+const USER_CACHE_TS_KEY = "xoqon_user_cache_ts";
+const CACHE_TTL_MS = 60_000; // 60 soniya: shu vaqt ichida /me ni qaytadan chaqirmaymiz
 
 function readCachedUser(): User | null {
   if (typeof window === "undefined") return null;
@@ -49,6 +51,15 @@ function readCachedUser(): User | null {
     return null;
   }
 }
+
+function isCacheFresh(): boolean {
+  if (typeof window === "undefined") return false;
+  const ts = Number(localStorage.getItem(USER_CACHE_TS_KEY) ?? 0);
+  return ts > 0 && (Date.now() - ts) < CACHE_TTL_MS;
+}
+
+// Bir vaqtda bir nechta UserProvider bo'lsa, /me ni faqat bir marta chaqiramiz
+let inflight: Promise<User | null> | null = null;
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -63,24 +74,42 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    fetch(`${API}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (res.status === 401) {
-          removeToken();
-          localStorage.removeItem(USER_CACHE_KEY);
-          router.replace("/auth/login");
-          return null;
-        }
-        return res.json();
+    // Agar kesh 60 sekunddan yangi bo'lsa, fetch qilmaymiz
+    if (isCacheFresh() && readCachedUser()) {
+      setLoading(false);
+      return;
+    }
+
+    // Concurrent UserProvider'lar bir xil promise'ni ishlatadi (deduplication)
+    if (!inflight) {
+      inflight = fetch(`${API}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
       })
-      .then((data) => {
-        if (data) {
-          setUser(data);
-          try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify(data)); } catch {}
-        }
-      })
+        .then((res) => {
+          if (res.status === 401) {
+            removeToken();
+            localStorage.removeItem(USER_CACHE_KEY);
+            localStorage.removeItem(USER_CACHE_TS_KEY);
+            router.replace("/auth/login");
+            return null;
+          }
+          return res.json();
+        })
+        .then((data: User | null) => {
+          if (data) {
+            try {
+              localStorage.setItem(USER_CACHE_KEY, JSON.stringify(data));
+              localStorage.setItem(USER_CACHE_TS_KEY, String(Date.now()));
+            } catch {}
+          }
+          return data;
+        })
+        .catch(() => null)
+        .finally(() => { inflight = null; });
+    }
+
+    inflight
+      .then((data) => { if (data) setUser(data); })
       .finally(() => setLoading(false));
   }, [router]);
 
