@@ -51,7 +51,11 @@ export default function XodimlarPage() {
   // Real-time: tenant yoki xodim balansi yangilansa
   useEffect(() => {
     if (!lastEvent) return;
-    if (lastEvent.type === "tenant_balance_updated" || lastEvent.type === "balance_updated") {
+    if (
+      lastEvent.type === "tenant_balance_updated" ||
+      lastEvent.type === "xodim_balance_updated" ||
+      lastEvent.type === "balance_updated"
+    ) {
       load();
     }
   }, [lastEvent]);

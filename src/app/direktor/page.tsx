@@ -68,10 +68,14 @@ export default function DirektorDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Real-time: tenant balansi yangilansa qaytadan fetch
+  // Real-time: tenant balansi yangilansa yoki xodim ishlatsa
   useEffect(() => {
     if (!lastEvent) return;
-    if (lastEvent.type === "tenant_balance_updated" || lastEvent.type === "tenant_status_changed") {
+    if (
+      lastEvent.type === "tenant_balance_updated" ||
+      lastEvent.type === "tenant_status_changed" ||
+      lastEvent.type === "xodim_balance_updated"
+    ) {
       load();
     }
   }, [lastEvent, load]);
