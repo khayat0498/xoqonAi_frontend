@@ -4,7 +4,7 @@ import { useUser, UserProvider } from "@/lib/user-context";
 import { ThemeProvider } from "@/lib/theme-context";
 import { AdminWSProvider, useAdminWS } from "@/lib/admin-ws";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { LayoutDashboard, Users, FileText, ShieldCheck, Wifi, WifiOff, Package, CreditCard, Building2 } from "lucide-react";
 import { getToken } from "@/lib/auth";
@@ -22,7 +22,7 @@ const NAV = [
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useUser();
-  const { connected } = useAdminWS();
+  const { connected, lastEvent } = useAdminWS();
   const router = useRouter();
   const pathname = usePathname();
   const [badges, setBadges] = useState<{ pendingTenants: number }>({ pendingTenants: 0 });
@@ -33,25 +33,34 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, router]);
 
-  // Pending tenant sonini fetch qilamiz va 30 soniyada yangilab turamiz
+  // Pending tenant sonini fetch qilamiz
+  const fetchBadges = useCallback(async () => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch(`${API}/api/admin/tenants?status=pending`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const d = await res.json();
+      setBadges({ pendingTenants: d.tenants?.length ?? 0 });
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (user?.role !== "admin") return;
-    const fetchBadges = async () => {
-      const token = getToken();
-      if (!token) return;
-      try {
-        const res = await fetch(`${API}/api/admin/tenants?status=pending`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const d = await res.json();
-        setBadges({ pendingTenants: d.tenants?.length ?? 0 });
-      } catch {}
-    };
     fetchBadges();
-    const interval = setInterval(fetchBadges, 30000);
+    // 60 soniyada bir backup poll (WS uzilsa ham ishlasin)
+    const interval = setInterval(fetchBadges, 60000);
     return () => clearInterval(interval);
-  }, [user?.role, pathname]);
+  }, [user?.role, pathname, fetchBadges]);
+
+  // Real-time: yangi pending tenant kelsa darhol yangilanadi
+  useEffect(() => {
+    if (lastEvent?.type === "tenant_pending_changed") {
+      fetchBadges();
+    }
+  }, [lastEvent, fetchBadges]);
 
   if (loading) {
     return (

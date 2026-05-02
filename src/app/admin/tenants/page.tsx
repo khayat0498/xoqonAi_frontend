@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Building2, Check, X, Wallet, Users as UsersIcon, ShieldCheck, ShieldX, Pause, Plus } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useAdminWS } from "@/lib/admin-ws";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -57,9 +58,18 @@ export default function AdminTenantsPage() {
     setLoading(false);
   };
 
+  const { lastEvent } = useAdminWS();
+
   useEffect(() => {
     load();
   }, [filter]);
+
+  // Yangi tenant kelsa yoki status o'zgarsa darhol yangilanadi
+  useEffect(() => {
+    if (lastEvent?.type === "tenant_pending_changed") {
+      load();
+    }
+  }, [lastEvent]);
 
   const approve = async (t: Tenant) => {
     if (!confirm(`"${t.name}" ni tasdiqlaysizmi?`)) return;

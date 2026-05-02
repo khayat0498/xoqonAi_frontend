@@ -2,6 +2,7 @@
 
 import { useUser, UserProvider } from "@/lib/user-context";
 import { ThemeProvider } from "@/lib/theme-context";
+import { UserWSProvider, useUserWS } from "@/lib/user-ws";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
@@ -17,12 +18,20 @@ function DirektorGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
+  const { lastEvent } = useUserWS();
 
   useEffect(() => {
     if (!loading && user && user.role !== "direktor") {
       router.replace("/home");
     }
   }, [user, loading, router]);
+
+  // Real-time: status o'zgarsa sahifa yangilanadi (user-context refetch qiladi)
+  useEffect(() => {
+    if (lastEvent?.type === "tenant_status_changed") {
+      window.location.reload();
+    }
+  }, [lastEvent]);
 
   if (loading) {
     return (
@@ -136,7 +145,9 @@ export default function DirektorLayout({ children }: { children: React.ReactNode
   return (
     <ThemeProvider>
       <UserProvider>
-        <DirektorGuard>{children}</DirektorGuard>
+        <UserWSProvider>
+          <DirektorGuard>{children}</DirektorGuard>
+        </UserWSProvider>
       </UserProvider>
     </ThemeProvider>
   );

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Building2, Users as UsersIcon, Wallet, FileText, Copy, Check, ArrowRight, TrendingUp } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useUserWS } from "@/lib/user-ws";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -47,24 +48,33 @@ export default function DirektorDashboard() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
+  const { lastEvent } = useUserWS();
+
+  const load = useCallback(async () => {
     const token = getToken();
     if (!token) return;
     const h = { Authorization: `Bearer ${token}` };
-
-    Promise.all([
+    const [me, xodimlarData, logsData] = await Promise.all([
       fetch(`${API}/api/direktor/me`, { headers: h }).then((r) => r.json()),
       fetch(`${API}/api/direktor/xodimlar`, { headers: h }).then((r) => r.json()),
       fetch(`${API}/api/direktor/balance-logs?limit=10`, { headers: h }).then((r) => r.json()),
-    ])
-      .then(([me, xodimlarData, logsData]) => {
-        setTenant(me.tenant);
-        setStats(me.stats);
-        setXodimlar(xodimlarData.xodimlar ?? []);
-        setLogs(logsData.logs ?? []);
-      })
-      .finally(() => setLoading(false));
+    ]);
+    setTenant(me.tenant);
+    setStats(me.stats);
+    setXodimlar(xodimlarData.xodimlar ?? []);
+    setLogs(logsData.logs ?? []);
+    setLoading(false);
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Real-time: tenant balansi yangilansa qaytadan fetch
+  useEffect(() => {
+    if (!lastEvent) return;
+    if (lastEvent.type === "tenant_balance_updated" || lastEvent.type === "tenant_status_changed") {
+      load();
+    }
+  }, [lastEvent, load]);
 
   const copyInviteCode = () => {
     if (!tenant) return;

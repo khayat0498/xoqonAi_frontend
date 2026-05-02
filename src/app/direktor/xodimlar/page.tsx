@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Minus, UserMinus, X } from "lucide-react";
 import { getToken } from "@/lib/auth";
+import { useUserWS } from "@/lib/user-ws";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -41,9 +42,19 @@ export default function XodimlarPage() {
     setLoading(false);
   };
 
+  const { lastEvent } = useUserWS();
+
   useEffect(() => {
     load();
   }, []);
+
+  // Real-time: tenant yoki xodim balansi yangilansa
+  useEffect(() => {
+    if (!lastEvent) return;
+    if (lastEvent.type === "tenant_balance_updated" || lastEvent.type === "balance_updated") {
+      load();
+    }
+  }, [lastEvent]);
 
   const openModal = (kind: ModalKind, x: Xodim) => {
     setModalKind(kind);

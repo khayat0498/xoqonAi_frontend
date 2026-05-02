@@ -13,6 +13,8 @@ export type UserWSEvent =
   | { type: "submission_processing"; data: { id: string; studentId: string | null; classId: string | null } }
   | { type: "balance_updated"; data: { balanceUzs: number; costUzs: number } }
   | { type: "cache_created"; data: { tokenCount: number; cacheCreateCostUzs: number; cacheStorageCostUzs: number; totalOverheadUzs: number } }
+  | { type: "tenant_status_changed"; data: { tenantId: string; status: "pending" | "active" | "rejected" | "suspended"; reason?: string | null } }
+  | { type: "tenant_balance_updated"; data: { balanceUzs: number; deltaUzs: number } }
   | { type: "connected" };
 
 type UserWSContextType = {

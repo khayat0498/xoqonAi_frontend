@@ -10,6 +10,7 @@ export type WSEvent =
   | { type: "request_updated"; data: { id: string; status: string } }
   | { type: "stats_refresh" }
   | { type: "plans_updated" }
+  | { type: "tenant_pending_changed" }
   | { type: "connected" };
 
 type AdminWSContextType = {
