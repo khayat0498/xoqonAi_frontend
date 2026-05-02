@@ -11,6 +11,7 @@ export function setToken(token: string) {
 
 export function removeToken() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem("xoqon_user_cache");
 }
 
 export async function getMe() {

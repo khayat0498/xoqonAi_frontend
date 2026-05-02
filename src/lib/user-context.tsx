@@ -38,11 +38,23 @@ const UserContext = createContext<UserContextType>({
 });
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const USER_CACHE_KEY = "xoqon_user_cache";
+
+function readCachedUser(): User | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(USER_CACHE_KEY);
+    return raw ? JSON.parse(raw) as User : null;
+  } catch {
+    return null;
+  }
+}
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Boshlang'ich qiymatni keshdan o'qiymiz — sahifa darhol ochiladi.
+  const [user, setUser] = useState<User | null>(() => readCachedUser());
+  const [loading, setLoading] = useState(() => readCachedUser() === null);
 
   useEffect(() => {
     const token = getToken();
@@ -57,13 +69,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       .then((res) => {
         if (res.status === 401) {
           removeToken();
+          localStorage.removeItem(USER_CACHE_KEY);
           router.replace("/auth/login");
           return null;
         }
         return res.json();
       })
       .then((data) => {
-        if (data) setUser(data);
+        if (data) {
+          setUser(data);
+          try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify(data)); } catch {}
+        }
       })
       .finally(() => setLoading(false));
   }, [router]);
