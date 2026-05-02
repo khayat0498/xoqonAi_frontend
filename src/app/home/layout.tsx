@@ -2,13 +2,30 @@
 
 import { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getToken } from "@/lib/auth";
-import { UserProvider } from "@/lib/user-context";
+import { getToken, landingForRole } from "@/lib/auth";
+import { UserProvider, useUser } from "@/lib/user-context";
 import { UserWSProvider } from "@/lib/user-ws";
 import { ThemeProvider } from "@/lib/theme-context";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
 import CameraFAB from "@/components/CameraFAB";
+
+// Admin/direktor /home ga kirsa, o'z paneliga qaytaramiz
+function RoleGate({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading || !user) return;
+    if (user.role === "admin" || user.role === "direktor") {
+      router.replace(landingForRole(user.role));
+    }
+  }, [user, loading, router]);
+
+  if (loading) return null;
+  if (user?.role === "admin" || user?.role === "direktor") return null;
+  return <>{children}</>;
+}
 
 export default function HomeLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -23,14 +40,16 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
     <ThemeProvider>
       <UserProvider>
         <UserWSProvider>
-          <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg-primary)" }}>
-            <Suspense fallback={null}><Sidebar /></Suspense>
-            <main className="flex-1 flex flex-col overflow-hidden">
-              {children}
-            </main>
-            <Suspense fallback={null}><BottomNav /></Suspense>
-            <Suspense fallback={null}><CameraFAB /></Suspense>
-          </div>
+          <RoleGate>
+            <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg-primary)" }}>
+              <Suspense fallback={null}><Sidebar /></Suspense>
+              <main className="flex-1 flex flex-col overflow-hidden">
+                {children}
+              </main>
+              <Suspense fallback={null}><BottomNav /></Suspense>
+              <Suspense fallback={null}><CameraFAB /></Suspense>
+            </div>
+          </RoleGate>
         </UserWSProvider>
       </UserProvider>
     </ThemeProvider>

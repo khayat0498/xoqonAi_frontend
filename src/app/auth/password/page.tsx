@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ArrowLeft, Lock } from "lucide-react";
-import { setToken } from "@/lib/auth";
+import { setToken, landingForRole } from "@/lib/auth";
 import { useT } from "@/lib/i18n-context";
 
 function validatePassword(pw: string, t: (k: string) => string): string | null {
@@ -95,7 +95,7 @@ function PasswordForm() {
         }
 
         setToken(data.token);
-        router.replace("/home");
+        router.replace(landingForRole(data.user?.role));
       } else {
         const res = await fetch(`${apiUrl}/api/auth/complete`, {
           method: "POST",
@@ -110,7 +110,7 @@ function PasswordForm() {
         }
 
         setToken(data.token);
-        router.replace("/home");
+        router.replace(landingForRole(data.user?.role));
       }
     } catch {
       setError(t("auth.errors.serverDown"));

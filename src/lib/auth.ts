@@ -28,3 +28,15 @@ export async function getMe() {
 
   return res.json();
 }
+
+// Foydalanuvchi roli bo'yicha login keyin qayerga yo'naltirish kerak
+export function landingForRole(role: string | undefined | null): string {
+  switch (role) {
+    case "admin":
+      return "/admin";
+    case "direktor":
+      return "/direktor";
+    default:
+      return "/home";
+  }
+}
