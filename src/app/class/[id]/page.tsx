@@ -10,6 +10,7 @@ import {
 import { getToken } from "@/lib/auth";
 import { useUserWS } from "@/lib/user-ws";
 import { useT } from "@/lib/i18n-context";
+import { rpcCall } from "@/lib/rpc";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
@@ -77,37 +78,24 @@ export default function ClassPage() {
 
   useEffect(() => {
     async function load() {
-      const [classRes, studentsRes, subsRes, subjectsRes] = await Promise.all([
-        fetch(`${API}/api/classes/${id}`, { headers: authHeaders() }),
-        fetch(`${API}/api/students`, { headers: authHeaders() }),
-        fetch(`${API}/api/submissions?limit=200`, { headers: authHeaders() }),
-        fetch(`${API}/api/subjects`, { headers: authHeaders() }),
-      ]);
-      if (classRes.ok) {
-        const data = await classRes.json();
-        setCls(data);
-        setStudentList(data.students ?? []);
-      }
-      if (studentsRes.ok) {
-        const data = await studentsRes.json();
-        setAllStudents(data.students ?? []);
-      }
-      if (subsRes.ok) {
-        const data = await subsRes.json();
-        const counts: Record<string, number> = {};
-        for (const sub of data.data ?? []) {
-          if ((sub.status === "pending" || sub.status === "processing") && sub.studentId) {
-            counts[sub.studentId] = (counts[sub.studentId] ?? 0) + 1;
-          }
-        }
-        setPendingCounts(counts);
-      }
-      if (subjectsRes.ok) {
-        const data = await subjectsRes.json();
-        const withGeneral = [{ id: "__general__", name: t("home.general"), icon: "📚" }, ...data];
+      try {
+        const data = await rpcCall<{
+          class: ClassInfo & { students: ClassStudent[]; sessionSubject: string | null; sessionCondition: string | null };
+          allStudents: ClassStudent[];
+          subjects: SubjectItem[];
+          pendingCounts: Record<string, number>;
+        }>(102, { classId: id });
+
+        const { class: cls, allStudents, subjects, pendingCounts } = data;
+        setCls(cls);
+        setStudentList(cls.students ?? []);
+        setAllStudents(allStudents ?? []);
+        setPendingCounts(pendingCounts ?? {});
+
+        const withGeneral = [{ id: "__general__", name: t("home.general"), icon: "📚" }, ...(subjects ?? [])];
         setSessionSubjects(withGeneral);
         setSendSubjects(withGeneral);
-      }
+      } catch {}
     }
     load().then(() => {
       // Sessiyani localStorage dan tiklash
