@@ -2,17 +2,11 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { getToken, removeToken } from "@/lib/auth";
+import { getSidebarMeta, patchSidebarMeta, invalidateSidebarMeta, type SidebarMeta } from "@/lib/sidebar-meta";
+import type { UserRole, Tenant } from "@/lib/user-context-types";
 import { useRouter } from "next/navigation";
 
-export type UserRole = "teacher" | "student" | "admin" | "direktor" | "xodim";
-
-export type Tenant = {
-  id: string;
-  name: string;
-  status: "pending" | "active" | "rejected" | "suspended";
-  inviteCode: string;
-  balanceUzs: number;
-};
+export type { UserRole, Tenant } from "@/lib/user-context-types";
 
 type User = {
   id: string;
@@ -38,34 +32,25 @@ const UserContext = createContext<UserContextType>({
 });
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-const USER_CACHE_KEY = "xoqon_user_cache";
-const USER_CACHE_TS_KEY = "xoqon_user_cache_ts";
-const CACHE_TTL_MS = 60_000; // 60 soniya: shu vaqt ichida /me ni qaytadan chaqirmaymiz
 
-function readCachedUser(): User | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(USER_CACHE_KEY);
-    return raw ? JSON.parse(raw) as User : null;
-  } catch {
-    return null;
-  }
+function metaToUser(meta: SidebarMeta): User {
+  return { ...meta.user, tenant: meta.tenant };
 }
-
-function isCacheFresh(): boolean {
-  if (typeof window === "undefined") return false;
-  const ts = Number(localStorage.getItem(USER_CACHE_TS_KEY) ?? 0);
-  return ts > 0 && (Date.now() - ts) < CACHE_TTL_MS;
-}
-
-// Bir vaqtda bir nechta UserProvider bo'lsa, /me ni faqat bir marta chaqiramiz
-let inflight: Promise<User | null> | null = null;
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  // Boshlang'ich qiymatni keshdan o'qiymiz — sahifa darhol ochiladi.
-  const [user, setUser] = useState<User | null>(() => readCachedUser());
-  const [loading, setLoading] = useState(() => readCachedUser() === null);
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("xoqon_sidebar_cache");
+      if (!raw) return null;
+      const meta = JSON.parse(raw) as SidebarMeta;
+      return meta?.user ? metaToUser(meta) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(() => user === null);
 
   useEffect(() => {
     const token = getToken();
@@ -74,43 +59,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Agar kesh 60 sekunddan yangi bo'lsa, fetch qilmaymiz
-    if (isCacheFresh() && readCachedUser()) {
-      setLoading(false);
-      return;
-    }
-
-    // Concurrent UserProvider'lar bir xil promise'ni ishlatadi (deduplication)
-    if (!inflight) {
-      inflight = fetch(`${API}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
+    let cancelled = false;
+    getSidebarMeta()
+      .then((meta) => {
+        if (cancelled) return;
+        if (meta) {
+          setUser(metaToUser(meta));
+        } else {
+          // RPC error — token bo'lishi mumkin yaroqsiz
+          removeToken();
+          invalidateSidebarMeta();
+          router.replace("/auth/login");
+        }
       })
-        .then((res) => {
-          if (res.status === 401) {
-            removeToken();
-            localStorage.removeItem(USER_CACHE_KEY);
-            localStorage.removeItem(USER_CACHE_TS_KEY);
-            router.replace("/auth/login");
-            return null;
-          }
-          return res.json();
-        })
-        .then((data: User | null) => {
-          if (data) {
-            try {
-              localStorage.setItem(USER_CACHE_KEY, JSON.stringify(data));
-              localStorage.setItem(USER_CACHE_TS_KEY, String(Date.now()));
-            } catch {}
-          }
-          return data;
-        })
-        .catch(() => null)
-        .finally(() => { inflight = null; });
-    }
+      .finally(() => { if (!cancelled) setLoading(false); });
 
-    inflight
-      .then((data) => { if (data) setUser(data); })
-      .finally(() => setLoading(false));
+    return () => { cancelled = true; };
   }, [router]);
 
   const uploadAvatar = useCallback(async (file: File) => {
@@ -129,6 +93,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (res.ok) {
       const data = await res.json();
       setUser((prev) => prev ? { ...prev, avatarUrl: data.avatarUrl } : prev);
+      // Cache'ni yangilaymiz (sidebar va home avatar uchun)
+      patchSidebarMeta({
+        user: { ...(JSON.parse(localStorage.getItem("xoqon_sidebar_cache") ?? "{}").user ?? {}), avatarUrl: data.avatarUrl },
+      } as Partial<SidebarMeta>);
     }
   }, []);
 

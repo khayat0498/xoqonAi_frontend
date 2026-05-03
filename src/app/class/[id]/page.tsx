@@ -787,7 +787,7 @@ export default function ClassPage() {
 
       {/* ── Sessiya sozlash — FULL SCREEN ── */}
       {showSessionSetup && (
-        <div className="fixed inset-0 z-50 flex flex-col animate-fade-in" style={{ background: "var(--bg-primary)" }}>
+        <div className="fixed inset-0 z-[60] flex flex-col animate-fade-in" style={{ background: "var(--bg-primary)" }}>
 
           {/* Header */}
           <div className="px-5 pb-4 flex items-center gap-3 shrink-0"

@@ -14,6 +14,33 @@ export function removeToken() {
   localStorage.removeItem("xoqon_user_cache");
 }
 
+export type JwtPayload = {
+  userId: string;
+  email: string;
+  role: "teacher" | "student" | "admin" | "direktor" | "xodim";
+  tenantId?: string | null;
+  exp: number;
+  iat: number;
+};
+
+export function decodeJwt(token: string): JwtPayload | null {
+  try {
+    const part = token.split(".")[1];
+    if (!part) return null;
+    const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - b64.length % 4) % 4);
+    const json = typeof window !== "undefined" ? atob(padded) : Buffer.from(padded, "base64").toString();
+    return JSON.parse(decodeURIComponent(escape(json))) as JwtPayload;
+  } catch {
+    return null;
+  }
+}
+
+export function getJwtPayload(): JwtPayload | null {
+  const token = getToken();
+  return token ? decodeJwt(token) : null;
+}
+
 export async function getMe() {
   const token = getToken();
   if (!token) return null;

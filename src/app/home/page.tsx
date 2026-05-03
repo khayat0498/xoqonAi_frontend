@@ -10,6 +10,7 @@ import { useUser } from "@/lib/user-context";
 import { useUserWS } from "@/lib/user-ws";
 import { getToken } from "@/lib/auth";
 import { rpcCall } from "@/lib/rpc";
+import { getSidebarMeta } from "@/lib/sidebar-meta";
 import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -50,31 +51,15 @@ function HomePageInner() {
 
   useEffect(() => {
     if (!getToken()) return;
-
-    // Sidebar bilan birgalikda kesh — agar Sidebar oldindan yozgan bo'lsa, RPC chaqirmaymiz
-    try {
-      const cached = localStorage.getItem("xoqon_sidebar_cache");
-      const ts = Number(localStorage.getItem("xoqon_sidebar_cache_ts") ?? 0);
-      if (cached) {
-        const c = JSON.parse(cached);
-        setPlanKey(c.planKey ?? "free");
-        setUsed(c.used ?? 0);
-        setLimit(c.limit ?? 60);
-        setBalanceUzs(c.balanceUzs ?? null);
-        if (ts > 0 && Date.now() - ts < 60_000) return;
-      }
-    } catch {}
-
-    rpcCall<{
-      planKey: string;
-      balanceUzs: number;
-      usage: { used: number; limit: number };
-    }>(101).then((meta) => {
+    let cancelled = false;
+    getSidebarMeta().then((meta) => {
+      if (cancelled || !meta) return;
       setPlanKey(meta.planKey ?? "free");
       setUsed(meta.usage?.used ?? 0);
       setLimit(meta.usage?.limit ?? 60);
       setBalanceUzs(meta.balanceUzs ?? null);
-    }).catch(() => {});
+    });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {

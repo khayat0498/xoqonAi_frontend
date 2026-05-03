@@ -16,7 +16,7 @@ import { useTheme } from "@/lib/theme-context";
 import { useUserWS } from "@/lib/user-ws";
 import { useT } from "@/lib/i18n-context";
 import { getToken } from "@/lib/auth";
-import { rpcCall } from "@/lib/rpc";
+import { getSidebarMeta, invalidateSidebarMeta } from "@/lib/sidebar-meta";
 
 const studentLinks = [
   { href: "/home",               labelKey: "nav.home",       icon: Home },
@@ -59,44 +59,15 @@ export default function Sidebar() {
   useEffect(() => {
     const token = getToken();
     if (!token) return;
-
-    const SIDEBAR_CACHE_KEY = "xoqon_sidebar_cache";
-    const SIDEBAR_CACHE_TS = "xoqon_sidebar_cache_ts";
-    const TTL = 60_000;
-
-    try {
-      const ts = Number(localStorage.getItem(SIDEBAR_CACHE_TS) ?? 0);
-      const cached = localStorage.getItem(SIDEBAR_CACHE_KEY);
-      if (cached) {
-        const c = JSON.parse(cached);
-        setPlanKey(c.planKey ?? "free");
-        setUsed(c.used ?? 0);
-        setLimit(c.limit ?? 60);
-        setBalanceUzs(c.balanceUzs ?? null);
-        if (ts > 0 && Date.now() - ts < TTL) return;
-      }
-    } catch {}
-
-    rpcCall<{
-      planKey: string;
-      period: string;
-      endsAt: string | null;
-      balanceUzs: number;
-      usage: { used: number; limit: number; allowed: boolean };
-    }>(101).then((meta) => {
-      const newPlan = meta.planKey ?? "free";
-      const newUsed = meta.usage?.used ?? 0;
-      const newLimit = meta.usage?.limit ?? 60;
-      const newBalance = meta.balanceUzs ?? null;
-      setPlanKey(newPlan);
-      setUsed(newUsed);
-      setLimit(newLimit);
-      setBalanceUzs(newBalance);
-      try {
-        localStorage.setItem(SIDEBAR_CACHE_KEY, JSON.stringify({ planKey: newPlan, used: newUsed, limit: newLimit, balanceUzs: newBalance }));
-        localStorage.setItem(SIDEBAR_CACHE_TS, String(Date.now()));
-      } catch {}
-    }).catch(() => {});
+    let cancelled = false;
+    getSidebarMeta().then((meta) => {
+      if (cancelled || !meta) return;
+      setPlanKey(meta.planKey ?? "free");
+      setUsed(meta.usage?.used ?? 0);
+      setLimit(meta.usage?.limit ?? 60);
+      setBalanceUzs(meta.balanceUzs ?? null);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -115,10 +86,7 @@ export default function Sidebar() {
       setBalanceUzs(lastEvent.data.balanceUzs);
       updated = true;
     }
-    // Kesh'ni yangilab qo'yamiz — keyingi mount'da yangi qiymatlar ko'rinadi
-    if (updated) {
-      try { localStorage.removeItem("xoqon_sidebar_cache_ts"); } catch {}
-    }
+    if (updated) invalidateSidebarMeta();
   }, [lastEvent]);
 
   // Role bo'yicha asosiy navigatsiya:
@@ -395,7 +363,7 @@ export default function Sidebar() {
               Tashkilot balansi
             </span>
             <span className="text-[0.75rem] font-bold tabular-nums" style={{ color: "var(--accent)" }}>
-              {new Intl.NumberFormat('uz-UZ').format(user.tenant.balanceUzs)} UZS
+              {new Intl.NumberFormat('uz-UZ').format(user.tenant.balanceUzs ?? 0)} UZS
             </span>
           </div>
           {user.tenant.status !== "active" && (
