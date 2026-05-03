@@ -39,18 +39,8 @@ function metaToUser(meta: SidebarMeta): User {
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = localStorage.getItem("xoqon_sidebar_cache");
-      if (!raw) return null;
-      const meta = JSON.parse(raw) as SidebarMeta;
-      return meta?.user ? metaToUser(meta) : null;
-    } catch {
-      return null;
-    }
-  });
-  const [loading, setLoading] = useState(() => user === null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = getToken();
