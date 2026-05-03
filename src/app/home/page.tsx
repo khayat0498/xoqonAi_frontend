@@ -9,6 +9,7 @@ import { Users, CheckCircle2, TrendingUp, BookOpen, Camera, Eye, Search, Folder,
 import { useUser } from "@/lib/user-context";
 import { useUserWS } from "@/lib/user-ws";
 import { getToken } from "@/lib/auth";
+import { rpcCall } from "@/lib/rpc";
 import { useT } from "@/lib/i18n-context";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -166,26 +167,27 @@ function HomePageInner() {
 
   useEffect(() => {
     async function load() {
-      const [classRes, studentRes, subjectsRes] = await Promise.all([
-        fetch(`${API}/api/classes`, { headers: authHeaders() }),
-        fetch(`${API}/api/students`, { headers: authHeaders() }),
-        fetch(`${API}/api/subjects`, { headers: authHeaders() }),
-      ]);
-      if (classRes.ok) setClassList(await classRes.json());
-      if (studentRes.ok) {
-        const data = await studentRes.json();
-        setStudentList(data.students ?? []);
-      }
-      if (subjectsRes.ok) {
-        const data = await subjectsRes.json();
-        setSubjectList([{ id: "__general__", name: t("home.general"), icon: "📚" }, ...data]);
-      }
-      await refreshFolders();
-      // Initial notifications: recent done/failed submissions
-      const notifRes = await fetch(`${API}/api/submissions?limit=15`, { headers: authHeaders() });
-      if (notifRes.ok) {
-        const notifData = await notifRes.json();
-        setNotifications((notifData.data ?? []).map((s: Submission) => ({ id: s.id, grade: s.grade, score: s.score, subject: s.subject, status: s.status })));
+      try {
+        const home = await rpcCall<{
+          classes: ClassItem[];
+          folders: FolderType[];
+          students: Student[];
+          subjects: SubjectItem[];
+          recentSubmissions: Submission[];
+        }>(100);
+        setClassList(home.classes ?? []);
+        setStudentList(home.students ?? []);
+        setSubjectList([{ id: "__general__", name: t("home.general"), icon: "📚" }, ...(home.subjects ?? [])]);
+        setFolderList(home.folders ?? []);
+        setNotifications((home.recentSubmissions ?? []).map((s) => ({
+          id: s.id, grade: s.grade, score: s.score, subject: s.subject, status: s.status,
+        })));
+      } catch {}
+      // allFiles to'liq ro'yxati Tahlillar tab va hafta/oy hisobi uchun kerak
+      const filesRes = await fetch(`${API}/api/submissions`, { headers: authHeaders() });
+      if (filesRes.ok) {
+        const data = await filesRes.json();
+        setAllFiles(data.data ?? []);
       }
     }
     load();

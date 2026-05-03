@@ -16,6 +16,7 @@ import { useTheme } from "@/lib/theme-context";
 import { useUserWS } from "@/lib/user-ws";
 import { useT } from "@/lib/i18n-context";
 import { getToken } from "@/lib/auth";
+import { rpcCall } from "@/lib/rpc";
 
 const studentLinks = [
   { href: "/home",               labelKey: "nav.home",       icon: Home },
@@ -39,8 +40,6 @@ const direktorLinks = [
   { href: "/direktor/balance",    labelKey: "nav.tenantBalance",   icon: Wallet },
 ];
 
-const API = process.env.NEXT_PUBLIC_API_URL;
-
 export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -60,9 +59,7 @@ export default function Sidebar() {
   useEffect(() => {
     const token = getToken();
     if (!token) return;
-    const h = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
-    // Sidebar metadata uchun kesh — 60 sekund ichida qaytadan fetch qilmaymiz
     const SIDEBAR_CACHE_KEY = "xoqon_sidebar_cache";
     const SIDEBAR_CACHE_TS = "xoqon_sidebar_cache_ts";
     const TTL = 60_000;
@@ -76,19 +73,21 @@ export default function Sidebar() {
         setUsed(c.used ?? 0);
         setLimit(c.limit ?? 60);
         setBalanceUzs(c.balanceUzs ?? null);
-        if (ts > 0 && Date.now() - ts < TTL) return; // kesh yangi — fetch qilmaymiz
+        if (ts > 0 && Date.now() - ts < TTL) return;
       }
     } catch {}
 
-    Promise.all([
-      fetch(`${API}/api/billing/my-plan`, { headers: h }).then(r => r.json()).catch(() => null),
-      fetch(`${API}/api/submissions/usage/me`, { headers: h }).then(r => r.json()).catch(() => null),
-      fetch(`${API}/api/balance/me`, { headers: h }).then(r => r.json()).catch(() => null),
-    ]).then(([plan, usage, balance]) => {
-      const newPlan = plan?.planKey ?? "free";
-      const newUsed = usage?.used ?? 0;
-      const newLimit = usage?.limit ?? 60;
-      const newBalance = balance?.balanceUzs ?? null;
+    rpcCall<{
+      planKey: string;
+      period: string;
+      endsAt: string | null;
+      balanceUzs: number;
+      usage: { used: number; limit: number; allowed: boolean };
+    }>(101).then((meta) => {
+      const newPlan = meta.planKey ?? "free";
+      const newUsed = meta.usage?.used ?? 0;
+      const newLimit = meta.usage?.limit ?? 60;
+      const newBalance = meta.balanceUzs ?? null;
       setPlanKey(newPlan);
       setUsed(newUsed);
       setLimit(newLimit);
@@ -97,7 +96,7 @@ export default function Sidebar() {
         localStorage.setItem(SIDEBAR_CACHE_KEY, JSON.stringify({ planKey: newPlan, used: newUsed, limit: newLimit, balanceUzs: newBalance }));
         localStorage.setItem(SIDEBAR_CACHE_TS, String(Date.now()));
       } catch {}
-    });
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
