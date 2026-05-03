@@ -49,20 +49,32 @@ function HomePageInner() {
   const [balanceUzs, setBalanceUzs] = useState<number | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    const h = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-    fetch(`${API}/api/billing/my-plan`, { headers: h })
-      .then((r) => r.json()).then((d) => {
-        const key = d.planKey ?? "free";
-        setPlanKey(key);
-        if (key === "pay_per_use") {
-          fetch(`${API}/api/balance/me`, { headers: h })
-            .then((r) => r.json()).then((b) => setBalanceUzs(b.balanceUzs ?? 0)).catch(() => {});
-        }
-      }).catch(() => {});
-    fetch(`${API}/api/submissions/usage/me`, { headers: h })
-      .then((r) => r.json()).then((d) => { setUsed(d.used ?? 0); setLimit(d.limit ?? 60); }).catch(() => {});
+    if (!getToken()) return;
+
+    // Sidebar bilan birgalikda kesh — agar Sidebar oldindan yozgan bo'lsa, RPC chaqirmaymiz
+    try {
+      const cached = localStorage.getItem("xoqon_sidebar_cache");
+      const ts = Number(localStorage.getItem("xoqon_sidebar_cache_ts") ?? 0);
+      if (cached) {
+        const c = JSON.parse(cached);
+        setPlanKey(c.planKey ?? "free");
+        setUsed(c.used ?? 0);
+        setLimit(c.limit ?? 60);
+        setBalanceUzs(c.balanceUzs ?? null);
+        if (ts > 0 && Date.now() - ts < 60_000) return;
+      }
+    } catch {}
+
+    rpcCall<{
+      planKey: string;
+      balanceUzs: number;
+      usage: { used: number; limit: number };
+    }>(101).then((meta) => {
+      setPlanKey(meta.planKey ?? "free");
+      setUsed(meta.usage?.used ?? 0);
+      setLimit(meta.usage?.limit ?? 60);
+      setBalanceUzs(meta.balanceUzs ?? null);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
