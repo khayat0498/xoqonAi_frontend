@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Camera, FileText, Search, Plus, X,
-  MoreVertical, Pencil, Trash2, Check, UserPlus, Send, Timer, BookOpen, ChevronRight, Settings, BarChart2,
+  MoreVertical, Pencil, Trash2, Check, UserPlus, Send, Timer, BookOpen, ChevronRight, Settings, BarChart2, Loader2,
 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 import { useUserWS } from "@/lib/user-ws";
@@ -72,6 +72,11 @@ export default function ClassPage() {
   // Temp state while setting up session
   const [setupSubject, setSetupSubject] = useState<SubjectItem | null>(null);
   const [setupCondition, setSetupCondition] = useState("");
+  const [savingSession, setSavingSession] = useState(false);
+  // Etalon yaratilayotgan paytda "Saqlash va davom etish" tugmasini bloklash uchun
+  const [etalonGenerating, setEtalonGenerating] = useState(false);
+  // Sessiya muddati tugaganligini bildiruvchi banner
+  const [expiredNotice, setExpiredNotice] = useState(false);
   // Kesh narxi (birinchi o'quvchi tekshirilganda ko'rinadi)
   const [cacheInfo, setCacheInfo] = useState<{ tokenCount: number; totalOverheadUzs: number; cacheStorageCostUzs: number } | null>(null);
 
@@ -100,15 +105,49 @@ export default function ClassPage() {
     }
     load().then(() => {
       // Sessiyani localStorage dan tiklash
+      let savedAssignmentId: string | null = null;
       try {
         const saved = localStorage.getItem(`class_session_${id}`);
         if (saved) {
           const { subject, condition, assignmentId } = JSON.parse(saved);
           if (subject) setSessionSubject(subject);
           if (condition) setSessionCondition(condition);
-          if (assignmentId) setSessionAssignmentId(assignmentId);
+          if (assignmentId) {
+            setSessionAssignmentId(assignmentId);
+            savedAssignmentId = assignmentId;
+          }
         }
       } catch {}
+
+      // Saqlangan assignmentId mavjud bo'lsa — backend'dan tekshirib ko'ramiz:
+      // 1) 1 soatdan eski bo'lsa → eskirgan, bo'shaltiramiz
+      // 2) Etalon hali pending bo'lsa → tugmani bloklaymiz
+      if (savedAssignmentId) {
+        fetch(`${API}/api/assignments/${savedAssignmentId}`, { headers: authHeaders() })
+          .then(r => r.ok ? r.json() : null)
+          .then(a => {
+            if (!a) return;
+            const created = new Date(a.createdAt).getTime();
+            const isExpired = Date.now() - created > 60 * 60 * 1000;
+            if (isExpired) {
+              setSessionSubject(null);
+              setSessionCondition("");
+              setSessionAssignmentId(null);
+              setEtalonGenerating(false);
+              setExpiredNotice(true);
+              localStorage.removeItem(`class_session_${id}`);
+              fetch(`${API}/api/classes/${id}/session`, {
+                method: "PATCH", headers: authHeaders(),
+                body: JSON.stringify({ subject: null, condition: "" }),
+              }).catch(() => {});
+              return;
+            }
+            if (a.etalonStatus === "pending") {
+              setEtalonGenerating(true);
+            }
+          })
+          .catch(() => {});
+      }
     });
   }, [id]);
 
@@ -135,8 +174,16 @@ export default function ClassPage() {
           return next;
         });
       }
+    } else if (lastEvent.type === "etalon_generating") {
+      if (lastEvent.data.assignmentId === sessionAssignmentId) {
+        setEtalonGenerating(true);
+      }
+    } else if (lastEvent.type === "etalon_ready" || lastEvent.type === "etalon_failed") {
+      if (lastEvent.data.assignmentId === sessionAssignmentId) {
+        setEtalonGenerating(false);
+      }
     }
-  }, [lastEvent]);
+  }, [lastEvent, sessionAssignmentId]);
 
   /* ── Mavjud o'quvchini sinfga qo'shish ── */
   const addExisting = async (studentId: string) => {
@@ -276,6 +323,7 @@ export default function ClassPage() {
   };
 
   const finishSessionSetup = async (overrideSubject?: SubjectItem | null, overrideCondition?: string) => {
+    if (savingSession || etalonGenerating) return;
     const subject = overrideSubject !== undefined ? overrideSubject : setupSubject;
     const condition = overrideCondition !== undefined ? overrideCondition : setupCondition;
 
@@ -283,15 +331,13 @@ export default function ClassPage() {
     const conditionChanged = condition.trim() !== sessionCondition.trim();
     const subjectChanged = subject?.id !== sessionSubject?.id;
 
-    setSessionSubject(subject);
-    setSessionCondition(condition);
-    setShowSessionSetup(false);
-    setCacheInfo(null);
-
     // Real fan + shart bo'lsa → assignment yaratish (etalon background'da generatsiya bo'ladi)
+    // MUHIM: assignment yaratilgunicha modal yopilmaydi — race'ni oldini olamiz
     let assignmentId: string | null = sessionAssignmentId;
+    let etalonStatus: string | null = null;
     const isRealSubject = !!subject && subject.id !== "__general__";
     if (isRealSubject && condition.trim() && (conditionChanged || subjectChanged || !assignmentId)) {
+      setSavingSession(true);
       try {
         const res = await fetch(`${API}/api/assignments`, {
           method: "POST",
@@ -305,16 +351,27 @@ export default function ClassPage() {
         if (res.ok) {
           const a = await res.json();
           assignmentId = a.id ?? null;
+          etalonStatus = a.etalonStatus ?? null;
         } else {
           assignmentId = null;
         }
       } catch {
         assignmentId = null;
+      } finally {
+        setSavingSession(false);
       }
     } else if (!isRealSubject || !condition.trim()) {
       assignmentId = null;
     }
+
+    // Endi state'ni yangilash va modal'ni yopish — assignment id allaqachon tayyor
+    setSessionSubject(subject);
+    setSessionCondition(condition);
     setSessionAssignmentId(assignmentId);
+    setEtalonGenerating(etalonStatus === "pending");
+    setExpiredNotice(false);
+    setShowSessionSetup(false);
+    setCacheInfo(null);
 
     // Class session DB ga saqlash (fan + shart matni)
     fetch(`${API}/api/classes/${id}/session`, {
@@ -390,6 +447,33 @@ export default function ClassPage() {
           </div>
         </div>
 
+        {/* Sessiya muddati tugaganligi haqida banner */}
+        {expiredNotice && (
+          <div className="px-5 pb-2 shrink-0">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+              style={{ background: "#fef3c7", border: "1px solid #f59e0b", color: "#92400e" }}>
+              <Timer size={16} />
+              <span className="flex-1 text-sm font-medium">Sessiya muddati tugadi (1 soat) — qayta fan va shart kiriting</span>
+              <button onClick={() => setExpiredNotice(false)}
+                className="w-6 h-6 flex items-center justify-center rounded-lg"
+                style={{ background: "rgba(146,64,14,0.1)" }}>
+                <X size={12} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Etalon yaratilayotgan banner */}
+        {etalonGenerating && sessionSubject && (
+          <div className="px-5 pb-2 shrink-0">
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl"
+              style={{ background: "var(--accent-light)", border: "1px solid var(--accent)", color: "var(--accent)" }}>
+              <Loader2 size={14} className="animate-spin" />
+              <span className="text-xs font-medium">Etalon yaratilmoqda — birinchi rasm yuklansa avtomatik solishtiriladi</span>
+            </div>
+          </div>
+        )}
+
         {/* Session bar */}
         <div className="px-5 pb-3 shrink-0">
           {sessionSubject ? (
@@ -410,7 +494,9 @@ export default function ClassPage() {
                     {t("class.change")}
                   </button>
                   <button onClick={() => {
-                    setSessionSubject(null); setSessionCondition(""); localStorage.removeItem(`class_session_${id}`);
+                    setSessionSubject(null); setSessionCondition(""); setSessionAssignmentId(null);
+                    setEtalonGenerating(false); setExpiredNotice(false);
+                    localStorage.removeItem(`class_session_${id}`);
                     fetch(`${API}/api/classes/${id}/session`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ subject: null, condition: "" }) }).catch(() => {});
                   }}
                     className="text-xs px-3 py-1.5 rounded-xl font-medium"
@@ -913,16 +999,22 @@ export default function ClassPage() {
                 </p>
               </div>
               <button
-                disabled={!setupCondition.trim()}
+                disabled={!setupCondition.trim() || savingSession || etalonGenerating}
                 onClick={() => finishSessionSetup()}
                 className="w-full flex items-center justify-center gap-2 py-4 text-base font-bold rounded-2xl transition-all active:scale-[0.98]"
                 style={{
-                  background: setupCondition.trim() ? "var(--cta)" : "var(--border)",
+                  background: setupCondition.trim() && !savingSession && !etalonGenerating ? "var(--cta)" : "var(--border)",
                   color: "#fff",
-                  boxShadow: setupCondition.trim() ? "0 4px 16px rgba(104,117,245,0.35)" : "none",
-                  cursor: setupCondition.trim() ? "pointer" : "not-allowed",
+                  boxShadow: setupCondition.trim() && !savingSession && !etalonGenerating ? "0 4px 16px rgba(104,117,245,0.35)" : "none",
+                  cursor: setupCondition.trim() && !savingSession && !etalonGenerating ? "pointer" : "not-allowed",
                 }}>
-                <Camera size={20} /> {t("class.saveAndContinue")}
+                {savingSession ? (
+                  <><Loader2 size={20} className="animate-spin" /> Saqlanmoqda...</>
+                ) : etalonGenerating ? (
+                  <><Loader2 size={20} className="animate-spin" /> Etalon yaratilmoqda...</>
+                ) : (
+                  <><Camera size={20} /> {t("class.saveAndContinue")}</>
+                )}
               </button>
             </div>
           )}
