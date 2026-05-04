@@ -106,12 +106,20 @@ export default function ClassPage() {
     load().then(() => {
       // Sessiyani localStorage dan tiklash
       let savedAssignmentId: string | null = null;
+      let savedSubject: SubjectItem | null = null;
+      let savedCondition = "";
       try {
         const saved = localStorage.getItem(`class_session_${id}`);
         if (saved) {
           const { subject, condition, assignmentId } = JSON.parse(saved);
-          if (subject) setSessionSubject(subject);
-          if (condition) setSessionCondition(condition);
+          if (subject) {
+            setSessionSubject(subject);
+            savedSubject = subject;
+          }
+          if (condition) {
+            setSessionCondition(condition);
+            savedCondition = condition;
+          }
           if (assignmentId) {
             setSessionAssignmentId(assignmentId);
             savedAssignmentId = assignmentId;
@@ -119,9 +127,7 @@ export default function ClassPage() {
         }
       } catch {}
 
-      // Saqlangan assignmentId mavjud bo'lsa — backend'dan tekshirib ko'ramiz:
-      // 1) 1 soatdan eski bo'lsa → eskirgan, bo'shaltiramiz
-      // 2) Etalon hali pending bo'lsa → tugmani bloklaymiz
+      // Saqlangan assignmentId mavjud bo'lsa — backend'dan tekshirib ko'ramiz
       if (savedAssignmentId) {
         fetch(`${API}/api/assignments/${savedAssignmentId}`, { headers: authHeaders() })
           .then(r => r.ok ? r.json() : null)
@@ -145,6 +151,31 @@ export default function ClassPage() {
             if (a.etalonStatus === "pending") {
               setEtalonGenerating(true);
             }
+          })
+          .catch(() => {});
+      }
+      // AUTO-HEAL: subject + condition bor lekin assignmentId yo'q (eski cache yoki boshqa sinf)
+      // Backend lookup-or-create — bir xil shart bo'lsa o'sha etalonni qaytaradi (yangi yaratmaydi)
+      else if (savedSubject && savedSubject.id !== "__general__" && savedCondition.trim()) {
+        fetch(`${API}/api/assignments`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            name: `${savedSubject.name} — ${new Date().toLocaleDateString()}`,
+            condition: savedCondition.trim(),
+            subjectId: savedSubject.id,
+          }),
+        })
+          .then(r => r.ok ? r.json() : null)
+          .then(a => {
+            if (!a?.id) return;
+            setSessionAssignmentId(a.id);
+            setEtalonGenerating(a.etalonStatus === "pending");
+            try {
+              localStorage.setItem(`class_session_${id}`, JSON.stringify({
+                subject: savedSubject, condition: savedCondition, assignmentId: a.id,
+              }));
+            } catch {}
           })
           .catch(() => {});
       }
