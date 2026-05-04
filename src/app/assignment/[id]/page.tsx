@@ -3,16 +3,26 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Clock, CheckCircle2, AlertCircle, ChevronRight, FileText, Pencil, X, Check } from "lucide-react";
+import { ArrowLeft, Clock, CheckCircle2, AlertCircle, ChevronRight, FileText, Pencil, X, Check, RefreshCw, Sparkles } from "lucide-react";
 import { getToken } from "@/lib/auth";
 import { useT } from "@/lib/i18n-context";
+import { useUserWS } from "@/lib/user-ws";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "";
 function authHeaders() {
   return { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` };
 }
 
-type Assignment = { id: string; name: string; condition: string; subjectId: string };
+type EtalonStatus = "pending" | "ready" | "failed" | null;
+type Assignment = {
+  id: string;
+  name: string;
+  condition: string;
+  subjectId: string;
+  etalonStatus?: EtalonStatus;
+  etalonGeneratedAt?: string | null;
+  etalonError?: string | null;
+};
 type Submission = {
   id: string;
   studentName: string | null;
@@ -36,6 +46,9 @@ export default function AssignmentPage() {
   const [conditionText, setConditionText] = useState("");
   const [savingCondition, setSavingCondition] = useState(false);
   const [conditionSaved, setConditionSaved] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+
+  const { lastEvent } = useUserWS();
 
   useEffect(() => {
     async function load() {
@@ -57,6 +70,30 @@ export default function AssignmentPage() {
     load();
   }, [id]);
 
+  // WebSocket: etalon hodisalari
+  useEffect(() => {
+    if (!lastEvent || !assignment) return;
+    if (lastEvent.type === "etalon_generating" && lastEvent.data.assignmentId === id) {
+      setAssignment(prev => prev ? { ...prev, etalonStatus: "pending", etalonError: null } : prev);
+    } else if (lastEvent.type === "etalon_ready" && lastEvent.data.assignmentId === id) {
+      setAssignment(prev => prev ? { ...prev, etalonStatus: "ready", etalonGeneratedAt: new Date().toISOString(), etalonError: null } : prev);
+    } else if (lastEvent.type === "etalon_failed" && lastEvent.data.assignmentId === id) {
+      setAssignment(prev => prev ? { ...prev, etalonStatus: "failed", etalonError: lastEvent.data.error } : prev);
+    }
+  }, [lastEvent, id, assignment]);
+
+  async function regenerateEtalon() {
+    setRegenerating(true);
+    const res = await fetch(`${API}/api/assignments/${id}/regenerate-etalon`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+    if (res.ok) {
+      setAssignment(prev => prev ? { ...prev, etalonStatus: "pending", etalonError: null } : prev);
+    }
+    setRegenerating(false);
+  }
+
   async function saveCondition() {
     setSavingCondition(true);
     const res = await fetch(`${API}/api/assignments/${id}`, {
@@ -65,7 +102,8 @@ export default function AssignmentPage() {
       body: JSON.stringify({ condition: conditionText }),
     });
     if (res.ok) {
-      setAssignment(prev => prev ? { ...prev, condition: conditionText } : prev);
+      const updated = await res.json();
+      setAssignment(prev => prev ? { ...prev, condition: conditionText, etalonStatus: updated.etalonStatus ?? prev.etalonStatus, etalonError: null } : prev);
       setConditionSaved(true);
       setTimeout(() => { setConditionSaved(false); setEditingCondition(false); }, 1500);
     }
@@ -166,6 +204,40 @@ export default function AssignmentPage() {
                 style={{ color: assignment.condition ? "var(--text-secondary)" : "var(--text-muted)", fontStyle: assignment.condition ? "normal" : "italic" }}>
                 {assignment.condition || t("assignment.noConditionHint")}
               </p>
+            )}
+
+            {/* Etalon (AI javoblar kaliti) status */}
+            {assignment.etalonStatus && (
+              <div className="flex items-center justify-between gap-2 pt-3" style={{ borderTop: "1px dashed var(--border)" }}>
+                <div className="flex items-center gap-2 text-xs">
+                  {assignment.etalonStatus === "pending" && (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" style={{ color: "#ca8a04" }} />
+                      <span style={{ color: "#ca8a04" }}>AI etalon yaratmoqda...</span>
+                    </>
+                  )}
+                  {assignment.etalonStatus === "ready" && (
+                    <>
+                      <Sparkles size={14} style={{ color: "var(--success)" }} />
+                      <span style={{ color: "var(--success)" }}>Etalon tayyor — tezroq tahlil</span>
+                    </>
+                  )}
+                  {assignment.etalonStatus === "failed" && (
+                    <>
+                      <AlertCircle size={14} style={{ color: "var(--error)" }} />
+                      <span style={{ color: "var(--error)" }} title={assignment.etalonError ?? ""}>Etalon xato — qayta urining</span>
+                    </>
+                  )}
+                </div>
+                {(assignment.etalonStatus === "ready" || assignment.etalonStatus === "failed") && (
+                  <button onClick={regenerateEtalon} disabled={regenerating}
+                    className="flex items-center gap-1 text-xs"
+                    style={{ color: "var(--accent)", opacity: regenerating ? 0.5 : 1 }}>
+                    <RefreshCw size={12} className={regenerating ? "animate-spin" : ""} />
+                    Qayta yaratish
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

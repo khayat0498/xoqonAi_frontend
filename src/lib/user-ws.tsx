@@ -16,6 +16,9 @@ export type UserWSEvent =
   | { type: "tenant_status_changed"; data: { tenantId: string; status: "pending" | "active" | "rejected" | "suspended"; reason?: string | null } }
   | { type: "tenant_balance_updated"; data: { balanceUzs: number; deltaUzs: number } }
   | { type: "xodim_balance_updated"; data: { xodimId: string; balanceUzs: number; costUzs: number } }
+  | { type: "etalon_generating"; data: { assignmentId: string } }
+  | { type: "etalon_ready"; data: { assignmentId: string; itemCount: number; inputTokens: number; outputTokens: number } }
+  | { type: "etalon_failed"; data: { assignmentId: string; error: string } }
   | { type: "connected" };
 
 type UserWSContextType = {
