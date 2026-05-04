@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Folder, CheckCircle2, Clock, XCircle, Loader2, Database } from "lucide-react";
+import { ArrowLeft, Folder, CheckCircle2, Clock, XCircle, Loader2, Database, Sparkles } from "lucide-react";
 import { getToken } from "@/lib/auth";
 import { useT } from "@/lib/i18n-context";
 
@@ -40,9 +40,20 @@ type CacheLog = {
   createdAt: string;
 };
 
+type EtalonLog = {
+  id: string;
+  amountUzs: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  thinkingTokens: number | null;
+  note: string | null;
+  createdAt: string;
+};
+
 type TimelineEntry =
   | { kind: "submission"; data: SubmissionItem }
-  | { kind: "cache"; data: CacheLog };
+  | { kind: "cache"; data: CacheLog }
+  | { kind: "etalon"; data: EtalonLog };
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -64,6 +75,7 @@ export default function HistoryPage() {
   const { t } = useT();
   const [items, setItems] = useState<SubmissionItem[]>([]);
   const [cacheLogs, setCacheLogs] = useState<CacheLog[]>([]);
+  const [etalonLogs, setEtalonLogs] = useState<EtalonLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -84,7 +96,9 @@ export default function HistoryPage() {
       if (balRes?.ok) {
         const balData = await balRes.json();
         const caches = (balData.logs ?? []).filter((l: any) => l.type === "cache");
+        const etalons = (balData.logs ?? []).filter((l: any) => l.type === "etalon");
         setCacheLogs(caches);
+        setEtalonLogs(etalons);
       }
     } finally {
       setLoading(false);
@@ -101,10 +115,11 @@ export default function HistoryPage() {
 
   const hasMore = items.length < total;
 
-  // Submissions + cache loglarni vaqt bo'yicha birlashtirish
+  // Submissions + cache + etalon loglarni vaqt bo'yicha birlashtirish
   const allEntries: TimelineEntry[] = [
     ...items.map(d => ({ kind: "submission" as const, data: d })),
     ...cacheLogs.map(d => ({ kind: "cache" as const, data: d })),
+    ...etalonLogs.map(d => ({ kind: "etalon" as const, data: d })),
   ].sort((a, b) => new Date(b.data.createdAt).getTime() - new Date(a.data.createdAt).getTime());
 
   // Kunlar bo'yicha guruhlash
@@ -186,6 +201,39 @@ export default function HistoryPage() {
                           </div>
                           <div className="flex flex-col items-end gap-1 shrink-0">
                             <span className="text-xs font-semibold" style={{ color: "#6366f1" }}>
+                              -{Math.abs(log.amountUzs).toLocaleString()}uzs
+                            </span>
+                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>{formatTime(log.createdAt)}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (entry.kind === "etalon") {
+                      const log = entry.data;
+                      const totalTokens = (log.inputTokens ?? 0) + (log.outputTokens ?? 0) + (log.thinkingTokens ?? 0);
+                      return (
+                        <div
+                          key={`etalon-${log.id}`}
+                          className="flex items-center gap-3 px-4 py-2.5"
+                          style={{
+                            background: "var(--bg-primary)",
+                            border: "1px dashed var(--border)",
+                            borderRadius: "var(--radius-sm)",
+                          }}
+                        >
+                          <div className="w-11 h-11 shrink-0 flex items-center justify-center"
+                            style={{ borderRadius: "var(--radius-sm)", background: "rgba(245,158,11,0.10)" }}>
+                            <Sparkles size={16} style={{ color: "#f59e0b" }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>Etalon yaratish</p>
+                            <p className="text-[11px] truncate mt-0.5" style={{ color: "var(--text-muted)" }}>
+                              {totalTokens ? `${totalTokens.toLocaleString()} token · ` : ""}{log.note ?? "AI etalon"}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className="text-xs font-semibold" style={{ color: "#f59e0b" }}>
                               -{Math.abs(log.amountUzs).toLocaleString()}uzs
                             </span>
                             <span className="text-xs" style={{ color: "var(--text-muted)" }}>{formatTime(log.createdAt)}</span>
