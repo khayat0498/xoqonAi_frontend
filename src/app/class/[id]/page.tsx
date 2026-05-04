@@ -64,6 +64,7 @@ export default function ClassPage() {
   type SubjectItem = { id: string; name: string; icon: string | null };
   const [sessionSubject, setSessionSubject] = useState<SubjectItem | null>(null);
   const [sessionCondition, setSessionCondition] = useState("");
+  const [sessionAssignmentId, setSessionAssignmentId] = useState<string | null>(null);
   const [showSessionSetup, setShowSessionSetup] = useState(false);
   const [sessionStep, setSessionStep] = useState<"subject" | "condition">("subject");
   const [sessionSubjects, setSessionSubjects] = useState<SubjectItem[]>([]);
@@ -102,9 +103,10 @@ export default function ClassPage() {
       try {
         const saved = localStorage.getItem(`class_session_${id}`);
         if (saved) {
-          const { subject, condition } = JSON.parse(saved);
+          const { subject, condition, assignmentId } = JSON.parse(saved);
           if (subject) setSessionSubject(subject);
           if (condition) setSessionCondition(condition);
+          if (assignmentId) setSessionAssignmentId(assignmentId);
         }
       } catch {}
     });
@@ -244,13 +246,13 @@ export default function ClassPage() {
       setShowSessionSetup(true);
       return;
     }
-    goDirectToCamera(student, sessionSubject, sessionCondition);
+    goDirectToCamera(student, sessionSubject, sessionCondition, sessionAssignmentId);
   };
 
-  const goDirectToCamera = (student: ClassStudent, subject: SubjectItem | null, condition: string) => {
+  const goDirectToCamera = (student: ClassStudent, subject: SubjectItem | null, condition: string, assignmentId: string | null) => {
     // Sessiyani saqlash (camera qaytganda tiklash uchun)
     try {
-      localStorage.setItem(`class_session_${id}`, JSON.stringify({ subject, condition }));
+      localStorage.setItem(`class_session_${id}`, JSON.stringify({ subject, condition, assignmentId }));
     } catch {}
     const params = new URLSearchParams({
       studentId: student.id,
@@ -260,6 +262,7 @@ export default function ClassPage() {
     if (cls?.id) params.set("classId", cls.id);
     if (subject) params.set("subject", subject.name);
     if (condition.trim()) params.set("condition", condition.trim());
+    if (assignmentId) params.set("assignmentId", assignmentId);
     params.set("returnTo", `/class/${id}`);
     window.location.href = `/home?${params.toString()}`;
   };
@@ -272,15 +275,48 @@ export default function ClassPage() {
     setShowSessionSetup(true);
   };
 
-  const finishSessionSetup = (overrideSubject?: SubjectItem | null, overrideCondition?: string) => {
+  const finishSessionSetup = async (overrideSubject?: SubjectItem | null, overrideCondition?: string) => {
     const subject = overrideSubject !== undefined ? overrideSubject : setupSubject;
     const condition = overrideCondition !== undefined ? overrideCondition : setupCondition;
+
+    // Avvalgi sessiya bilan farqni topamiz — agar fan/shart o'zgargan bo'lsa yangi assignment yaratamiz
+    const conditionChanged = condition.trim() !== sessionCondition.trim();
+    const subjectChanged = subject?.id !== sessionSubject?.id;
+
     setSessionSubject(subject);
     setSessionCondition(condition);
     setShowSessionSetup(false);
     setCacheInfo(null);
 
-    // DB ga saqlash + keshni o'chirish
+    // Real fan + shart bo'lsa → assignment yaratish (etalon background'da generatsiya bo'ladi)
+    let assignmentId: string | null = sessionAssignmentId;
+    const isRealSubject = !!subject && subject.id !== "__general__";
+    if (isRealSubject && condition.trim() && (conditionChanged || subjectChanged || !assignmentId)) {
+      try {
+        const res = await fetch(`${API}/api/assignments`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            name: `${cls?.name ?? "Sessiya"} — ${new Date().toLocaleDateString()}`,
+            condition: condition.trim(),
+            subjectId: subject!.id,
+          }),
+        });
+        if (res.ok) {
+          const a = await res.json();
+          assignmentId = a.id ?? null;
+        } else {
+          assignmentId = null;
+        }
+      } catch {
+        assignmentId = null;
+      }
+    } else if (!isRealSubject || !condition.trim()) {
+      assignmentId = null;
+    }
+    setSessionAssignmentId(assignmentId);
+
+    // Class session DB ga saqlash (fan + shart matni)
     fetch(`${API}/api/classes/${id}/session`, {
       method: "PATCH",
       headers: authHeaders(),
@@ -290,7 +326,7 @@ export default function ClassPage() {
     if (pendingStudentForCamera) {
       const student = pendingStudentForCamera;
       setPendingStudentForCamera(null);
-      goDirectToCamera(student, subject, condition);
+      goDirectToCamera(student, subject, condition, assignmentId);
     }
   };
 

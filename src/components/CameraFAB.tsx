@@ -41,6 +41,11 @@ export default function CameraFAB() {
     if (!classId) return null;
     try { return JSON.parse(localStorage.getItem(`class_session_${classId}`) || "{}").condition || null; } catch { return null; }
   })();
+  const urlAssignmentId = searchParams.get("assignmentId") || (() => {
+    const classId = searchParams.get("classId");
+    if (!classId) return null;
+    try { return JSON.parse(localStorage.getItem(`class_session_${classId}`) || "{}").assignmentId || null; } catch { return null; }
+  })();
   const urlReturnTo    = searchParams.get("returnTo");
 
   // ── Step state ──
@@ -237,6 +242,7 @@ export default function CameraFAB() {
       if (urlStudentId) fd.append("studentId", urlStudentId);
       if (urlClassId) fd.append("classId", urlClassId);
       if (selectedFolder) fd.append("folderId", selectedFolder.id);
+      if (urlAssignmentId) fd.append("assignmentId", urlAssignmentId);
 
       const res = await fetch(`${API}/api/submissions`, {
         method: "POST",
