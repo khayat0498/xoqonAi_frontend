@@ -742,12 +742,63 @@ export default function AdminPlansPage() {
                 Mavjud modellar: gemini-3-flash-preview, gemini-1.5-flash, gemini-2.0-flash
               </p>
             </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>Etalon temperature</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="2"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+                  style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                  value={sysSettings.etalon_temperature ?? ""}
+                  onChange={e => setSysSettings(s => ({ ...s, etalon_temperature: e.target.value }))}
+                  placeholder="0"
+                />
+                <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>0 = deterministic, 1 = ijodiy</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>Etalon max output</label>
+                <input
+                  type="number"
+                  step="1024"
+                  min="1024"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+                  style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                  value={sysSettings.etalon_max_output_tokens ?? ""}
+                  onChange={e => setSysSettings(s => ({ ...s, etalon_max_output_tokens: e.target.value }))}
+                  placeholder="32768"
+                />
+                <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>JSON kesilmasligi uchun</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>Etalon thinking</label>
+                <input
+                  type="number"
+                  step="512"
+                  min="0"
+                  max="32768"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+                  style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                  value={sysSettings.etalon_thinking_budget ?? ""}
+                  onChange={e => setSysSettings(s => ({ ...s, etalon_thinking_budget: e.target.value }))}
+                  placeholder="0"
+                />
+                <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>0 = o'chiq, 2048+ sifat oshiradi (qimmat)</p>
+              </div>
+            </div>
             <button
               onClick={async () => {
                 setSettingsSaving(true);
                 await apiFetch("/api/plans/admin/settings", {
                   method: "PATCH",
-                  body: JSON.stringify({ gemini_model: sysSettings.gemini_model }),
+                  body: JSON.stringify({
+                    gemini_model: sysSettings.gemini_model,
+                    etalon_temperature: sysSettings.etalon_temperature ?? "0",
+                    etalon_max_output_tokens: sysSettings.etalon_max_output_tokens ?? "32768",
+                    etalon_thinking_budget: sysSettings.etalon_thinking_budget ?? "0",
+                  }),
                 });
                 setSettingsSaving(false);
               }}
