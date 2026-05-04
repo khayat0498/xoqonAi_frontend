@@ -195,7 +195,9 @@ export default function SubmissionPage() {
 
   const analysis = submission.analysis;
   const imageUrls = getImageUrls(submission);
-  const questions = analysis?.questions ?? [];
+  // Eski DB'da etalon yo'lida questions ga verification items yozilgan ({q, v, r}) — text/options yo'q.
+  // Faqat to'g'ri shakldagi clarification savollarini olamiz.
+  const questions = (analysis?.questions ?? []).filter((q) => q && typeof q.text === "string" && Array.isArray(q.options));
   const allAnswered = questions.length > 0 && questions.every((_, i) => !!selectedAnswers[i]);
 
   return (
@@ -379,7 +381,7 @@ export default function SubmissionPage() {
                         <div key={qi} className="flex flex-col gap-2">
                           <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{q.text}</p>
                           <div className="flex flex-wrap gap-2">
-                            {q.options.map((opt, oi) => {
+                            {(q.options ?? []).map((opt, oi) => {
                               const isSelected = selectedAnswers[qi] === opt;
                               return (
                                 <button key={oi}
