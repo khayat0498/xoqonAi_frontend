@@ -122,6 +122,9 @@ export default function SettingsPage() {
   // Tenant join/leave
   const [tenantModal, setTenantModal] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
+
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleteSaving, setDeleteSaving] = useState(false);
   const [tenantPreview, setTenantPreview] = useState<{ id: string; name: string } | null>(null);
   const [tenantLoading, setTenantLoading] = useState(false);
   const [tenantError, setTenantError] = useState("");
@@ -166,6 +169,23 @@ export default function SettingsPage() {
     }
     removeToken();
     router.replace("/auth/login");
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteSaving(true);
+    try {
+      const res = await fetch(`${API}/api/users/me`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (res.ok) {
+        removeToken();
+        router.replace("/auth/login");
+      }
+    } finally {
+      setDeleteSaving(false);
+      setDeleteModal(false);
+    }
   };
 
   const openProfileModal = () => {
@@ -437,7 +457,7 @@ export default function SettingsPage() {
             {/* Hisob */}
             <Section title={t("settings.account")}>
               <Row icon={LogOut} label={t("settings.logout")} danger onClick={handleLogout} />
-              <Row icon={Trash2} label={t("settings.deleteAccount")} sub={t("settings.deleteAccountSub")} danger last />
+              <Row icon={Trash2} label={t("settings.deleteAccount")} sub={t("settings.deleteAccountSub")} danger last onClick={() => setDeleteModal(true)} />
             </Section>
 
             <p className="text-center text-xs" style={{ color: "var(--border)" }}>
@@ -621,6 +641,47 @@ export default function SettingsPage() {
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete account confirmation modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.72)" }} onClick={() => setDeleteModal(false)}>
+          <div
+            className="w-full max-w-lg p-5 pb-10 flex flex-col gap-4"
+            style={{ background: "var(--bg-card)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
+            <div className="flex items-center gap-2">
+              <Trash2 size={18} style={{ color: "var(--error)" }} />
+              <p className="text-base font-bold" style={{ color: "var(--error)" }}>Hisobni o'chirish</p>
+            </div>
+            <p className="text-sm" style={{ color: "var(--text-primary)" }}>
+              Haqiqatan ham hisobingizni o'chirmoqchimisiz?
+            </p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Hisobingiz nofaol bo'ladi va tizimdan chiqasiz. Login qilolmaysiz. Tiklash uchun admin bilan bog'laning.
+            </p>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => setDeleteModal(false)}
+                disabled={deleteSaving}
+                className="flex-1 py-3 text-sm font-bold rounded-xl transition-all"
+                style={{ background: "var(--bg-primary)", color: "var(--text-primary)" }}
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteSaving}
+                className="flex-1 py-3 text-sm font-bold rounded-xl transition-all"
+                style={{ background: "var(--error)", color: "#fff", opacity: deleteSaving ? 0.6 : 1 }}
+              >
+                {deleteSaving ? "O'chirilmoqda..." : "Ha, o'chirish"}
+              </button>
             </div>
           </div>
         </div>
