@@ -6,7 +6,7 @@ import { AdminWSProvider, useAdminWS } from "@/lib/admin-ws";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Users, FileText, ShieldCheck, Wifi, WifiOff, Package, Building2 } from "lucide-react";
+import { LayoutDashboard, Users, FileText, ShieldCheck, Wifi, WifiOff, Package, Building2, Archive } from "lucide-react";
 import { getToken } from "@/lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -14,6 +14,7 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true, badgeKey: null },
   { href: "/admin/users", label: "Foydalanuvchilar", icon: Users, badgeKey: null },
+  { href: "/admin/archive", label: "Arxiv", icon: Archive, badgeKey: null },
   { href: "/admin/tenants", label: "Tashkilotlar", icon: Building2, badgeKey: "pendingTenants" as const },
   { href: "/admin/requests", label: "So'rovlar", icon: FileText, badgeKey: null },
   { href: "/admin/plans", label: "Tariflar", icon: Package, badgeKey: null },
