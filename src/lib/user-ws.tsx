@@ -19,6 +19,7 @@ export type UserWSEvent =
   | { type: "etalon_generating"; data: { assignmentId: string } }
   | { type: "etalon_ready"; data: { assignmentId: string; itemCount: number; inputTokens: number; outputTokens: number } }
   | { type: "etalon_failed"; data: { assignmentId: string; error: string } }
+  | { type: "notification_new"; data: { id: string; type: string; title: string; body: string | null; sourceUrl: string | null; createdAt: string } }
   | { type: "connected" };
 
 type UserWSContextType = {

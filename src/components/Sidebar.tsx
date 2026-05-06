@@ -9,7 +9,7 @@ import {
   ChevronLeft, ChevronRight, BarChart3, AlertCircle,
   CalendarDays, Moon, Sun, Pencil, User, LogOut,
   CreditCard, HelpCircle, MessageSquare, Layers,
-  Building2, Users as UsersIcon, Wallet, ShieldCheck, Clock,
+  Building2, Users as UsersIcon, Wallet, ShieldCheck, Clock, Bell,
 } from "lucide-react";
 import { useUser } from "@/lib/user-context";
 import { useTheme } from "@/lib/theme-context";
@@ -54,6 +54,7 @@ export default function Sidebar() {
   const [limit, setLimit] = useState<number>(60);
   const [planKey, setPlanKey] = useState("free");
   const [balanceUzs, setBalanceUzs] = useState<number | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
 
   useEffect(() => {
@@ -67,6 +68,12 @@ export default function Sidebar() {
       setLimit(meta.usage?.limit ?? 60);
       setBalanceUzs(meta.balanceUzs ?? null);
     });
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/unread-count`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (!cancelled && d) setUnreadCount(d.count ?? 0); })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
@@ -86,8 +93,16 @@ export default function Sidebar() {
       setBalanceUzs(lastEvent.data.balanceUzs);
       updated = true;
     }
+    if (lastEvent.type === "notification_new") {
+      setUnreadCount(c => c + 1);
+    }
     if (updated) invalidateSidebarMeta();
   }, [lastEvent]);
+
+  // /notifications sahifasiga kirsa badge'ni nolga tushuramiz
+  useEffect(() => {
+    if (pathname === "/notifications") setUnreadCount(0);
+  }, [pathname]);
 
   // Role bo'yicha asosiy navigatsiya:
   // - direktor: faqat tashkilot boshqaruvi (o'qituvchi ishlari yo'q)
@@ -216,19 +231,20 @@ export default function Sidebar() {
       )}
       <nav className="px-[10px] flex flex-col gap-1">
         {[
-          ...(isAdmin ? [{ href: "/admin/tenants", labelKey: "nav.adminTenants", icon: ShieldCheck }] : []),
-          { href: "/history", labelKey: "nav.usage", icon: History },
-          ...(isDirektor || isXodim ? [] : [{ href: "/billing", labelKey: "nav.billing", icon: CreditCard }]),
-          ...(isDirektor || isXodim ? [] : [{ href: "/plans", labelKey: "nav.plans", icon: Layers }]),
-          { href: "/contact", labelKey: "nav.contact", icon: MessageSquare },
-          { href: "/faq", labelKey: "nav.faq", icon: HelpCircle },
-        ].map(({ href, labelKey, icon: Icon }) => (
+          ...(isAdmin ? [{ href: "/admin/tenants", labelKey: "nav.adminTenants", icon: ShieldCheck, badge: 0 }] : []),
+          { href: "/notifications", labelKey: "nav.notifications", icon: Bell, badge: unreadCount },
+          { href: "/history", labelKey: "nav.usage", icon: History, badge: 0 },
+          ...(isDirektor || isXodim ? [] : [{ href: "/billing", labelKey: "nav.billing", icon: CreditCard, badge: 0 }]),
+          ...(isDirektor || isXodim ? [] : [{ href: "/plans", labelKey: "nav.plans", icon: Layers, badge: 0 }]),
+          { href: "/contact", labelKey: "nav.contact", icon: MessageSquare, badge: 0 },
+          { href: "/faq", labelKey: "nav.faq", icon: HelpCircle, badge: 0 },
+        ].map(({ href, labelKey, icon: Icon, badge }) => (
           <Link
             key={href}
             href={href}
             prefetch={false}
             className={clsx(
-              "flex items-center gap-[11px] py-[10px] rounded-[var(--radius-sm)] transition-all hover:bg-[var(--sidebar-hover)]",
+              "flex items-center gap-[11px] py-[10px] rounded-[var(--radius-sm)] transition-all hover:bg-[var(--sidebar-hover)] relative",
               collapsed ? "px-[14px] justify-center" : "px-[14px]"
             )}
             style={{
@@ -237,8 +253,30 @@ export default function Sidebar() {
               boxShadow: pathname === href ? "var(--shadow-clay-sm)" : "none",
             }}
           >
-            <Icon size={19} className="shrink-0" style={{ opacity: pathname === href ? 1 : 0.6 }} />
-            {!collapsed && <span className="text-[0.87rem] font-medium">{t(labelKey)}</span>}
+            <div className="relative shrink-0">
+              <Icon size={19} style={{ opacity: pathname === href ? 1 : 0.6 }} />
+              {collapsed && badge > 0 && (
+                <span
+                  className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] px-1 flex items-center justify-center text-[9px] font-bold rounded-full"
+                  style={{ background: "var(--error)", color: "#fff" }}
+                >
+                  {badge > 99 ? "99+" : badge}
+                </span>
+              )}
+            </div>
+            {!collapsed && (
+              <span className="text-[0.87rem] font-medium flex-1 flex items-center justify-between">
+                {t(labelKey)}
+                {badge > 0 && (
+                  <span
+                    className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded-full"
+                    style={{ background: "var(--error)", color: "#fff" }}
+                  >
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                )}
+              </span>
+            )}
           </Link>
         ))}
       </nav>
