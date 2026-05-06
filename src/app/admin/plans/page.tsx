@@ -4,9 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import { getToken } from "@/lib/auth";
 import {
   Package, Plus, Trash2, Edit3, Save, X, Tag,
-  ToggleLeft, ToggleRight, ChevronUp, Gift, Settings, FileText, BookOpen, Link2
+  ToggleLeft, ToggleRight, ChevronUp, Gift, Settings, FileText, BookOpen, Link2, CreditCard
 } from "lucide-react";
 import { useAdminWS } from "@/lib/admin-ws";
+import AdminBillingPage from "../billing/page";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
@@ -442,7 +443,7 @@ export default function AdminPlansPage() {
   const [loading, setLoading] = useState(true);
   const [promoModal, setPromoModal] = useState<{ open: boolean; promo: Promotion | null }>({ open: false, promo: null });
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"plans" | "promos" | "settings" | "prompts" | "subjects">("plans");
+  const [tab, setTab] = useState<"plans" | "promos" | "settings" | "prompts" | "subjects" | "billing">("plans");
   const [sysSettings, setSysSettings] = useState<Record<string, string>>({});
   const [promptsList, setPromptsList] = useState<Array<{ id: string; key: string; name: string; description: string | null; content: string; language: string }>>([]);
   const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
@@ -518,6 +519,7 @@ export default function AdminPlansPage() {
       <div className="flex gap-1 mb-5 p-1 rounded-xl" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
         {[
           { key: "plans" as const, label: "Tariflar", icon: Package },
+          { key: "billing" as const, label: "Billing", icon: CreditCard },
           { key: "promos" as const, label: "Aksiyalar", icon: Tag },
           { key: "prompts" as const, label: "Promptlar", icon: FileText },
           { key: "subjects" as const, label: "Fanlar", icon: BookOpen },
@@ -557,6 +559,9 @@ export default function AdminPlansPage() {
             <PlanCard key={plan.key} plan={plan} onSaved={load} />
           ))}
         </div>
+      ) : tab === "billing" ? (
+        /* ── Billing tab ── */
+        <AdminBillingPage />
       ) : tab === "prompts" ? (
         /* ── Prompts tab ── */
         <div className="space-y-3">

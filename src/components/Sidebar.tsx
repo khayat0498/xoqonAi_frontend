@@ -340,7 +340,7 @@ export default function Sidebar() {
                     <p className="text-[0.68rem] font-bold uppercase tracking-wide" style={{
                       color: planKey === "premium" ? "var(--warning)" : planKey === "pro" ? "var(--accent)" : planKey === "pay_per_use" ? "var(--success)" : "var(--text-muted)"
                     }}>
-                      {planKey === "premium" ? "Premium" : planKey === "pro" ? "Pro" : planKey === "pay_per_use" ? "Pay per use" : "Free"}
+                      {planKey === "premium" ? "Premium" : planKey === "pro" ? "Pro" : planKey === "pay_per_use" ? "Hamyon" : "Bepul"}
                     </p>
                   )}
                 </>

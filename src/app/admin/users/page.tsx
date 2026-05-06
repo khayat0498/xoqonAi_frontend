@@ -77,10 +77,10 @@ export default function AdminUsersPage() {
   };
 
   const PLAN_OPTIONS = [
-    { key: "free",        label: "Free",        color: "var(--text-muted)",  bg: "var(--bg-primary)" },
+    { key: "free",        label: "Bepul",       color: "var(--text-muted)",  bg: "var(--bg-primary)" },
     { key: "pro",         label: "Pro",         color: "var(--accent)",      bg: "var(--accent-light)" },
     { key: "premium",     label: "Premium",     color: "var(--warning)",     bg: "var(--warning-bg)" },
-    { key: "pay_per_use", label: "Pay per use", color: "#7C3AED",            bg: "#EDE9FE" },
+    { key: "pay_per_use", label: "Hamyon",      color: "#7C3AED",            bg: "#EDE9FE" },
   ];
 
   const handleGrantPlan = async (userId: string, planKey: string) => {
@@ -265,7 +265,7 @@ export default function AdminUsersPage() {
                           background: user.planKey === "pay_per_use" ? "#EDE9FE" : user.planKey === "premium" ? "var(--warning-bg)" : user.planKey === "pro" ? "var(--accent-light)" : "var(--bg-primary)",
                           color: user.planKey === "pay_per_use" ? "#7C3AED" : user.planKey === "premium" ? "var(--warning)" : user.planKey === "pro" ? "var(--accent)" : "var(--text-muted)",
                         }}>
-                          {user.planKey === "pay_per_use" ? "Pay per use" : user.planKey}
+                          {user.planKey === "pay_per_use" ? "Hamyon" : user.planKey === "free" ? "Bepul" : user.planKey}
                         </span>
                       )}
                       {user.planKey === "pay_per_use" && (
