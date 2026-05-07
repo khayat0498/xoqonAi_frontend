@@ -209,7 +209,7 @@ export default function StudentProfilePage() {
           style={{ background: "rgba(0,0,0,0.25)", backdropFilter: "blur(6px)" }}
           onClick={e => e.target === e.currentTarget && setShowEdit(false)}>
           <div className="w-full max-w-sm p-5"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)" }}>
+            style={{ background: "var(--bg-modal)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)" }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
                 {t("student.editStudent")}

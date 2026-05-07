@@ -243,7 +243,7 @@ export default function SubjectPage() {
           style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
           onClick={e => { if (e.target === e.currentTarget) setCreating(false); }}>
           <div className="w-full max-w-sm animate-fade-in"
-            style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)", overflow: "hidden" }}>
+            style={{ background: "var(--bg-modal)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)", overflow: "hidden" }}>
             <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
               <span className="text-base font-bold" style={{ color: "var(--text-primary)" }}>{t("subject.newAssignmentTitle")}</span>
               <button onClick={() => setCreating(false)} className="w-8 h-8 flex items-center justify-center"

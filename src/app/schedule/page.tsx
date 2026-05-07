@@ -295,7 +295,7 @@ export default function SchedulePage() {
           style={{ background: "#00000050" }}
           onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
           <div className="w-full max-w-sm p-5 animate-fade-in max-h-[calc(100dvh-120px)] overflow-y-auto"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
+            style={{ background: "var(--bg-modal)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("schedule.newPlan")}</h2>
               <button onClick={() => setShowModal(false)} style={{ color: "var(--text-muted)" }}>

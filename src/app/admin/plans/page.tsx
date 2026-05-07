@@ -333,7 +333,7 @@ function PromoModal({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
       <div
         className="w-full max-w-md rounded-2xl overflow-hidden"
-        style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}
+        style={{ background: "var(--bg-modal)", border: "1px solid var(--border)" }}
       >
         <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
           <Gift size={16} style={{ color: "var(--accent)" }} />
@@ -968,7 +968,7 @@ export default function AdminPlansPage() {
       {/* New Subject modal */}
       {newSubjectModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "var(--bg-modal)", border: "1px solid var(--border)" }}>
             <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
               <BookOpen size={16} style={{ color: "var(--accent)" }} />
               <p className="font-bold text-sm flex-1" style={{ color: "var(--text-primary)" }}>Yangi global fan</p>
@@ -1050,7 +1050,7 @@ export default function AdminPlansPage() {
       {/* Edit Subject modal */}
       {editingSubject && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "var(--bg-modal)", border: "1px solid var(--border)" }}>
             <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
               <BookOpen size={16} style={{ color: "var(--accent)" }} />
               <p className="font-bold text-sm flex-1" style={{ color: "var(--text-primary)" }}>Fanni tahrirlash</p>
@@ -1121,7 +1121,7 @@ export default function AdminPlansPage() {
       {/* Delete Subject confirm */}
       {deletingSubjectId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="w-full max-w-xs rounded-2xl p-5 text-center space-y-4" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          <div className="w-full max-w-xs rounded-2xl p-5 text-center space-y-4" style={{ background: "var(--bg-modal)", border: "1px solid var(--border)" }}>
             <p className="font-bold" style={{ color: "var(--text-primary)" }}>Fanni o'chirish</p>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>Bu amalni qaytarib bo'lmaydi</p>
             <div className="flex gap-2">
@@ -1147,7 +1147,7 @@ export default function AdminPlansPage() {
       {/* New Prompt modal */}
       {newPromptModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ background: "var(--bg-modal)", border: "1px solid var(--border)" }}>
             <div className="px-5 py-4 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
               <FileText size={16} style={{ color: "var(--accent)" }} />
               <p className="font-bold text-sm flex-1" style={{ color: "var(--text-primary)" }}>Yangi prompt</p>
@@ -1243,7 +1243,7 @@ export default function AdminPlansPage() {
       {/* Delete confirm */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="w-full max-w-xs rounded-2xl p-5 text-center space-y-4" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
+          <div className="w-full max-w-xs rounded-2xl p-5 text-center space-y-4" style={{ background: "var(--bg-modal)", border: "1px solid var(--border)" }}>
             <p className="font-bold" style={{ color: "var(--text-primary)" }}>Aksiyani o'chirish</p>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>Bu amalni qaytarib bo'lmaydi</p>
             <div className="flex gap-2">

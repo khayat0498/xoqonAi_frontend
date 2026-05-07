@@ -1728,7 +1728,7 @@ function HomePageInner() {
           style={{ background: "rgba(0,0,0,0.25)", backdropFilter: "blur(6px)" }}
           onClick={(e) => e.target === e.currentTarget && setDeleteStudentId(null)}>
           <div className="w-full max-w-xs p-5 animate-fade-in"
-            style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
+            style={{ background: "var(--bg-modal)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
             <div className="flex items-center justify-between mb-3">
               <p className="text-base font-semibold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>{t("home.deleteStudentTitle")}</p>
               <button onClick={() => setDeleteStudentId(null)} className="w-8 h-8 flex items-center justify-center"
@@ -1761,7 +1761,7 @@ function HomePageInner() {
         >
           <div className="w-full max-w-sm animate-fade-in p-6 flex flex-col items-center gap-4 text-center"
             onClick={(e) => e.stopPropagation()}
-            style={{ background: "var(--bg-card-solid, var(--bg-card))", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)" }}
+            style={{ background: "var(--bg-modal)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)" }}
           >
             <div className="w-14 h-14 flex items-center justify-center rounded-full" style={{ background: "rgba(224,92,92,0.1)" }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

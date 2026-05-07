@@ -407,7 +407,7 @@ export default function PlansPage() {
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
           onClick={(e) => { if (e.target === e.currentTarget && !sending) setConfirmPlan(null); }}>
           <div className="w-full max-w-sm p-6 flex flex-col gap-5"
-            style={{ background: "var(--bg-card)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)", border: "1px solid var(--border)" }}>
+            style={{ background: "var(--bg-modal)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-clay)", border: "1px solid var(--border)" }}>
             {sentOk ? (
               <div className="flex flex-col items-center gap-3 py-4">
                 <div className="w-14 h-14 flex items-center justify-center rounded-full" style={{ background: "var(--success-bg)" }}>

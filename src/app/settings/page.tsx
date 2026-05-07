@@ -473,7 +473,7 @@ export default function SettingsPage() {
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.72)" }} onClick={() => setProfileModal(false)}>
           <div
             className="w-full max-w-lg p-5 pb-10 flex flex-col gap-4"
-            style={{ background: "var(--bg-card)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
+            style={{ background: "var(--bg-modal)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
@@ -515,7 +515,7 @@ export default function SettingsPage() {
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.72)" }} onClick={() => setPasswordModal(false)}>
           <div
             className="w-full max-w-lg p-5 pb-10 flex flex-col gap-4"
-            style={{ background: "var(--bg-card)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
+            style={{ background: "var(--bg-modal)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
@@ -576,7 +576,7 @@ export default function SettingsPage() {
         <div className="fixed inset-0 z-[100] flex items-end justify-center" style={{ background: "rgba(0,0,0,0.72)" }} onClick={() => setTenantModal(false)}>
           <div
             className="w-full max-w-lg p-5 pb-[max(env(safe-area-inset-bottom),5rem)] flex flex-col gap-4"
-            style={{ background: "var(--bg-card)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
+            style={{ background: "var(--bg-modal)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
@@ -651,7 +651,7 @@ export default function SettingsPage() {
         <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.72)" }} onClick={() => setDeleteModal(false)}>
           <div
             className="w-full max-w-lg p-5 pb-10 flex flex-col gap-4"
-            style={{ background: "var(--bg-card)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
+            style={{ background: "var(--bg-modal)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />

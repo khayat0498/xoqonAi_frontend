@@ -489,7 +489,7 @@ export default function AdminUsersPage() {
         >
           <div
             className="w-full max-w-sm p-6 flex flex-col gap-4"
-            style={{ background: "var(--bg-card)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", boxShadow: "var(--shadow-clay)" }}
+            style={{ background: "var(--bg-modal)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", boxShadow: "var(--shadow-clay)" }}
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 flex items-center justify-center rounded-xl" style={{ background: "#FEF2F2" }}>
