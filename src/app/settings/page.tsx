@@ -125,6 +125,11 @@ export default function SettingsPage() {
 
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteSaving, setDeleteSaving] = useState(false);
+
+  const [createTenantModal, setCreateTenantModal] = useState(false);
+  const [createTenantName, setCreateTenantName] = useState("");
+  const [createTenantLoading, setCreateTenantLoading] = useState(false);
+  const [createTenantError, setCreateTenantError] = useState("");
   const [tenantPreview, setTenantPreview] = useState<{ id: string; name: string } | null>(null);
   const [tenantLoading, setTenantLoading] = useState(false);
   const [tenantError, setTenantError] = useState("");
@@ -169,6 +174,31 @@ export default function SettingsPage() {
     }
     removeToken();
     router.replace("/auth/login");
+  };
+
+  const handleCreateTenant = async () => {
+    const name = createTenantName.trim();
+    if (name.length < 3) return setCreateTenantError("Tashkilot nomi kamida 3 ta belgi");
+    setCreateTenantLoading(true); setCreateTenantError("");
+    try {
+      const res = await fetch(`${API}/api/tenant/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ tenantName: name }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setCreateTenantError(d.error ?? "Xato");
+        setCreateTenantLoading(false);
+        return;
+      }
+      setCreateTenantModal(false);
+      setCreateTenantName("");
+      router.replace("/direktor");
+    } catch (e) {
+      setCreateTenantError(e instanceof Error ? e.message : "Tarmoq xatosi");
+      setCreateTenantLoading(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -438,18 +468,30 @@ export default function SettingsPage() {
                     />
                   </>
                 ) : (
-                  <Row
-                    icon={LogIn}
-                    label="Tashkilotga ulanish"
-                    sub="Direktoringiz bergan kod orqali"
-                    onClick={() => {
-                      setInviteCode("");
-                      setTenantPreview(null);
-                      setTenantError("");
-                      setTenantModal(true);
-                    }}
-                    last
-                  />
+                  <>
+                    <Row
+                      icon={Building2}
+                      label="Tashkilot sifatida ochish"
+                      sub="O'z tashkilotingizni yarating (direktor)"
+                      onClick={() => {
+                        setCreateTenantName("");
+                        setCreateTenantError("");
+                        setCreateTenantModal(true);
+                      }}
+                    />
+                    <Row
+                      icon={LogIn}
+                      label="Tashkilotga ulanish"
+                      sub="Direktoringiz bergan kod orqali"
+                      onClick={() => {
+                        setInviteCode("");
+                        setTenantPreview(null);
+                        setTenantError("");
+                        setTenantModal(true);
+                      }}
+                      last
+                    />
+                  </>
                 )}
               </Section>
             )}
@@ -641,6 +683,55 @@ export default function SettingsPage() {
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create tenant modal */}
+      {createTenantModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.72)" }} onClick={() => setCreateTenantModal(false)}>
+          <div
+            className="w-full max-w-lg p-5 pb-10 flex flex-col gap-4"
+            style={{ background: "var(--bg-modal)", borderRadius: "var(--radius-lg) var(--radius-lg) 0 0", boxShadow: "0 -8px 32px rgba(0,0,0,0.18)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-1" style={{ background: "var(--border)" }} />
+            <div className="flex items-center gap-2">
+              <Building2 size={18} style={{ color: "#7C3AED" }} />
+              <p className="text-base font-bold" style={{ color: "var(--text-primary)" }}>Tashkilot sifatida ochish</p>
+            </div>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Direktor sifatida o'z tashkilotingizni yarating. Admin tasdiqlagandan keyin xodimlar invite kod orqali ulanishi mumkin.
+            </p>
+            <input
+              type="text"
+              placeholder="Tashkilot nomi"
+              value={createTenantName}
+              onChange={e => setCreateTenantName(e.target.value)}
+              className="w-full p-3 rounded-xl text-sm outline-none"
+              style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+            />
+            {createTenantError && (
+              <p className="text-xs" style={{ color: "var(--error)" }}>{createTenantError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCreateTenantModal(false)}
+                disabled={createTenantLoading}
+                className="flex-1 py-3 text-sm font-bold rounded-xl"
+                style={{ background: "var(--bg-primary)", color: "var(--text-primary)" }}
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={handleCreateTenant}
+                disabled={createTenantLoading}
+                className="flex-1 py-3 text-sm font-bold rounded-xl"
+                style={{ background: "var(--accent)", color: "#fff", opacity: createTenantLoading ? 0.6 : 1 }}
+              >
+                {createTenantLoading ? "Yaratilmoqda..." : "Yaratish"}
+              </button>
             </div>
           </div>
         </div>
