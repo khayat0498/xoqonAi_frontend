@@ -61,6 +61,17 @@ export default function TelegramAuthPage() {
         if (typeof window !== "undefined") {
           localStorage.setItem("xoqon_token", data.token);
         }
+        // Onboarding holatini tekshirish
+        const roleRes = await fetch(`${API}/api/users/me/role-info`, {
+          headers: { Authorization: `Bearer ${data.token}` },
+        });
+        if (roleRes.ok) {
+          const info = await roleRes.json();
+          if (!info.onboarded) {
+            router.replace("/onboarding/role");
+            return;
+          }
+        }
         // Role bo'yicha redirect
         const role = data.user?.role ?? "teacher";
         const home = role === "admin" ? "/admin" : role === "direktor" ? "/direktor" : "/home";
