@@ -234,7 +234,6 @@ export default function Sidebar() {
           ...(isAdmin ? [{ href: "/admin/tenants", labelKey: "nav.adminTenants", icon: ShieldCheck, badge: 0 }] : []),
           { href: "/notifications", labelKey: "nav.notifications", icon: Bell, badge: unreadCount },
           { href: "/history", labelKey: "nav.usage", icon: History, badge: 0 },
-          ...(isDirektor || isXodim ? [] : [{ href: "/billing", labelKey: "nav.billing", icon: CreditCard, badge: 0 }]),
           ...(isDirektor || isXodim ? [] : [{ href: "/plans", labelKey: "nav.plans", icon: Layers, badge: 0 }]),
           { href: "/contact", labelKey: "nav.contact", icon: MessageSquare, badge: 0 },
           { href: "/faq", labelKey: "nav.faq", icon: HelpCircle, badge: 0 },

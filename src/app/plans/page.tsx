@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import BillingPage from "../billing/page";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Check, Zap, Crown, Gem, Building2,
@@ -95,6 +96,7 @@ export default function PlansPage() {
   const { t } = useT();
   const { fmtPrice, fmtPriceYear } = useFmtPrice();
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+  const [tab, setTab] = useState<"plans" | "billing">("plans");
   const [plans, setPlans] = useState<PlanConfig[]>([]);
   const [promos, setPromos] = useState<Promotion[]>([]);
   const [currentPlan, setCurrentPlan] = useState("free");
@@ -179,6 +181,35 @@ export default function PlansPage() {
         <h1 className="text-lg font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{t("plans.title")}</h1>
       </div>
 
+      {/* Tabs: Tariflar | Billing */}
+      <div className="shrink-0 flex gap-1 px-4 py-2" style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-card)" }}>
+        <button
+          onClick={() => setTab("plans")}
+          className="flex-1 py-2 rounded-lg text-sm font-bold transition-all"
+          style={{
+            background: tab === "plans" ? "var(--accent)" : "transparent",
+            color: tab === "plans" ? "#fff" : "var(--text-muted)",
+          }}
+        >
+          Tariflar
+        </button>
+        <button
+          onClick={() => setTab("billing")}
+          className="flex-1 py-2 rounded-lg text-sm font-bold transition-all"
+          style={{
+            background: tab === "billing" ? "var(--accent)" : "transparent",
+            color: tab === "billing" ? "#fff" : "var(--text-muted)",
+          }}
+        >
+          Billing
+        </button>
+      </div>
+
+      {tab === "billing" ? (
+        <div className="flex-1 overflow-y-auto">
+          <BillingPage />
+        </div>
+      ) : (
       <div className="bg-grid flex-1 overflow-y-auto">
         <div className="px-4 py-6 pb-28 max-w-2xl mx-auto w-full">
 
@@ -400,6 +431,7 @@ export default function PlansPage() {
           )}
         </div>
       </div>
+      )}
 
       {/* Confirm modal */}
       {confirmPlan && (
