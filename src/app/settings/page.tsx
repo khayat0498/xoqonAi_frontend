@@ -558,7 +558,9 @@ export default function SettingsPage() {
               <Section title="Shaxsiy promptlar">
                 <div className="px-4 py-3 flex flex-col gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    Subject va prompt kiriting. O'sha fan submission'larida default kimyo prompti o'rniga sizning promptingiz ishlatiladi (faqat Hamyon tarifda).
+                    Subject va prompt kiriting. O'sha fan submission'larida sizning promptingiz default sifatida ishlatiladi (faqat Hamyon tarifda).
+                    <br/>
+                    <strong>Avtomatik qo'shiladi:</strong> "Sen [subject] fanidan professional o'qituvchisan, avval o'zing ishla keyin solishtir" + "5 ta savol odatda, ishlanish yo'li muhim". Siz faqat <em>maxsus qoidalarni</em> yozasiz.
                   </p>
                   <input
                     type="text"
