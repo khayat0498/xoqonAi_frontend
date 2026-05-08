@@ -560,9 +560,15 @@ export default function SettingsPage() {
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                     O'sha fan submission'larida sizning maxsus qoidalaringiz ishlatiladi (faqat Hamyon).
                     <br/>
-                    <strong>Avtomatik qo'shiladi:</strong> "Sen [subject] fanidan professional o'qituvchisan, avval o'zing ishla keyin solishtir" boshlanishida; "5 ta savol odatda bo'ladi, ishlanish yo'li muhim" oxirida.
+                    <strong>Avtomatik qo'shiladi (siz yozmaysiz):</strong>
                     <br/>
-                    <strong>Yozmasangiz</strong> default usul (etalon + comparator) ishlatiladi.
+                    • Boshlanishida: "Sen [subject] fani o'qituvchisisan. Sening vazifang quyidagi maxsus qoidalar bo'yicha tekshirish..."
+                    <br/>
+                    • Mablag' tejovchi qoidalar: oddiy variantli savollar uchun faqat harf solishtirish, yozma savollar uchun mantiq va ishlash baholash
+                    <br/>
+                    • Format: OK/X/P/- verdict, har savolga aniq baho
+                    <br/>
+                    <strong style={{ color: "var(--error)" }}>Maxsus qoidalar majburiy:</strong> bu maydonni to'ldirmasangiz default usul (etalon + comparator) ishlatiladi.
                   </p>
                   <input
                     type="text"

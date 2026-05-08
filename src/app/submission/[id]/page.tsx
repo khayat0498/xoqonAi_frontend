@@ -23,6 +23,7 @@ type Question = { text: string; options: string[] };
 type Analysis = {
   grade: string;
   score: number;
+  maxScore: number | null;
   feedback: string;
   errors: string[];
   suggestions: string[];
@@ -72,9 +73,12 @@ export default function SubmissionPage() {
       const data = await res.json();
       setSubmission(data);
       const savedGrade = data.analysis?.grade;
+      const hasMaxScore = data.analysis?.maxScore != null && data.analysis.maxScore > 0;
       const aiGrade = (savedGrade && savedGrade !== "-")
         ? savedGrade
-        : (data.analysis?.score != null ? scoreToGrade(data.analysis.score) : "");
+        : hasMaxScore
+          ? String(data.analysis.score)
+          : (data.analysis?.score != null ? scoreToGrade(data.analysis.score) : "");
       setGrade(aiGrade);
     } catch {}
   }, [id]);
@@ -343,14 +347,20 @@ export default function SubmissionPage() {
                         style={{ color: "var(--grade-color)", borderColor: "rgba(74,154,170,0.4)", caretColor: "var(--grade-color)" }}
                       />
                       <span className="text-5xl font-bold leading-none pb-0.5" style={{ color: "var(--grade-color)", opacity: 0.4 }}>/</span>
-                      <span className="text-5xl font-bold leading-none pb-0.5" style={{ color: "var(--grade-color)", opacity: 0.4 }}>5</span>
+                      <span className="text-5xl font-bold leading-none pb-0.5" style={{ color: "var(--grade-color)", opacity: 0.4 }}>
+                        {analysis.maxScore && analysis.maxScore > 0 ? analysis.maxScore : 5}
+                      </span>
                       {gradeSaved && (
                         <span className="flex items-center gap-1 text-xs pb-1" style={{ color: "var(--success)" }}>
                           <Check size={12} /> {t("submission.saved")}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>{t("submission.gradeHelp").replace("{score}", String(analysis.score))}</p>
+                    <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                      {analysis.maxScore && analysis.maxScore > 0
+                        ? `Olingan ${analysis.score} / ${analysis.maxScore} ball (${Math.round((analysis.score / analysis.maxScore) * 100)}%)`
+                        : t("submission.gradeHelp").replace("{score}", String(analysis.score))}
+                    </p>
                   </div>
 
                   {/* Xatolar */}
