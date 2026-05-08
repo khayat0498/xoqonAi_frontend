@@ -558,9 +558,11 @@ export default function SettingsPage() {
               <Section title="Shaxsiy promptlar">
                 <div className="px-4 py-3 flex flex-col gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    Subject va prompt kiriting. O'sha fan submission'larida sizning promptingiz default sifatida ishlatiladi (faqat Hamyon tarifda).
+                    O'sha fan submission'larida sizning maxsus qoidalaringiz ishlatiladi (faqat Hamyon).
                     <br/>
-                    <strong>Avtomatik qo'shiladi:</strong> "Sen [subject] fanidan professional o'qituvchisan, avval o'zing ishla keyin solishtir" + "5 ta savol odatda, ishlanish yo'li muhim". Siz faqat <em>maxsus qoidalarni</em> yozasiz.
+                    <strong>Avtomatik qo'shiladi:</strong> "Sen [subject] fanidan professional o'qituvchisan, avval o'zing ishla keyin solishtir" boshlanishida; "5 ta savol odatda bo'ladi, ishlanish yo'li muhim" oxirida.
+                    <br/>
+                    <strong>Yozmasangiz</strong> default usul (etalon + comparator) ishlatiladi.
                   </p>
                   <input
                     type="text"
@@ -571,13 +573,35 @@ export default function SettingsPage() {
                     style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
                   />
                   <textarea
-                    placeholder="Prompt — batafsil tekshirish qoidalari, format, talablar..."
+                    placeholder={`Maxsus qoidalar — masalan:\n\nQ1-Q12: oddiy variant (A/B/C/D) tekshiruvi\nQ13-Q14: hisob va birlik to'g'rimi tekshir\nQ15: reaksiya tenglashtirish — koeffisiyentlar yig'indisi\nQ16: batafsil yechim, formulalar va qadamlar\n\nYoki istalgan formatda erkin qoidalar yozing.`}
                     value={cpPrompt}
                     onChange={e => setCpPrompt(e.target.value)}
-                    rows={8}
+                    rows={10}
                     className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y font-mono"
                     style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
                   />
+                  <details className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    <summary className="cursor-pointer font-semibold">📌 Shablon ko'rish</summary>
+                    <pre className="mt-2 p-2 rounded text-[11px] whitespace-pre-wrap" style={{ background: "var(--bg-primary)", border: "1px solid var(--border)" }}>{`Q1-Q12: yopiq test (A/B/C/D harf javobi)
+   - Etalon bilan harf solishtir
+   - Faqat harf yozilgan bo'lsa ham qabul qil
+   - Hisob xato bo'lsa lekin javob mos kelsa "qisman"
+
+Q13-Q14: yozma hisob
+   - Sonli javob to'g'rimi
+   - O'lchov birligi mos kelishi kerak
+   - Hisob qadamlari ko'rsatilgan bo'lishi shart
+
+Q15: reaksiya tenglamalari
+   - 7 ta reaksiya bor
+   - Davom ettirish + koeffisiyentlar tenglashtirilishi
+   - Eng kichik butun sonlar
+
+Q16: batafsil masala yechimi
+   - Reaksiya tenglamalari ko'rsatilishi shart
+   - Formulalar va birlik
+   - Mantiqiy ketma-ketlik`}</pre>
+                  </details>
                   {cpError && <p className="text-xs" style={{ color: "var(--error)" }}>{cpError}</p>}
                   <button
                     onClick={saveCustomPrompt}
