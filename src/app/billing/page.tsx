@@ -13,7 +13,7 @@ function authHeaders() {
   return { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` };
 }
 
-export default function BillingPage() {
+export default function BillingPage({ embedded = false }: { embedded?: boolean } = {}) {
   const router = useRouter();
   const { lastEvent, connected } = useUserWS();
   const { t } = useT();
@@ -61,8 +61,9 @@ export default function BillingPage() {
   const isUnlimited = limit >= 99999;
 
   return (
-    <div className="flex flex-col h-screen" style={{ background: "var(--bg-primary)" }}>
-      {/* Header */}
+    <div className={embedded ? "flex flex-col" : "flex flex-col h-screen"} style={{ background: "var(--bg-primary)" }}>
+      {/* Header — embedded rejimida ko'rsatilmaydi (Plans tab orqali ochilsa) */}
+      {!embedded && (
       <div
         className="shrink-0 px-5 py-4 flex items-center gap-3 relative overflow-hidden"
         style={{
@@ -86,6 +87,7 @@ export default function BillingPage() {
           </span>
         </div>
       </div>
+      )}
 
       <div className="bg-grid flex-1 overflow-y-auto">
         <div className="px-4 py-6 pb-28 max-w-lg mx-auto w-full flex flex-col gap-4">

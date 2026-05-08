@@ -207,7 +207,7 @@ export default function PlansPage() {
 
       {tab === "billing" ? (
         <div className="flex-1 overflow-y-auto">
-          <BillingPage />
+          <BillingPage embedded />
         </div>
       ) : (
       <div className="bg-grid flex-1 overflow-y-auto">
