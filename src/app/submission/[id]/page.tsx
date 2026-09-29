@@ -28,6 +28,7 @@ type Analysis = {
   errors: string[];
   suggestions: string[];
   questions: Question[];
+  promptTitle?: string | null;
 };
 
 type Submission = {
@@ -379,6 +380,11 @@ export default function SubmissionPage() {
                     <p className="text-sm italic leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                       → {analysis.feedback}
                     </p>
+                    {analysis.promptTitle && (
+                      <p className="text-[11px] mt-2.5 px-2.5 py-1 rounded-md inline-block" style={{ background: "var(--accent-light)", color: "var(--accent)" }}>
+                        🎯 Tekshirildi: <b>{analysis.promptTitle}</b>
+                      </p>
+                    )}
                   </div>
 
                   {/* Savollar — aniqlashtirish */}

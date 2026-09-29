@@ -60,6 +60,12 @@ export default function CameraFAB() {
   const [conditionError, setConditionError]   = useState(false);
   const [loading, setLoading]             = useState(false);
 
+  // Maxsus prompt — faqat Hamyon tarifi uchun
+  type CustomPrompt = { id: string; title: string; subject: string; prompt: string };
+  const [planKey, setPlanKey] = useState<string>("free");
+  const [customPrompts, setCustomPrompts] = useState<CustomPrompt[]>([]);
+  const [selectedPromptId, setSelectedPromptId] = useState<string>("");
+
   // ── Folder creation ──
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName]   = useState("");
@@ -99,6 +105,7 @@ export default function CameraFAB() {
     setCreatingFolder(false); setNewFolderName("");
     setCapturedImages([]); setSendError("");
     setPreviewIndex(null);
+    setSelectedPromptId(""); setCustomPrompts([]);
     document.body.classList.remove("modal-open");
     if (urlCamera === "1") router.replace(urlReturnTo ?? "/home");
   }, [stopCamera, urlCamera, router, urlReturnTo]);
@@ -107,12 +114,23 @@ export default function CameraFAB() {
   async function openSubjectPicker() {
     setStep("subject");
     setLoading(true);
-    const [subsRes, foldersRes] = await Promise.all([
+    const [subsRes, foldersRes, planRes] = await Promise.all([
       fetch(`${API}/api/subjects`, { headers: { Authorization: `Bearer ${getToken()}` } }),
       fetch(`${API}/api/folders`,  { headers: { Authorization: `Bearer ${getToken()}` } }),
+      fetch(`${API}/api/billing/my-plan`, { headers: { Authorization: `Bearer ${getToken()}` } }),
     ]);
     if (subsRes.ok) setSubjects(await subsRes.json());
     if (foldersRes.ok) { const d = await foldersRes.json(); setFolders(d.data ?? d ?? []); }
+    if (planRes.ok) {
+      const p = await planRes.json();
+      const k = p.planKey ?? "free";
+      setPlanKey(k);
+      // Hamyon bo'lsa, foydalanuvchi promptlarini yuklab olamiz
+      if (k === "pay_per_use") {
+        const cpRes = await fetch(`${API}/api/custom-prompts`, { headers: { Authorization: `Bearer ${getToken()}` } });
+        if (cpRes.ok) setCustomPrompts((await cpRes.json()) as CustomPrompt[]);
+      }
+    }
     setLoading(false);
   }
 
@@ -130,6 +148,7 @@ export default function CameraFAB() {
     setFolderCondition("");
     setConditionError(false);
     setCreatingFolder(false);
+    setSelectedPromptId(""); // har safar yangi shart kiritishda default'ga qaytish
     setStep("condition");
   }
 
@@ -243,6 +262,7 @@ export default function CameraFAB() {
       if (urlClassId) fd.append("classId", urlClassId);
       if (selectedFolder) fd.append("folderId", selectedFolder.id);
       if (urlAssignmentId) fd.append("assignmentId", urlAssignmentId);
+      if (selectedPromptId) fd.append("customPromptId", selectedPromptId);
 
       const res = await fetch(`${API}/api/submissions`, {
         method: "POST",
@@ -434,6 +454,39 @@ export default function CameraFAB() {
                   {t("camera.sessionConditionPrefix")}{urlCondition.length > 80 ? urlCondition.slice(0, 80) + "…" : urlCondition}
                 </div>
               )}
+
+              {/* Maxsus prompt dropdown — faqat Hamyon va shu fan uchun prompt bo'lsa */}
+              {planKey === "pay_per_use" && (() => {
+                const subjectName = selectedFolder?.subjectName || urlSubject || "";
+                const promptsForSubject = customPrompts.filter(p =>
+                  p.subject.toLowerCase() === subjectName.toLowerCase()
+                );
+                if (promptsForSubject.length === 0) return null;
+                return (
+                  <div className="mb-3">
+                    <label className="text-[11px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>
+                      Tekshirish qoidasi
+                    </label>
+                    <select
+                      value={selectedPromptId}
+                      onChange={e => setSelectedPromptId(e.target.value)}
+                      className="w-full px-3 py-2 text-sm outline-none"
+                      style={{
+                        background: "var(--bg-primary)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "var(--radius-sm)",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <option value="">Default (universal)</option>
+                      {promptsForSubject.map(p => (
+                        <option key={p.id} value={p.id}>{p.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })()}
+
               <textarea
                 autoFocus
                 value={folderCondition}

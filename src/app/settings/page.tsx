@@ -131,13 +131,6 @@ export default function SettingsPage() {
   const [createTenantLoading, setCreateTenantLoading] = useState(false);
   const [createTenantError, setCreateTenantError] = useState("");
 
-  // Shaxsiy promptlar (Hamyon tarif uchun)
-  type CustomPrompt = { id: string; subject: string; prompt: string; updatedAt: string };
-  const [customPromptList, setCustomPromptList] = useState<CustomPrompt[]>([]);
-  const [cpSubject, setCpSubject] = useState("");
-  const [cpPrompt, setCpPrompt] = useState("");
-  const [cpSaving, setCpSaving] = useState(false);
-  const [cpError, setCpError] = useState("");
   const [tenantPreview, setTenantPreview] = useState<{ id: string; name: string } | null>(null);
   const [tenantLoading, setTenantLoading] = useState(false);
   const [tenantError, setTenantError] = useState("");
@@ -156,55 +149,6 @@ export default function SettingsPage() {
   useEffect(() => {
     if (lastEvent?.type === "plan_updated") setPlanKey(lastEvent.data.planKey);
   }, [lastEvent]);
-
-  // Custom promptlar — faqat Hamyon planda
-  useEffect(() => {
-    if (planKey !== "pay_per_use") return;
-    const token = getToken();
-    if (!token) return;
-    fetch(`${API}/api/custom-prompts`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.ok ? r.json() : [])
-      .then((rows: CustomPrompt[]) => setCustomPromptList(Array.isArray(rows) ? rows : []))
-      .catch(() => {});
-  }, [planKey]);
-
-  const saveCustomPrompt = async () => {
-    if (cpSubject.trim().length < 2) return setCpError("Subject kerak");
-    if (cpPrompt.trim().length < 10) return setCpError("Prompt kamida 10 ta belgi");
-    setCpSaving(true); setCpError("");
-    try {
-      const res = await fetch(`${API}/api/custom-prompts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ subject: cpSubject.trim(), prompt: cpPrompt.trim() }),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        setCpError(d.error ?? "Xato");
-        return;
-      }
-      const saved = await res.json();
-      setCustomPromptList(prev => {
-        const filtered = prev.filter(p => p.subject !== saved.subject);
-        return [saved, ...filtered];
-      });
-      setCpSubject(""); setCpPrompt("");
-    } finally {
-      setCpSaving(false);
-    }
-  };
-
-  const deleteCustomPrompt = async (id: string) => {
-    const ok = window.confirm("Promptni o'chirasizmi?");
-    if (!ok) return;
-    const res = await fetch(`${API}/api/custom-prompts/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    if (res.ok) setCustomPromptList(prev => prev.filter(p => p.id !== id));
-  };
 
   // Sync dark mode from localStorage
   useEffect(() => {
@@ -553,96 +497,16 @@ export default function SettingsPage() {
               </Section>
             )}
 
-            {/* Shaxsiy promptlar — faqat Hamyon (pay_per_use) tarif uchun */}
+            {/* Shaxsiy promptlar — alohida sahifaga link (faqat Hamyon) */}
             {planKey === "pay_per_use" && (
-              <Section title="Shaxsiy promptlar">
-                <div className="px-4 py-3 flex flex-col gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    O'sha fan submission'larida sizning maxsus qoidalaringiz ishlatiladi (faqat Hamyon).
-                    <br/>
-                    <strong>Avtomatik qo'shiladi (siz yozmaysiz):</strong>
-                    <br/>
-                    • Boshlanishida: "Sen [subject] fani o'qituvchisisan. Sening vazifang quyidagi maxsus qoidalar bo'yicha tekshirish..."
-                    <br/>
-                    • Mablag' tejovchi qoidalar: oddiy variantli savollar uchun faqat harf solishtirish, yozma savollar uchun mantiq va ishlash baholash
-                    <br/>
-                    • Format: OK/X/P/- verdict, har savolga aniq baho
-                    <br/>
-                    <strong style={{ color: "var(--error)" }}>Maxsus qoidalar majburiy:</strong> bu maydonni to'ldirmasangiz default usul (etalon + comparator) ishlatiladi.
-                  </p>
-                  <input
-                    type="text"
-                    placeholder="Subject (masalan: Kimyo)"
-                    value={cpSubject}
-                    onChange={e => setCpSubject(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                    style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
-                  />
-                  <textarea
-                    placeholder={`Maxsus qoidalar — masalan:\n\nQ1-Q12: oddiy variant (A/B/C/D) tekshiruvi\nQ13-Q14: hisob va birlik to'g'rimi tekshir\nQ15: reaksiya tenglashtirish — koeffisiyentlar yig'indisi\nQ16: batafsil yechim, formulalar va qadamlar\n\nYoki istalgan formatda erkin qoidalar yozing.`}
-                    value={cpPrompt}
-                    onChange={e => setCpPrompt(e.target.value)}
-                    rows={10}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-y font-mono"
-                    style={{ background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
-                  />
-                  <details className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    <summary className="cursor-pointer font-semibold">📌 Shablon ko'rish</summary>
-                    <pre className="mt-2 p-2 rounded text-[11px] whitespace-pre-wrap" style={{ background: "var(--bg-primary)", border: "1px solid var(--border)" }}>{`Q1-Q12: yopiq test (A/B/C/D harf javobi)
-   - Etalon bilan harf solishtir
-   - Faqat harf yozilgan bo'lsa ham qabul qil
-   - Hisob xato bo'lsa lekin javob mos kelsa "qisman"
-
-Q13-Q14: yozma hisob
-   - Sonli javob to'g'rimi
-   - O'lchov birligi mos kelishi kerak
-   - Hisob qadamlari ko'rsatilgan bo'lishi shart
-
-Q15: reaksiya tenglamalari
-   - 7 ta reaksiya bor
-   - Davom ettirish + koeffisiyentlar tenglashtirilishi
-   - Eng kichik butun sonlar
-
-Q16: batafsil masala yechimi
-   - Reaksiya tenglamalari ko'rsatilishi shart
-   - Formulalar va birlik
-   - Mantiqiy ketma-ketlik`}</pre>
-                  </details>
-                  {cpError && <p className="text-xs" style={{ color: "var(--error)" }}>{cpError}</p>}
-                  <button
-                    onClick={saveCustomPrompt}
-                    disabled={cpSaving}
-                    className="self-start px-4 py-2 rounded-lg text-sm font-bold"
-                    style={{ background: "var(--accent)", color: "#fff", opacity: cpSaving ? 0.6 : 1 }}
-                  >
-                    {cpSaving ? "Saqlanmoqda..." : "Saqlash"}
-                  </button>
-                </div>
-
-                {customPromptList.length === 0 ? (
-                  <p className="px-4 py-4 text-xs text-center" style={{ color: "var(--text-muted)" }}>
-                    Hali shaxsiy prompt yo'q
-                  </p>
-                ) : (
-                  <div className="flex flex-col">
-                    {customPromptList.map(p => (
-                      <div key={p.id} className="px-4 py-3 flex items-start gap-2" style={{ borderTop: "1px solid var(--border)" }}>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>📚 {p.subject}</p>
-                          <p className="text-xs mt-0.5 line-clamp-2" style={{ color: "var(--text-muted)" }}>{p.prompt}</p>
-                        </div>
-                        <button
-                          onClick={() => deleteCustomPrompt(p.id)}
-                          className="p-1.5 rounded-lg shrink-0"
-                          style={{ background: "rgba(248,113,113,0.1)", color: "#f87171" }}
-                          title="O'chirish"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <Section title="AI tekshirish">
+                <Row
+                  icon={MessageSquare}
+                  label="Shaxsiy promptlar"
+                  sub="O'z tekshirish qoidalaringizni yarating"
+                  last
+                  onClick={() => router.push("/settings/shaxsiy-prompt")}
+                />
               </Section>
             )}
 

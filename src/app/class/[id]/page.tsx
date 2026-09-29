@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Camera, FileText, Search, Plus, X,
   MoreVertical, Pencil, Trash2, Check, UserPlus, Send, Timer, BookOpen, ChevronRight, Settings, BarChart2, Loader2,
+  FileSpreadsheet, Download,
 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 import { useUserWS } from "@/lib/user-ws";
@@ -41,6 +42,13 @@ export default function ClassPage() {
   const [newTgId, setNewTgId]       = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [savingStudent, setSavingStudent] = useState(false);
+
+  // Excel import
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [showImport, setShowImport] = useState(false);
+  const [importRows, setImportRows] = useState<{ name: string; telegramId: string }[]>([]);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
 
   // Edit / Delete
   const [editingId, setEditingId]   = useState<string | null>(null);
@@ -256,6 +264,96 @@ export default function ClassPage() {
     setNewTgId("");
     setShowCreate(false);
     setSavingStudent(false);
+  };
+
+  /* ── Excel matritsadan {name, telegramId} qatorlarini ajratish ── */
+  const parseMatrix = (matrix: unknown[][]): { name: string; telegramId: string }[] => {
+    const norm = (v: unknown) => (v == null ? "" : String(v).trim());
+    if (matrix.length === 0) return [];
+
+    // Sarlavha (header) qatorini aniqlash
+    const nameKeys = ["ism", "name", "f.i.o", "fio", "familiya", "ф.и.о", "имя", "o'quvchi", "oquvchi", "talaba", "ученик"];
+    const first = matrix[0].map((c) => norm(c).toLowerCase());
+    const hasHeader = first.some((c) => nameKeys.some((k) => c.includes(k)) || c.includes("telegram"));
+
+    let nameCol = 0, tgCol = 1, dataStart = 0;
+    if (hasHeader) {
+      dataStart = 1;
+      const nIdx = first.findIndex((c) => nameKeys.some((k) => c.includes(k)));
+      const tIdx = first.findIndex((c) => c.includes("telegram") || c === "tg" || c.includes("chat"));
+      if (nIdx >= 0) nameCol = nIdx;
+      if (tIdx >= 0) tgCol = tIdx;
+      else tgCol = nameCol === 0 ? 1 : 0;
+    }
+
+    const out: { name: string; telegramId: string }[] = [];
+    for (let i = dataStart; i < matrix.length; i++) {
+      const row = matrix[i] ?? [];
+      const name = norm(row[nameCol]);
+      if (!name) continue;
+      out.push({ name, telegramId: norm(row[tgCol]) });
+    }
+    return out;
+  };
+
+  /* ── Excel faylni o'qib preview'ga tayyorlash ── */
+  const handleExcelFile = async (file: File) => {
+    setImportError(null);
+    try {
+      const XLSX = await import("xlsx");
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]!];
+      if (!ws) { setImportError(t("class.importParseError")); return; }
+      const matrix = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, blankrows: false, defval: "" });
+      const rows = parseMatrix(matrix);
+      if (rows.length === 0) { setImportError(t("class.importNoNames")); return; }
+      setImportRows(rows);
+      setShowImport(true);
+    } catch {
+      setImportError(t("class.importParseError"));
+    }
+  };
+
+  /* ── Namuna (shablon) Excel yuklab olish ── */
+  const downloadTemplate = async () => {
+    const XLSX = await import("xlsx");
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["Ism Familiya", "Telegram ID"],
+      ["Ali Valiyev", "123456789"],
+      ["Vali Aliyev", ""],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "O'quvchilar");
+    XLSX.writeFile(wb, "oquvchilar-namuna.xlsx");
+  };
+
+  /* ── Preview'dagi qatorlarni sinfga import qilish ── */
+  const confirmImport = async () => {
+    if (importing) return;
+    const rows = importRows
+      .map((r) => ({ name: r.name.trim(), telegramId: r.telegramId.trim() || null }))
+      .filter((r) => r.name.length > 0);
+    if (rows.length === 0) { setImportError(t("class.importNoNames")); return; }
+
+    setImporting(true);
+    setImportError(null);
+    const res = await fetch(`${API}/api/students/bulk`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ rows, classId: id }),
+    });
+    if (res.ok) {
+      const data: { students: ClassStudent[] } = await res.json();
+      setStudentList((prev) => [...prev, ...data.students]);
+      setAllStudents((prev) => [...prev, ...data.students]);
+      setShowImport(false);
+      setShowAdd(false);
+      setImportRows([]);
+    } else {
+      setImportError(t("class.importFailed"));
+    }
+    setImporting(false);
   };
 
   /* ── Sinfdan chiqarish ── */
@@ -896,12 +994,98 @@ export default function ClassPage() {
                   </div>
                 </div>
               ) : (
-                <button onClick={() => setShowCreate(true)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 text-sm transition-all hover:opacity-80"
-                  style={{ border:"1px dashed var(--border)", color:"var(--text-muted)", borderRadius: "var(--radius-sm)" }}>
-                  <UserPlus size={15} /> {t("class.createNewStudent")}
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button onClick={() => setShowCreate(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 text-sm transition-all hover:opacity-80"
+                    style={{ border:"1px dashed var(--border)", color:"var(--text-muted)", borderRadius: "var(--radius-sm)" }}>
+                    <UserPlus size={15} /> {t("class.createNewStudent")}
+                  </button>
+                  <button onClick={() => fileRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 text-sm transition-all hover:opacity-80"
+                    style={{ border:"1px dashed var(--border)", color:"var(--accent)", borderRadius: "var(--radius-sm)" }}>
+                    <FileSpreadsheet size={15} /> {t("class.importFromExcel")}
+                  </button>
+                  <button onClick={() => void downloadTemplate()}
+                    className="w-full flex items-center justify-center gap-1.5 text-xs transition-all hover:opacity-70 py-0.5"
+                    style={{ color:"var(--text-muted)" }}>
+                    <Download size={12} /> {t("class.downloadTemplate")}
+                  </button>
+                  {importError && <p className="text-xs text-center" style={{ color:"var(--danger, #e5484d)" }}>{importError}</p>}
+                  <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void handleExcelFile(f);
+                      e.target.value = "";
+                    }} />
+                </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Excel import preview modal ── */}
+      {showImport && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          style={{ background:"rgba(0,0,0,0.25)", backdropFilter:"blur(6px)" }}
+          onClick={(e) => e.target === e.currentTarget && !importing && setShowImport(false)}>
+          <div className="w-full max-w-md overflow-hidden animate-fade-in flex flex-col"
+            style={{ background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius: "var(--radius-md)", maxHeight:"85vh" }}>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor:"var(--border)" }}>
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet size={17} style={{ color:"var(--accent)" }} />
+                <p className="text-base font-semibold" style={{ color:"var(--text-primary)", fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}>
+                  {t("class.importPreviewTitle").replace("{count}", String(importRows.length))}
+                </p>
+              </div>
+              <button onClick={() => !importing && setShowImport(false)} className="w-8 h-8 flex items-center justify-center"
+                style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-muted)" }}>
+                <X size={15} />
+              </button>
+            </div>
+
+            {/* Rows */}
+            <div className="overflow-y-auto px-3 py-3 flex flex-col gap-2">
+              {importRows.map((r, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="text-xs w-5 text-right shrink-0" style={{ color:"var(--text-muted)" }}>{idx + 1}</span>
+                  <input value={r.name}
+                    onChange={(e) => setImportRows((prev) => prev.map((p, i) => i === idx ? { ...p, name: e.target.value } : p))}
+                    placeholder={t("class.fullName")}
+                    className="flex-[2] px-2.5 py-2 text-sm outline-none min-w-0"
+                    style={{ background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-primary)", borderRadius: "var(--radius-sm)" }} />
+                  <input value={r.telegramId}
+                    onChange={(e) => setImportRows((prev) => prev.map((p, i) => i === idx ? { ...p, telegramId: e.target.value } : p))}
+                    placeholder="Telegram ID"
+                    className="flex-1 px-2.5 py-2 text-sm outline-none min-w-0"
+                    style={{ background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-primary)", borderRadius: "var(--radius-sm)" }} />
+                  <button onClick={() => setImportRows((prev) => prev.filter((_, i) => i !== idx))}
+                    className="w-8 h-8 flex items-center justify-center shrink-0"
+                    style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-primary)", border:"1px solid var(--border)", color:"var(--text-muted)" }}>
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 border-t flex flex-col gap-2" style={{ borderColor:"var(--border)" }}>
+              {importError && <p className="text-xs text-center" style={{ color:"var(--danger, #e5484d)" }}>{importError}</p>}
+              <div className="flex gap-2">
+                <button onClick={() => setShowImport(false)} disabled={importing}
+                  className="flex-1 py-2.5 text-sm"
+                  style={{ borderRadius: "var(--radius-sm)", background:"var(--bg-card)", border:"1px solid var(--border)", color:"var(--text-secondary)" }}>
+                  {t("class.cancel")}
+                </button>
+                <button onClick={() => void confirmImport()} disabled={importing || importRows.length === 0}
+                  className="flex-[2] py-2.5 text-sm font-medium flex items-center justify-center gap-2"
+                  style={{ borderRadius: "var(--radius-sm)", background:"var(--cta)", color:"#fff", opacity: importing || importRows.length === 0 ? 0.6 : 1 }}>
+                  {importing ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
+                  {t("class.importConfirm").replace("{count}", String(importRows.length))}
+                </button>
+              </div>
             </div>
           </div>
         </div>
