@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, TrendingUp, CheckCircle2, BarChart2 } from "lucide-react";
 import { getToken } from "@/lib/auth";
 import { useT } from "@/lib/i18n-context";
+import { type Period, periodOptions, defaultValue, monthOf, INSIGHT_STYLE } from "@/lib/stats-period";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 function authHeaders() {
@@ -19,22 +20,7 @@ type Stats = {
   subjects: { name: string; count: number; avgScore: number }[];
 };
 
-function getPeriodOptions(period: "month" | "year", t: (k: string) => string) {
-  const now = new Date();
-  if (period === "month") {
-    const opts = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const label = `${t(`studentStats.monthsShort.${d.getMonth()}`)} ${d.getFullYear()}`;
-      opts.push({ value, label });
-    }
-    return opts;
-  }
-  // year
-  const year = now.getFullYear();
-  return [year - 2, year - 1, year].map(y => ({ value: String(y), label: String(y) }));
-}
+type Insight = { status: string; note: string; submissions: number; avgScore: number } | null;
 
 export default function StudentStatsPage() {
   const { t } = useT();
@@ -42,12 +28,10 @@ export default function StudentStatsPage() {
   const router = useRouter();
 
   const [studentName, setStudentName] = useState("");
-  const [period, setPeriod] = useState<"month" | "year">("month");
-  const [value, setValue] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  });
+  const [period, setPeriod] = useState<Period>("month");
+  const [value, setValue] = useState(() => defaultValue("month"));
   const [stats, setStats] = useState<Stats | null>(null);
+  const [insight, setInsight] = useState<Insight>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -55,7 +39,7 @@ export default function StudentStatsPage() {
       .then(r => r.json()).then(d => setStudentName(d.name ?? ""));
   }, [id]);
 
-  const load = useCallback(async (p: "month" | "year", v: string) => {
+  const load = useCallback(async (p: Period, v: string) => {
     setLoading(true);
     try {
       const res = await fetch(`${API}/api/stats/student/${id}?period=${p}&value=${v}`, { headers: authHeaders() });
@@ -67,17 +51,21 @@ export default function StudentStatsPage() {
 
   useEffect(() => { load(period, value); }, [load, period, value]);
 
-  const switchPeriod = (p: "month" | "year") => {
+  // Insight (holat|izoh) — oy bo'yicha
+  useEffect(() => {
+    const m = monthOf(value);
+    fetch(`${API}/api/stats/insights/student/${id}?value=${m}`, { headers: authHeaders() })
+      .then(r => r.ok ? r.json() : null)
+      .then((d) => setInsight(d && d.status ? d : null))
+      .catch(() => setInsight(null));
+  }, [id, value]);
+
+  const switchPeriod = (p: Period) => {
     setPeriod(p);
-    const now = new Date();
-    if (p === "month") {
-      setValue(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
-    } else {
-      setValue(String(now.getFullYear()));
-    }
+    setValue(defaultValue(p));
   };
 
-  const periodOpts = getPeriodOptions(period, t);
+  const periodOpts = periodOptions(period);
   const maxTimeline = Math.max(...(stats?.timeline.map(t => t.count) ?? [1]), 1);
   const maxGrade = Math.max(...Object.values(stats?.gradeDistribution ?? {}), 1);
   const totalGrades = Object.values(stats?.gradeDistribution ?? {}).reduce((a, b) => a + b, 0);
@@ -104,14 +92,14 @@ export default function StudentStatsPage() {
 
             {/* Period toggle */}
             <div className="flex gap-2 p-1 rounded-xl" style={{ background: "var(--bg-card)", border: "1px solid var(--border)" }}>
-              {(["month", "year"] as const).map(p => (
+              {(["day", "week", "month"] as const).map(p => (
                 <button key={p} onClick={() => switchPeriod(p)}
                   className="flex-1 py-2 text-sm font-semibold rounded-lg transition-all"
                   style={{
                     background: period === p ? "var(--accent)" : "transparent",
                     color: period === p ? "#fff" : "var(--text-muted)",
                   }}>
-                  {p === "month" ? t("studentStats.monthly") : t("studentStats.yearly")}
+                  {t(`studentStats.${p === "day" ? "daily" : p === "week" ? "weekly" : "monthly"}`)}
                 </button>
               ))}
             </div>
@@ -156,6 +144,22 @@ export default function StudentStatsPage() {
                   </div>
                 </div>
 
+                {/* Insight — holat | izoh (oy bo'yicha) */}
+                {insight && (() => {
+                  const st = INSIGHT_STYLE[insight.status] ?? { emoji: "•", color: "var(--text-muted)" };
+                  return (
+                    <div className="p-4 flex items-start gap-3" style={{ background: `${st.color}0f`, border: `1px solid ${st.color}40`, borderRadius: "var(--radius-md)" }}>
+                      <span className="text-2xl shrink-0 leading-none">{st.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded" style={{ color: st.color, background: `${st.color}1a` }}>
+                          {t(`studentStats.status.${insight.status}`)}
+                        </span>
+                        <p className="text-sm mt-1.5" style={{ color: "var(--text-primary)" }}>{insight.note}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Grade distribution */}
                 {totalGrades > 0 && (
                   <div className="p-4 flex flex-col gap-3" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
@@ -184,7 +188,7 @@ export default function StudentStatsPage() {
                 {stats.timeline.length > 0 && (
                   <div className="p-4 flex flex-col gap-3" style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}>
                     <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-                      {period === "month" ? t("studentStats.dailyActivity") : t("studentStats.monthlyActivity")}
+                      {t(`studentStats.${period === "day" ? "hourlyActivity" : period === "week" ? "weeklyActivity" : "dailyActivity"}`)}
                     </p>
                     <div className="flex items-end gap-1.5 h-24">
                       {stats.timeline.map((t, i) => (

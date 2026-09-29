@@ -349,14 +349,28 @@
     "title": "Статистика",
     "monthly": "Месяц",
     "yearly": "Год",
+    "daily": "День",
+    "weekly": "Неделя",
+    "activeStudents": "Активные ученики",
     "noData": "Нет данных за этот период",
     "checks": "Проверок",
     "averageScore": "Средний балл",
     "gradeDistribution": "Распределение оценок",
     "dailyActivity": "Активность по дням",
+    "weeklyActivity": "Активность по неделям",
+    "hourlyActivity": "Активность по часам",
     "monthlyActivity": "Активность по месяцам",
     "bySubjects": "По предметам",
     "checksUnit": "проверок",
+    "insightsTitle": "Состояние учеников",
+    "status": {
+      "osish": "Рост",
+      "faol": "Активный",
+      "barqaror": "Стабильно",
+      "yangi": "Новый",
+      "pasayish": "Спад",
+      "passiv": "Пассивный"
+    },
     "monthsShort": ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"]
   },
   "student": {

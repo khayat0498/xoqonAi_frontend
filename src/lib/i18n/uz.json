@@ -349,14 +349,28 @@
     "title": "Statistika",
     "monthly": "Oylik",
     "yearly": "Yillik",
+    "daily": "Kunlik",
+    "weekly": "Haftalik",
+    "activeStudents": "Faol o'quvchilar",
     "noData": "Bu davr uchun ma'lumot yo'q",
     "checks": "Tekshirishlar",
     "averageScore": "O'rtacha ball",
     "gradeDistribution": "Baholar taqsimoti",
     "dailyActivity": "Kunlik faollik",
+    "weeklyActivity": "Haftalik faollik",
+    "hourlyActivity": "Soatlik faollik",
     "monthlyActivity": "Oylik faollik",
     "bySubjects": "Fanlar bo'yicha",
     "checksUnit": "ta tekshiruv",
+    "insightsTitle": "O'quvchilar holati",
+    "status": {
+      "osish": "O'sishda",
+      "faol": "Faol",
+      "barqaror": "Barqaror",
+      "yangi": "Yangi",
+      "pasayish": "Pasayish",
+      "passiv": "Passiv"
+    },
     "monthsShort": ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"]
   },
   "student": {
